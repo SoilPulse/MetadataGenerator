@@ -1,0 +1,13 @@
+This is a list of expressions and their meaning in the scope of SoilPulse project
+
+data source - repository, storage, database or any other digital deposit of data suitable (desired) to be processed by SoilPulse metadata generator
+data set - 
+metadata generator - set of tools for handling (reading, deriving, storing, retrieving) metadata or data with the aim to gain metadata image of a data source described by SoilPulse entity and relationship model
+entity and relationship model - code realization of representation, handling and storing of the metadata elements and their mutual bonds, the model uses entity definition of existing metadata scheme (metadata standard)
+metadata standard (= metadata scheme) - existing metadata elements definition established by a third party (e.g. BonaRes metadata sheme)
+metadata template - definition of metadata elements set with assigned mandatory level (needed, optional) related to a particular use-case (scientific task, modeling task, e.g. Erosion-3D model build)
+metadata mining - retrieving list of 
+data mining
+metadata mapping storage
+SoilPulse API
+data-shop - graphical user interface for data and metadata searching and mining
