@@ -35,9 +35,22 @@ jobs:
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install sphinx pydata_sphinx_theme sphinx-autoapi
+        pip install -e .
+        
     - name: Test with pytest
       run: |
         pytest
+        
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v3
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
 #        pip install pytest pytest-cov
 #        pytest --import-mode=append --cov-config=.coveragerc --cov=soilpulse --cov-report=xml
 
@@ -46,12 +59,6 @@ jobs:
 #       with:
 #         file: ./coverage.xml
 #         env_vars: PYTHON
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install sphinx pydata_sphinx_theme sphinx-autoapi
-        pip install -e .
 
     - name: Build docs
       run: |
