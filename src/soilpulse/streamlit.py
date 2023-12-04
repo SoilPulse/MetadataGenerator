@@ -6,7 +6,8 @@ Created on Thu Nov 30 09:33:07 2023
 """
 
 import streamlit as st
-from get_metadata import *
+import requests
+from soilpulse import get_metadata as gm
 
 st.title("SoilPulse Metadata generator")
 
@@ -32,12 +33,12 @@ doi = st.radio(
         ]
     )
 
-ra = doi_ra(doi)
+ra = gm.doi_ra(doi)
 st.write("DOI is registered at: "+ra)
 
 if(ra=="DataCite"):
     st.header("Show some DataCite Metadata")
-    meta_ra = doi_meta(doi)
+    meta_ra = gm.doi_meta(doi)
     st.write("Data was created by: "+str(meta_ra['data']['attributes']['creators']))
     st.write("Data is titled: "+str(meta_ra['data']['attributes']['titles'][0]['title']))
     dataset_url = meta_ra['data']['attributes']['url']
