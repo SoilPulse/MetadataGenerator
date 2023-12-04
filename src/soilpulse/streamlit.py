@@ -12,15 +12,15 @@ from soilpulse import get_metadata as gm
 st.title("SoilPulse Metadata generator")
 
 # start with a given DOI
-#doi = "10.14454/FXWS-0523"
-#doi = "10.5281/zenodo.6654150"
-#doi = "10.5281/zenodo.10210062"
-#doi = "10.5281/zenodo.10209718"
-#doi = "10.5281/zenodo.10210061"
+# doi = "10.14454/FXWS-0523"
+# doi = "10.5281/zenodo.6654150"
+# doi = "10.5281/zenodo.10210062"
+# doi = "10.5281/zenodo.10209718"
+# doi = "10.5281/zenodo.10210061"
 
 
 doi = st.radio(
-    label="Enter DOI",
+    label = "Enter DOI",
     options = [
         "10.14454/FXWS-0523",
         "10.5281/zenodo.6654150",
@@ -36,28 +36,33 @@ doi = st.radio(
 ra = gm.doi_ra(doi)
 st.write("DOI is registered at: "+ra)
 
-if(ra=="DataCite"):
+if(ra == "DataCite"):
     st.header("Show some DataCite Metadata")
     meta_ra = gm.doi_meta(doi)
-    st.write("Data was created by: "+str(meta_ra['data']['attributes']['creators']))
-    st.write("Data is titled: "+str(meta_ra['data']['attributes']['titles'][0]['title']))
+    st.write("Data was created by:\
+             "+str(meta_ra['data']['attributes']['creators']))
+    st.write("Data is titled: "\
+             +str(meta_ra['data']['attributes']['titles'][0]['title']))
     dataset_url = meta_ra['data']['attributes']['url']
     st.write("DOI resolves to: "+str(dataset_url))
-    
+
     if ("zenodo.org" in dataset_url):
         zenodo_id = dataset_url.split("/")[-1].split(".")[-1]
         st.header("Retrieving information for Zenodo dataset "+zenodo_id)
-        
-        response = requests.get("https://zenodo.org/api/deposit/depositions/"+zenodo_id+"/files").json()
-        if (type(response) == dict):
+
+        response = requests.get(
+            "https://zenodo.org/api/deposit/depositions/"+zenodo_id+"/files"
+            ).json()
+        if (type(response) is dict):
             st.write("Data set can not be retrieved.")
         else:
             st.write("Check files to download:")
             download_files = [
-#                file['filename'] for file in response if 'zip' in file['filename']
-                file['filename'] for file in response if st.toggle(label=file['filename'])
-                ]    
-                
+                file['filename'] \
+                    for file in response \
+                    if st.toggle(label=file['filename'])
+            ]    
+
 #            for file in response:
 #                if (".zip" in file['filename']):
 #                    st.write("The file "+file['filename']+" can be downloaded at:")
@@ -67,6 +72,4 @@ if(ra=="DataCite"):
         st.write("Not a Zenodo Dataset - up to now not treated.")
 else:
     st.write("Not a DataCite DOI - up to now not treated.")
-#print(base64.b64decode(response['data']['attributes']['xml']))
-
-    
+# print(base64.b64decode(response['data']['attributes']['xml']))

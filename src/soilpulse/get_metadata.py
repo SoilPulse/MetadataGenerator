@@ -7,10 +7,12 @@ This is a temporary script file.
 
 import requests
 
+
 def doi_ra(doi, meta=False):
     '''
     get registration agency from doi.org API
- 
+
+    
     Parameters
     ----------
     doi : string
@@ -33,6 +35,7 @@ def doi_ra(doi, meta=False):
     except:
         return("This is not a DOI.")
 
+
 def doi_meta(doi):
     '''
     Parameters
@@ -49,6 +52,7 @@ def doi_meta(doi):
     if(ra == 'DataCite'):
         url = "https://api.datacite.org/dois/"+doi
         headers = {"accept": "application/vnd.api+json"}
-        return(requests.get(url, headers=headers).json())
+        return(requests.get(url, headers = headers).json())
     else:
-        return('Please contact admins, registration agency currently not covered')
+        return('Please contact admins, registration agency \
+               currently not covered')
