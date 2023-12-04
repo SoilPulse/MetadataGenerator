@@ -23,12 +23,15 @@ def doi_ra(doi, meta=False):
     information on Registration agency
 
     '''
-    url_ra = "https://doi.org/ra/"+doi
-    ra = requests.get(url_ra).json()
-    if(meta):
-        return(ra)
-    else:
-        return(ra[0]['RA'])
+    try:
+        url_ra = "https://doi.org/ra/"+doi
+        ra = requests.get(url_ra).json()
+        if(meta):
+            return(ra)
+        else:
+            return(ra[0]['RA'])
+    except:
+        return("This is not a DOI.")
 
 def doi_meta(doi):
     '''
