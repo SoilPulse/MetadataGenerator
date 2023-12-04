@@ -5,7 +5,7 @@ Spyder Editor
 This is a temporary script file.
 """
 
-from scripts.get_metadata import *
+from soilpulse.get_metadata import *
 
 # start with a given DOI
 #doi = "10.14454/FXWS-0523"
