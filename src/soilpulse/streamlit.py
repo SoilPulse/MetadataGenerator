@@ -39,10 +39,10 @@ st.write("DOI is registered at: "+ra)
 if(ra == "DataCite"):
     st.header("Show some DataCite Metadata")
     meta_ra = gm.doi_meta(doi)
-    st.write("Data was created by:\
-             "+str(meta_ra['data']['attributes']['creators']))
-    st.write("Data is titled: "\
-             +str(meta_ra['data']['attributes']['titles'][0]['title']))
+    st.write("Data was created by:"
+             + str(meta_ra['data']['attributes']['creators']))
+    st.write("Data is titled: "
+             + str(meta_ra['data']['attributes']['titles'][0]['title']))
     dataset_url = meta_ra['data']['attributes']['url']
     st.write("DOI resolves to: "+str(dataset_url))
 
@@ -58,10 +58,10 @@ if(ra == "DataCite"):
         else:
             st.write("Check files to download:")
             download_files = [
-                file['filename'] \
-                    for file in response \
-                    if st.toggle(label=file['filename'])
-            ]    
+                file['filename']
+                for file in response
+                if st.toggle(label=file['filename'])
+                ]
 
 #            for file in response:
 #                if (".zip" in file['filename']):
