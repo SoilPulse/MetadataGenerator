@@ -21,7 +21,7 @@ classifiers = [
 mypkg = "src/soilpulse"
 
 [project.urls]
-Homepage = "soilpulse.github.io"
+Homepage = "https://soilpulse.github.io/"
 Issues = "https://github.com/SoilPulse/MetadataGenerator/issues"
 
 [tool.pytest.ini_options]
