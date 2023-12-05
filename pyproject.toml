@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "soilpulse"
-version = "0.0.1"
+dynamic = ["version"]
 authors = [
   { name="Jan Devátý", email="jan.devaty@fsv.cvut.cz" },
   { name="Jonas Lenz", email="jonas.lenz@iproconsult.com" },
@@ -17,9 +17,6 @@ classifiers = [
     "Programming Language :: Python :: 3",
 ]
 
-[tool.setuptools.package-dir]
-mypkg = "src/soilpulse"
-
 [project.urls]
 Homepage = "https://soilpulse.github.io/"
 Issues = "https://github.com/SoilPulse/MetadataGenerator/issues"
@@ -29,3 +26,6 @@ addopts = [
     "--import-mode=importlib",
 ]
 pythonpath = "src"
+
+[tool.setuptools.dynamic]
+version = {attr = "soilpulse.__version__"}
