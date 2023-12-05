@@ -1,26 +1,32 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = [
+    "setuptools>=60",
+    "setuptools-scm>=8.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "soilpulse"
-version = "0.0.1"
+dynamic = ["version"]
 authors = [
   { name="Jan Devátý", email="jan.devaty@fsv.cvut.cz" },
   { name="Jonas Lenz", email="jonas.lenz@iproconsult.com" },
 ]
 description = "SoilPulse metadata generator"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 license = {file = "LICENSE"}
 classifiers = [
     "Programming Language :: Python :: 3",
-    "Operating System :: OS Independent",
 ]
 
-[tool.setuptools.package-dir]
-mypkg = "soilpulse"
-
 [project.urls]
-Homepage = "soilpulse.github.io"
+Homepage = "https://soilpulse.github.io/"
 Issues = "https://github.com/SoilPulse/MetadataGenerator/issues"
+
+[tool.pytest.ini_options]
+addopts = [
+    "--import-mode=importlib",
+]
+pythonpath = "src"
+
+[tool.setuptools_scm]
