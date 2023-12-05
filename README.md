@@ -1,4 +1,8 @@
 # MetadataGenerator
+
+[![Test SoilPulse](https://github.com/jonaslenz/MetadataGenerator/actions/workflows/main.yml/badge.svg)](https://github.com/jonaslenz/MetadataGenerator/actions/workflows/main.yml)
+[![codecov](https://codecov.io/gh/jonaslenz/MetadataGenerator/graph/badge.svg?token=MNH7U3WUSW)](https://codecov.io/gh/jonaslenz/MetadataGenerator)
+
 The metadata generator guides researchers to the creation of reusable data sets in a webapp.
 
 ## Possible workflow
