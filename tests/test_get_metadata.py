@@ -27,4 +27,3 @@ class TestGetMetadata:
 
     def test_doi_ra_three(self):
         assert get_metadata.doi_ra("notaDOI") == "This is not a DOI."
-        
