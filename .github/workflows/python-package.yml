@@ -53,5 +53,5 @@ jobs:
     - name: Build docs
       run: |
         cd docs
-        sphinx-build -b html build
+        sphinx-build -b html ./source/ build
         make html

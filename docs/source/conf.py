@@ -21,6 +21,9 @@ project = 'SoilPulse'
 copyright = '2023, Jan Devátý; Jonas Lenz'
 author = 'Jan Devátý; Jonas Lenz'
 
+import os
+import sys
+sys.path.insert(0, os.path.abspath('../..'))  # Source code dir relative to this file
 
 # -- General configuration ---------------------------------------------------
 
@@ -28,7 +31,13 @@ author = 'Jan Devátý; Jonas Lenz'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    'sphinx.ext.duration',
+    'sphinx.ext.doctest',
+    'sphinx.ext.autodoc',  # Core library for html generation from docstrings
+    'sphinx.ext.autosummary',  # Create neat summary tables
 ]
+
+autosummary_generate = True  # Turn on sphinx.ext.autosummary
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
