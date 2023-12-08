@@ -11,3 +11,7 @@ The metadata generator guides researchers to the creation of reusable data sets 
 ![BPMN](https://raw.githubusercontent.com/SoilPulse/MetadataGenerator/main/metagen_BPMN.svg)
 
 edit by modifying the [BPMN file](https://github.com/SoilPulse/MetadataGenerator/blob/add_BPMN/metagen.bpmn) at [demo.bpmn.io](demo.bpmn.io)
+
+## Technical Docs
+
+A technical documentation of implemented functions can be found at [readthedocs](https://metadatagenerator.readthedocs.io/en/latest/ )
