@@ -44,23 +44,3 @@ jobs:
       uses: codecov/codecov-action@v3
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-
-#        pip install pytest pytest-cov
-#        pytest --import-mode=append --cov-config=.coveragerc --cov=soilpulse --cov-report=xml
-
-#     - name: Upload coverage to codecov
-#       uses: codecov/codecov-action@v2
-#       with:
-#         file: ./coverage.xml
-#         env_vars: PYTHON
-
-    # - name: Install dependencies
-    #   run: |
-    #     pip install sphinx pydata_sphinx_theme sphinx-autoapi
-    #     pip install -e .
-        
-    # - name: Build docs
-#      run: |
-#        cd docs
-#        sphinx-build -b html build
-#        make html
