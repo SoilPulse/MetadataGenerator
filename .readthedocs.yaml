@@ -16,7 +16,7 @@ build:
     # golang: "1.19"
   jobs:
     pre_build:
-     - sphinx-apidoc -o . ../src -F
+     - sphinx-apidoc -o . ./src -F
 
 # Build documentation in the "docs/" directory with Sphinx
 sphinx:
