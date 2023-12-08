@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Nov 30 09:33:07 2023
+Frontend implementation for the SoilPulse Metadata Generator.
 
 @author: Jonas Lenz
 """
@@ -20,8 +20,8 @@ st.title("SoilPulse Metadata generator")
 
 
 doi = st.radio(
-    label = "Enter DOI",
-    options = [
+    label="Enter DOI",
+    options=[
         "10.14454/FXWS-0523",
         "10.5281/zenodo.6654150",
         "10.5281/zenodo.10210062",
@@ -36,7 +36,7 @@ doi = st.radio(
 ra = gm.doi_ra(doi)
 st.write("DOI is registered at: "+ra)
 
-if(ra == "DataCite"):
+if (ra == "DataCite"):
     st.header("Show some DataCite Metadata")
     meta_ra = gm.doi_meta(doi)
     st.write("Data was created by:"
@@ -65,8 +65,10 @@ if(ra == "DataCite"):
 
 #            for file in response:
 #                if (".zip" in file['filename']):
-#                    st.write("The file "+file['filename']+" can be downloaded at:")
-#                    st.write("Download-url: https://zenodo.org/records/"+zenodo_id+"/files/"+file['filename']+"?download=1")
+#                    st.write("The file "+file['filename']+
+#                             " can be downloaded at:")
+#                    st.write("Download-url: https://zenodo.org/records/"
+#                       + zenodo_id+"/files/"+file['filename']+"?download=1")
 #            st.write(download_files)
     else:
         st.write("Not a Zenodo Dataset - up to now not treated.")
