@@ -2,6 +2,10 @@
 """
 Frontend implementation for the SoilPulse Metadata Generator.
 
+Makes use of st.session_state - see this guide:
+https://gist.github.com/asehmi/f7e35c3880897fbae92adc7a5315ac0e
+It pickles to cache metadata.
+
 @author: Jonas Lenz
 """
 
@@ -22,9 +26,9 @@ def _writes_cache():
 #        file.write(json.dumps(st.session_state.metainf))
 
 
-def _clear_session_state():
-    if 'metainf' in st.session_state:
-        del st.session_state.metainf
+def _clear_session_state(prop):
+    if prop in st.session_state:
+        del st.session_state[prop]
 
 
 st.title("SoilPulse Metadata generator")
@@ -42,7 +46,8 @@ doi = st.radio(
         "10.1594/GFZ.TR32.2",
         "10.3390/su152316295"
         ],
-    on_change=_clear_session_state
+    on_change=_clear_session_state,
+    args="metainf"
     )
 
 load_cache = False
