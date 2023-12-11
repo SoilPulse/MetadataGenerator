@@ -16,8 +16,7 @@ build:
     # golang: "1.19"
   jobs:
     pre_build:
-     - sphinx-apidoc -o ./docs/ ./src -F
-
+     - sphinx-apidoc -o ./docs/ ./src -F -a -A "Jan Devátý, Jonas Lenz" -H "SoilPulse"
 # Build documentation in the "docs/" directory with Sphinx
 sphinx:
    configuration: docs/conf.py
