@@ -9,7 +9,7 @@ Created on Thu Nov 30 09:35:03 2023.
 import requests
 # from zipfile import ZipFile
 # from urllib.request import urlopen
-import get_metadata as gm
+from soilpulse import get_metadata as gm
 
 # def load_data(url):
 #    f = urlopen(url)
@@ -110,3 +110,6 @@ def doi_data(doi):
                     print(file['filename'])
                 print("Download-url: https://zenodo.org/records/"+zenodo_id
                       + "/files/"+file['filename']+"?download=1")
+    else:
+        print("Can not retrieve files. - This is currently implemented \
+              ONLY for Zenodo.")
