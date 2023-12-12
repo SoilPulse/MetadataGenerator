@@ -13,6 +13,8 @@ import streamlit as st
 import requests
 import pickle
 import os
+import sys
+sys.path.insert(0, '../src')
 import re
 from soilpulse import get_metadata as gm
 
