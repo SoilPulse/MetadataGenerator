@@ -14,9 +14,10 @@ import requests
 import pickle
 import os
 import sys
-sys.path.insert(0, '../src')
 import re
-from soilpulse import get_metadata as gm
+sys.path.insert(0, './src/soilpulse')
+import get_metadata as gm
+# from soilpulse import get_metadata as gm
 
 
 def _writes_cache():
@@ -28,9 +29,9 @@ def _writes_cache():
 #        file.write(json.dumps(st.session_state.metainf))
 
 
-def _clear_session_state(prop):
-    if prop in st.session_state:
-        del st.session_state[prop]
+def _clear_session_state():
+    if "metainf" in st.session_state:
+        del st.session_state["metainf"]
 
 
 st.title("SoilPulse Metadata generator")
@@ -48,8 +49,7 @@ doi = st.radio(
         "10.1594/GFZ.TR32.2",
         "10.3390/su152316295"
         ],
-    on_change=_clear_session_state,
-    args="metainf"
+    on_change=_clear_session_state
     )
 
 load_cache = False
