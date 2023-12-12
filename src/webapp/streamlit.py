@@ -20,12 +20,14 @@ import get_metadata as gm
 # from soilpulse import get_metadata as gm
 
 
+
+
 def _writes_cache():
-    with open("instance/"+cache_file, 'wb') as handle:
+    with open("catalogue/"+cache_file, 'wb') as handle:
         pickle.dump(st.session_state.metainf,
                     handle, protocol=pickle.HIGHEST_PROTOCOL)
 #    import json
-#    with open('instance/file.txt', 'w') as file:
+#    with open('catalogue/file.txt', 'w') as file:
 #        file.write(json.dumps(st.session_state.metainf))
 
 
@@ -55,16 +57,16 @@ doi = st.radio(
 load_cache = False
 
 cache_file = re.sub('[^A-Za-z0-9]+', '', doi)
-if cache_file in os.listdir("instance"):
+if cache_file in os.listdir("catalogue"):
     st.write("The metadat of this dataset is allready in the cache.")
     clear_cache = st.button(":red[Clear cache]")
     load_cache = st.button("Load cache")
     if (clear_cache):
-        os.unlink("instance/"+cache_file)
+        os.unlink("catalogue/"+cache_file)
         st.rerun()
 
 if (load_cache):
-    with open("instance/"+cache_file, 'rb') as handle:
+    with open("catalogue/"+cache_file, 'rb') as handle:
         st.session_state.metainf = pickle.load(handle)
 
 st.header("Retrieve metadata")
