@@ -12,6 +12,7 @@ It pickles to cache metadata.
 import streamlit as st
 import requests
 import pickle
+import shutil
 import os
 import sys
 import re
@@ -20,10 +21,10 @@ import get_metadata as gm
 # from soilpulse import get_metadata as gm
 
 
-
-
 def _writes_cache():
-    with open("catalogue/"+cache_file, 'wb') as handle:
+    if not os.path.isdir("catalogue/"+cache_dir):
+        os.mkdir("catalogue/"+cache_dir)
+    with open("catalogue/"+cache_dir+"/meta", 'wb') as handle:
         pickle.dump(st.session_state.metainf,
                     handle, protocol=pickle.HIGHEST_PROTOCOL)
 #    import json
@@ -56,67 +57,92 @@ doi = st.radio(
 
 load_cache = False
 
-cache_file = re.sub('[^A-Za-z0-9]+', '', doi)
-if cache_file in os.listdir("catalogue"):
+cache_dir = re.sub('[^A-Za-z0-9]+', '', doi)
+if os.path.isdir("catalogue/"+cache_dir) and\
+  "meta" in os.listdir("catalogue/"+cache_dir):
     st.write("The metadat of this dataset is allready in the cache.")
     clear_cache = st.button(":red[Clear cache]")
     load_cache = st.button("Load cache")
     if (clear_cache):
-        os.unlink("catalogue/"+cache_file)
+        shutil.rmtree("catalogue/"+cache_dir)
         st.rerun()
 
 if (load_cache):
-    with open("catalogue/"+cache_file, 'rb') as handle:
+    with open("catalogue/"+cache_dir+"/meta", 'rb') as handle:
         st.session_state.metainf = pickle.load(handle)
 
 st.header("Retrieve metadata")
-getra = st.button("Get RA")
+getra = st.button("Get doi.org metadata")
 if getra:
     st.session_state.metainf = {}
-    st.session_state.metainf['ra'] = gm.doi_ra(doi)
-if ('metainf' in st.session_state):
-    if ('ra' in st.session_state.metainf):
-        st.write("DOI is registered at: "+st.session_state.metainf['ra'])
+    st.session_state.metainf['doiorg'] = gm.doi_ra(doi, meta=True)[0]
+if ('metainf' in st.session_state and 'doiorg' in st.session_state.metainf):
+    if ('RA' in st.session_state.metainf['doiorg']):
+        st.write("DOI is registered at: " +
+                 st.session_state.metainf['doiorg']['RA'])
 
-        if (st.session_state.metainf['ra'] == "DataCite"):
-            st.header("Show some DataCite Metadata")
-            meta_ra = gm.doi_meta(doi)
+        if (st.session_state.metainf['doiorg']['RA'] == "DataCite"):
+
+            getDatacite = st.button("Get DataCite Metadata")
+            if getDatacite:
+                st.session_state.metainf['Datacite'] = gm.doi_meta(doi)
+
+        if 'Datacite' in st.session_state.metainf:
             st.write("Data was created by:"
-                     + str(meta_ra['data']['attributes']['creators']))
+                     + str(st.session_state.metainf
+                     ['Datacite']['data']['attributes']['creators']))
             st.write("Data is titled: "
-                     + str(meta_ra['data']['attributes']['titles'][0]['title']))
-            dataset_url = meta_ra['data']['attributes']['url']
+                     + str(st.session_state.
+                           metainf['Datacite']['data']
+                           ['attributes']['titles'][0]['title']))
+            dataset_url = str(st.session_state.
+                              metainf['Datacite']['data']
+                              ['attributes']['url'])
             st.write("DOI resolves to: "+str(dataset_url))
 
             if ("zenodo.org" in dataset_url):
-                zenodo_id = dataset_url.split("/")[-1].split(".")[-1]
-                st.header("Retrieving information for Zenodo dataset "+zenodo_id)
+                st.session_state.metainf['zenodo_id'] =\
+                    dataset_url.split("/")[-1].split(".")[-1]
+                st.header("Retrieving information for Zenodo dataset " +
+                          st.session_state.metainf['zenodo_id'])
 
-                response = requests.get(
-                    "https://zenodo.org/api/deposit/depositions/"+zenodo_id+"/files"
-                    ).json()
-                if (type(response) is dict):
-                    st.write("Data set can not be retrieved.")
-                else:
-                    st.write("Check files to download:")
-                    download_files = [
-                        file['filename']
-                        for file in response
-                        if st.toggle(label=file['filename'])
-                        ]
-
-#            for file in response:
-#                if (".zip" in file['filename']):
-#                    st.write("The file "+file['filename']+
-#                             " can be downloaded at:")
-#                    st.write("Download-url: https://zenodo.org/records/"
-#                       + zenodo_id+"/files/"+file['filename']+"?download=1")
-#            st.write(download_files)
+                getZenodo = st.button("Get Zenodo file list")
+                if getZenodo:
+                    response = requests.get(
+                        "https://zenodo.org/api/deposit/depositions/" +
+                        st.session_state.metainf['zenodo_id']+"/files"
+                        ).json()
+                    if (type(response) is dict):
+                        st.write("Data set can not be retrieved.")
+                    else:
+                        st.session_state.metainf['ZenodoFiles'] = response
             else:
                 st.write("Not a Zenodo Dataset - up to now not treated.")
         else:
             st.write("Not a DataCite DOI - up to now not treated.")
-        # print(base64.b64decode(response['data']['attributes']['xml']))
+
+        if 'ZenodoFiles' in st.session_state.metainf:
+            st.write("Check files to download:")
+            download_files = [
+                file['filename']
+                for file in st.session_state.metainf['ZenodoFiles']
+                if st.toggle(label=file['filename'],
+                             value=".zip" in file['filename'])
+                ]
+            st.write(download_files)
+            getZenodoFiles = st.button("Download selected Zenodo files")
+            if getZenodoFiles:
+                for file in download_files:
+                    url = str("https://zenodo.org/records/" +
+                              st.session_state.metainf['zenodo_id'] +
+                              "/files/" + file)
+                    response = requests.get(url, params={"download": "1"})
+                    st.write(response.url)
+                    if response.ok:
+                        with open("catalogue/"+cache_dir+"/"+file,
+                                  mode="wb") as filesave:
+                            filesave.write(response.content)
+            # print(base64.b64decode(response['data']['attributes']['xml']))
 
 if "metainf" in st.session_state:
     st.write("You can cache the retrieved metadata now:")
