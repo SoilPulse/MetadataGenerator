@@ -13,8 +13,9 @@ It pickles to cache metadata.
 import streamlit as st
 import requests
 import pickle
-import shutil
+# import shutil
 import os
+import pandas as pd
 import sys
 import re
 sys.path.insert(0, './src/soilpulse')
@@ -41,16 +42,28 @@ def _clear_session_state():
 st.title("SoilPulse Metadata generator")
 
 if 'metainf' in st.session_state and 'doiorg' in st.session_state['metainf']:
-    st.write(str("Here you can crawl te dataset files of the dataset **" +
+    st.write(str("Here you can crawl the dataset files of the dataset **" +
              st.session_state['metainf']['doiorg']['DOI'] +
              "** to generate and complete metadata"))
     cache_dir = re.sub('[^A-Za-z0-9]+', '',
                        st.session_state['metainf']['doiorg']['DOI'])
 else:
     st.write("Please go back to Metadata retriever first to select dataset.")
+    st.link_button("Start Generator", "./Metadata_retriever")
 
 if ('metainf' in st.session_state and
         'ZenodoFiles' in st.session_state.metainf):
+    # ## Test with editable pandas dataframe
+    df = pd.DataFrame(st.session_state.metainf['ZenodoFiles'])
+    df = df.drop(columns=["id", "filesize", "checksum", "links"])
+    df["Download (again)?"] = [".zip" in file for file in df["filename"]]
+    df["File loaded and checked"] = [file in os.listdir("catalogue/"+cache_dir)
+                                     for file in df["filename"]]
+    edited_df = st.data_editor(df)
+    download_files2 = edited_df.loc[edited_df["Download (again)?"]]["filename"]
+    st.write(download_files2)
+
+    # first shot on file selector
     st.write("Check files to download:")
     download_files = [
         file['filename']
