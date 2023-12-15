@@ -92,6 +92,8 @@ if ('metainf' in st.session_state and 'doiorg' in st.session_state.metainf):
             if getDatacite:
                 st.session_state.metainf['Datacite'] = gm.doi_meta(doi)
 
+dataset_url = ""
+
 if ('metainf' in st.session_state and 'Datacite' in st.session_state.metainf):
     st.write("Data was created by:"
              + str(st.session_state.metainf
