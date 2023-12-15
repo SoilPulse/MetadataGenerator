@@ -50,6 +50,9 @@ if 'metainf' in st.session_state and 'doiorg' in st.session_state['metainf']:
 else:
     st.write("Please go back to Metadata retriever first to select dataset.")
     st.link_button("Start Generator", "./Metadata_retriever")
+#    st.write("Or start over by providing a link/lokal path to\
+#             prepare a data publication.")
+#    st.textbox("paste URL/path to dataset")
 
 if ('metainf' in st.session_state and
         'ZenodoFiles' in st.session_state.metainf):
@@ -57,9 +60,12 @@ if ('metainf' in st.session_state and
     df = pd.DataFrame(st.session_state.metainf['ZenodoFiles'])
     df = df.drop(columns=["id", "filesize", "checksum", "links"])
     df["Download (again)?"] = [".zip" in file for file in df["filename"]]
-    df["File loaded and checked"] = [file in os.listdir("catalogue/"+cache_dir)
-                                     for file in df["filename"]]
-    edited_df = st.data_editor(df)
+    df["File loaded"] = [file in os.listdir("catalogue/"+cache_dir)
+                         for file in df["filename"]]
+    edited_df = st.data_editor(df,
+                               hide_index=True,
+                               disabled=["filename", "File loaded"]
+                               )
     download_files2 = edited_df.loc[edited_df["Download (again)?"]]["filename"]
     st.write(download_files2)
 
