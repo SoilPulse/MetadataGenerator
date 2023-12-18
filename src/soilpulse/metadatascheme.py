@@ -16,42 +16,65 @@ class MetadataEntity:
     minMultiplicity = 0
     # highest number of appearances in resource (None meaning infinity)
     maxMultiplicity = None
-
+    # class of the super-element
     subtypeOf = None
-
+    # data type that the element can be
     dataType = None
-
+    # value domain the element can have
     domain = None
     # list of keywords used for identification of the element in the data resource
     keywords = None
 
     def __init__(self, value):
+        # the actual value of the metadata element
         self.value = value
+        # list of child metadata elements
+        self.childElements = []
+        # the parent element of self
+        self.parentElement = None
 
-class TextualEnity(MetadataEntity):
+    def getXMLrepresenatation(self):
+        """
+        Creates the string of element's XML representation
+        :return: XML string
+        """
+        pass
+
+    def getMySQLrepresenatation(self):
+        """
+        Creates the string of element's MySQL snippet
+        :return: MySQL query string
+        """
+        pass
+
+class TextMetadataEntity(MetadataEntity):
     """
-    Abstract interface class of textual value metadata entity
+    Abstract interface class of metadata element with textual value
     """
-    translations = []
+
     def __init__(self, value, language):
+        # the actual value of the metadata element
         self.value = value
+        # the original language of the element value
         self.language = language
+        # translations of the element value in different languages
+        self.translations = {}
 
-class Title(MetadataEntity, TextualEnity):
+class Title(TextMetadataEntity):
     ID = "1"
     description = "A characteristic, unique name by which the dataset is known."
     minMultiplicity = 1
     maxMultiplicity = 1
     keywords = ["title", "<h1>"]
 
-class AlternateTitle(MetadataEntity, TextualEnity):
+class AlternateTitle(TextMetadataEntity):
     ID = "2"
     description = "A short name by which the dataset is also known."
     minMultiplicity = 0
     maxMultiplicity = None
     keywords = ["<h2>"]
 
-class Summary(MetadataEntity, TextualEnity):
+class Summary(TextMetadataEntity):
     ID = "3"
     description = "Brief narrative summary of the content of the dataset."
     minMultiplicity = 1
