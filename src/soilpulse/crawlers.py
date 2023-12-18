@@ -7,8 +7,9 @@ class Crawler:
     """
     Top level abstract class of the crawler metadata/data crawler
     """
-    resourcePath = None
-    def __init__(self):
+
+    def __init__(self, resurceURI):
+        self.resourceURI = resurceURI
         pass
 
     def getMetadataStructure(self):
