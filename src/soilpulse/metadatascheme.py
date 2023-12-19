@@ -52,13 +52,25 @@ class TextMetadataEntity(MetadataEntity):
     Abstract interface class of metadata element with textual value
     """
 
-    def __init__(self, value, language):
+    def __init__(self, value, language, encoding):
         # the actual value of the metadata element
-        self.value = value
+        super(TextMetadataEntity, self).__init__(value)
         # the original language of the element value
         self.language = language
+        # the encoding of the value
+        self.encoding = encoding
         # translations of the element value in different languages
         self.translations = {}
+
+class GeographicalMetadataEntity(MetadataEntity):
+    """
+    Abstract interface of metadata element with geographical value
+    """
+    def __init__(self, coordinateSystem, epsg = None):
+        # the coordinate system of the element
+        self.coordinateReferenceSystem = coordinateSystem
+        # the EPSG code of the coordinate system of the element
+        self.EPSGcode = epsg
 
 class Title(TextMetadataEntity):
     ID = "1"
@@ -167,3 +179,24 @@ class DateValid(MetadataEntity):
     maxMultiplicity = 1
     keywords = ["valid", "valid until"]
 
+class GeographicalBoundingBox(GeographicalMetadataEntity):
+    ID = "9"
+    description = "The spatial limits of a box. A box is defined by two geographic points.\
+    Lower left corner and upper right corner. Each point is defined by its longitude and latitude value."
+    minMultiplicity = 1
+    maxMultiplicity = 1
+    keywords = ["bounding box", "extent", "geographical"]
+
+    def __init__(self, northLat, southLat, westLong, eastLong, coordinateSystem, epsg = None):
+        super(GeographicalBoundingBox, self).__init__(coordinateSystem, epsg)
+        self.nortLatitude = northLat
+        self.southLatitude = southLat
+        self.westLongitude = westLong
+        self.eastLongitude = eastLong
+
+class TemporalExtent(MetadataEntity):
+    ID = "11"
+    description = "The time period in which the resource content was collected (e.g. From 2008-01-01 to 2008-12-31)"
+    minMultiplicity = 0
+    maxMultiplicity = 1
+    keywords = ["temporal extent"]
