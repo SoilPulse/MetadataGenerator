@@ -17,15 +17,13 @@ class Crawler:
         Parses the source and translate it to metadata elements structure
         :return:
         """
+        return
 
 class FilesystemCrawler(Crawler):
     """
     Crawler for file system repositories
     """
-    # list of all the directories that will be crawled through
-    directories = []
-    # list of all the files that will be crawled through
-    files = []
+
     pass
 
 class XMLcrawler(Crawler):
