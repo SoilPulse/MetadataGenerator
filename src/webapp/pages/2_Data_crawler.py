@@ -66,18 +66,10 @@ if ('metainf' in st.session_state and
                                hide_index=True,
                                disabled=["filename", "File loaded"]
                                )
-    download_files2 = edited_df.loc[edited_df["Download (again)?"]]["filename"]
-    st.write(download_files2)
-
-    # first shot on file selector
-    st.write("Check files to download:")
-    download_files = [
-        file['filename']
-        for file in st.session_state.metainf['ZenodoFiles']
-        if st.toggle(label=file['filename'],
-                     value=".zip" in file['filename'])
-        ]
+    download_files = edited_df.loc[
+        edited_df["Download (again)?"]]["filename"].tolist()
     st.write(download_files)
+
     getZenodoFiles = st.button("Download selected Zenodo files")
     if getZenodoFiles:
         for file in download_files:
