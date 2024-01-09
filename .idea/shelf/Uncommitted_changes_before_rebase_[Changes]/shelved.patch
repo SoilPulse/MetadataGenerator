@@ -1,0 +1,163 @@
+Index: src/soilpulse/entities.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+># coding = utf-8\r\n# -*- coding: utf-8 -*-\r\n\r\n\r\nclass MetadataElement:\r\n    \"\"\"\r\n    Defines the very general basic interface for metadata element\r\n    \"\"\"\r\n    # element ID from metadata scheme\r\n    ID = None\r\n    # entity name from metadata scheme\r\n    entityName = None\r\n    # super element of this element\r\n    subelementOf = None\r\n    # description  from metadata scheme (= 'definition' from the BonaRes scheme)\r\n    definition = None\r\n    # dictionary of all obligation levels\r\n    obligations = 0 # {1: \"mandatory\", 0: \"optional\"}\r\n    # implementation of multiplicity levels # BonaRes multiplicities = [\"0..1\", \"1\", \"0..n\", \"1..n\"]\r\n    minMultipicity = None\r\n    maxMultiplicity = None\r\n    # dataType\r\n    dataType = None\r\n    # values domain\r\n    domain = None\r\n    # value of the element (in first language for textual elements)\r\n    value = None\r\n    # relationships that the instance is member of\r\n    relationships = []\r\n\r\n    def __init__(self, value):\r\n        self.value = value\r\n\r\n    # method to pack self to XML string\r\n    def getXMLrepresentation(self):\r\n        pass\r\n    # method to pack self to SQL query\r\n    def getSQLrepresentation(self):\r\n        pass\r\n\r\n\r\nclass Title(MetadataElement):\r\n    ID = \"1\"\r\n    entityName = \"Title\"\r\n    definition = \"A characteristic, unique name by which the dataset is known.\"\r\n    obligations = 1\r\n    minMultipicity = 1\r\n    maxMultiplicity = 1\r\n\r\n    def __init__(self, value, language):\r\n        self.value = value\r\n        # first language\r\n        self.language = language\r\n        # dictionary of translated value strings {language string: value translation}\r\n        translations = []\r\n\r\nclass AlternateTitle(MetadataElement):\r\n    ID = \"2\"\r\n    entityName = \"Alternate title\"\r\n    definition = \"A short name by which the dataset is also known.\"\r\n    obligations = 0\r\n    minMultipicity = 0\r\n    maxMultiplicity = None\r\n\r\n    def __init__(self, value, language):\r\n        self.value = value\r\n        # first language\r\n        self.language = language\r\n        # dictionary of translated value strings {language string: value translation}\r\n        translations = []\r\n\r\nclass Summary(MetadataElement):\r\n    ID = \"3\"\r\n    entityName = \"Summary\"\r\n    definition = \"Brief narrative summary of the content of the dataset.\"\r\n    obligations = 1\r\n    minMultipicity = 1\r\n    maxMultiplicity = 1\r\n\r\n    def __init__(self, value, language):\r\n        self.value = value\r\n        # first language\r\n        self.language = language\r\n        # dictionary of translated value strings {language string: value translation}\r\n        translations = []\r\n\r\nclass GraphicOverview(MetadataElement):\r\n    ID = \"4\"\r\n    entityName = \"Graphic overview\"\r\n    definition = \"Graphic that provides an illustration of the dataset.\"\r\n    obligations = 0\r\n    minMultipicity = 0\r\n    maxMultiplicity = None\r\n    language = None\r\n\r\nclass Date(MetadataElement):\r\n    ID = \"5\"\r\n    entityName = \"Date\"\r\n    definition = \"The date when the dataset was or will be made ...\"\r\n    obligations = 1\r\n    minMultipicity = 4\r\n    maxMultiplicity = None\r\n\r\nclass DateAccapted(Date):\r\n    ID = \"5.1\"\r\n    subelementOf = Date\r\n    entityName = \"Accepted by publisher at\"\r\n    definition = \"The date that the publisher accepted the resource into their system.\"\r\n    obligations = 0\r\n    minMultipicity = 0\r\n    maxMultiplicity = 1\r\n\r\nclass DateAvailable(Date):\r\n    ID = \"5.2\"\r\n    subelementOf = Date\r\n    entityName = \"Publicly available since\"\r\n    definition = \"The date when the dataset was or will be made publicly available.\"\r\n    obligations = 1\r\n    minMultipicity = 1\r\n    maxMultiplicity = 1\r\n\r\nclass DateCollected(Date):\r\n    ID = \"5.3\"\r\n    subelementOf = Date\r\n    entityName = \"Data collected\"\r\n    definition = \"The date or date range in which the dataset content was collected\"\r\n    obligations = 0\r\n    minMultipicity = 0\r\n    maxMultiplicity = 2\r\n\r\nclass DateCopyrighted(Date):\r\n    ID = \"5.4\"\r\n    subelementOf = Date\r\n    entityName = \"Publicly available since\"\r\n    definition = \"The specific, documented date at which the dataset receives a copyrighted status, if applicable.\"\r\n    obligations = 0\r\n    minMultipicity = 0\r\n    maxMultiplicity = 1\r\n\r\nclass DateCreated(Date):\r\n    ID = \"5.5\"\r\n    subelementOf = Date\r\n    entityName = \"Date of creation\"\r\n    definition = \"The date the dataset itself was put together; a single date for a final component, e.g., the finalised file with all of the data.\"\r\n    obligations = 1\r\n    minMultipicity = 1\r\n    maxMultiplicity = 1\r\n\r\nclass DateIssued(Date):\r\n    ID = \"5.6\"\r\n    subelementOf = Date\r\n    entityName = \"Issued at\"\r\n    definition = \"The date that the dataset is published or distributed to the data centre.\"\r\n    obligations = 0\r\n    minMultipicity = 0\r\n    maxMultiplicity = 1\r\n\r\nclass DateSubmitted(Date):\r\n    ID = \"5.7\"\r\n    subelementOf = Date\r\n    entityName = \"Date of submission\"\r\n    definition = \"The date the author submits the resource to the publisher. This could be different from “Accepted” if the publisher then applies a selection process.\"\r\n    obligations = 1\r\n    minMultipicity = 1\r\n    maxMultiplicity = 1\r\n\r\nclass DateLastRevised(Date):\r\n    ID = \"5.8\"\r\n    subelementOf = Date\r\n    entityName = \"Date of last revision\"\r\n    definition = \"The date of the last update (last revision) to the dataset, when the dataset is being added to.\"\r\n    obligations = 1\r\n    minMultipicity = 1\r\n    maxMultiplicity = 1\r\n\r\nclass DateValid(Date):\r\n    ID = \"5.9\"\r\n    subelementOf = Date\r\n    entityName = \"Valid within\"\r\n    definition = \"The date or date range during which the dataset or resource is accurate.\"\r\n    obligations = 0\r\n    minMultipicity = 0\r\n    maxMultiplicity = 2\r\n\r\nclass ResponsibleParty(MetadataElement):\r\n    ID = \"6\"\r\n    entityName = \"Responsible party\"\r\n    definition = \"The main researchers involved in producing (collecting, managing,\\\r\n                    distributing, or otherwise contributing to the development of the\\\r\n                    dataset) the data, or the authors of the publication, in priority order.\\\r\n                    Will be cited if Author is used as contact type.\"\r\n    obligations = 1\r\n    minMultipicity = 1\r\n    maxMultiplicity = None\r\n\r\n\r\n
+===================================================================
+diff --git a/src/soilpulse/entities.py b/src/soilpulse/entities.py
+--- a/src/soilpulse/entities.py	
++++ b/src/soilpulse/entities.py	
+@@ -6,7 +6,7 @@
+     """
+     Defines the very general basic interface for metadata element
+     """
+-    # element ID from metadata scheme
++    # entity ID from metadata scheme
+     ID = None
+     # entity name from metadata scheme
+     entityName = None
+@@ -14,8 +14,8 @@
+     subelementOf = None
+     # description  from metadata scheme (= 'definition' from the BonaRes scheme)
+     definition = None
+-    # dictionary of all obligation levels
+-    obligations = 0 # {1: "mandatory", 0: "optional"}
++    # obligation level
++    obligation = 0 # {1: "mandatory", 0: "optional"}
+     # implementation of multiplicity levels # BonaRes multiplicities = ["0..1", "1", "0..n", "1..n"]
+     minMultipicity = None
+     maxMultiplicity = None
+@@ -43,7 +43,7 @@
+     ID = "1"
+     entityName = "Title"
+     definition = "A characteristic, unique name by which the dataset is known."
+-    obligations = 1
++    obligation = 1
+     minMultipicity = 1
+     maxMultiplicity = 1
+ 
+@@ -58,7 +58,7 @@
+     ID = "2"
+     entityName = "Alternate title"
+     definition = "A short name by which the dataset is also known."
+-    obligations = 0
++    obligation = 0
+     minMultipicity = 0
+     maxMultiplicity = None
+ 
+@@ -73,7 +73,7 @@
+     ID = "3"
+     entityName = "Summary"
+     definition = "Brief narrative summary of the content of the dataset."
+-    obligations = 1
++    obligation = 1
+     minMultipicity = 1
+     maxMultiplicity = 1
+ 
+@@ -88,7 +88,7 @@
+     ID = "4"
+     entityName = "Graphic overview"
+     definition = "Graphic that provides an illustration of the dataset."
+-    obligations = 0
++    obligation = 0
+     minMultipicity = 0
+     maxMultiplicity = None
+     language = None
+@@ -97,7 +97,7 @@
+     ID = "5"
+     entityName = "Date"
+     definition = "The date when the dataset was or will be made ..."
+-    obligations = 1
++    obligation = 1
+     minMultipicity = 4
+     maxMultiplicity = None
+ 
+@@ -106,7 +106,7 @@
+     subelementOf = Date
+     entityName = "Accepted by publisher at"
+     definition = "The date that the publisher accepted the resource into their system."
+-    obligations = 0
++    obligation = 0
+     minMultipicity = 0
+     maxMultiplicity = 1
+ 
+@@ -115,7 +115,7 @@
+     subelementOf = Date
+     entityName = "Publicly available since"
+     definition = "The date when the dataset was or will be made publicly available."
+-    obligations = 1
++    obligation = 1
+     minMultipicity = 1
+     maxMultiplicity = 1
+ 
+@@ -124,7 +124,7 @@
+     subelementOf = Date
+     entityName = "Data collected"
+     definition = "The date or date range in which the dataset content was collected"
+-    obligations = 0
++    obligation = 0
+     minMultipicity = 0
+     maxMultiplicity = 2
+ 
+@@ -133,7 +133,7 @@
+     subelementOf = Date
+     entityName = "Publicly available since"
+     definition = "The specific, documented date at which the dataset receives a copyrighted status, if applicable."
+-    obligations = 0
++    obligation = 0
+     minMultipicity = 0
+     maxMultiplicity = 1
+ 
+@@ -142,7 +142,7 @@
+     subelementOf = Date
+     entityName = "Date of creation"
+     definition = "The date the dataset itself was put together; a single date for a final component, e.g., the finalised file with all of the data."
+-    obligations = 1
++    obligation = 1
+     minMultipicity = 1
+     maxMultiplicity = 1
+ 
+@@ -151,7 +151,7 @@
+     subelementOf = Date
+     entityName = "Issued at"
+     definition = "The date that the dataset is published or distributed to the data centre."
+-    obligations = 0
++    obligation = 0
+     minMultipicity = 0
+     maxMultiplicity = 1
+ 
+@@ -160,7 +160,7 @@
+     subelementOf = Date
+     entityName = "Date of submission"
+     definition = "The date the author submits the resource to the publisher. This could be different from “Accepted” if the publisher then applies a selection process."
+-    obligations = 1
++    obligation = 1
+     minMultipicity = 1
+     maxMultiplicity = 1
+ 
+@@ -169,7 +169,7 @@
+     subelementOf = Date
+     entityName = "Date of last revision"
+     definition = "The date of the last update (last revision) to the dataset, when the dataset is being added to."
+-    obligations = 1
++    obligation = 1
+     minMultipicity = 1
+     maxMultiplicity = 1
+ 
+@@ -178,7 +178,7 @@
+     subelementOf = Date
+     entityName = "Valid within"
+     definition = "The date or date range during which the dataset or resource is accurate."
+-    obligations = 0
++    obligation = 0
+     minMultipicity = 0
+     maxMultiplicity = 2
+ 
+@@ -189,7 +189,7 @@
+                     distributing, or otherwise contributing to the development of the\
+                     dataset) the data, or the authors of the publication, in priority order.\
+                     Will be cited if Author is used as contact type."
+-    obligations = 1
++    obligation = 1
+     minMultipicity = 1
+     maxMultiplicity = None
+ 
