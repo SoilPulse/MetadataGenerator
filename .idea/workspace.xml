@@ -4,7 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="0d8e6823-2450-4805-9015-a6f4ccc5becb" name="Changes" comment="Create first shot of resource management classes structure">
+    <list default="true" id="0d8e6823-2450-4805-9015-a6f4ccc5becb" name="Changes" comment="Changes in metadata scheme, introduction of entity manager. Can't make it work because of import problems ... so untested">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/soilpulse/metadatascheme.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/soilpulse/metadatascheme.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/soilpulse/resource_management.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/soilpulse/resource_management.py" afterDir="false" />
     </list>
@@ -88,7 +90,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1702900558845</updated>
-      <workItem from="1702900563598" duration="32879000" />
+      <workItem from="1702900563598" duration="36756000" />
     </task>
     <task id="LOCAL-00001" summary="Establish basic elements structure and entities">
       <created>1702907681115</created>
@@ -132,7 +134,14 @@
       <option name="project" value="LOCAL" />
       <updated>1703018435756</updated>
     </task>
-    <option name="localTasksCounter" value="7" />
+    <task id="LOCAL-00007" summary="Changes in metadata scheme, introduction of entity manager. Can't make it work because of import problems ... so untested">
+      <created>1704841823359</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1704841823359</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -192,10 +201,11 @@
     <MESSAGE value="change the resource path to instance property" />
     <MESSAGE value="Add more metadata element types" />
     <MESSAGE value="Create first shot of resource management classes structure" />
-    <option name="LAST_COMMIT_MESSAGE" value="Create first shot of resource management classes structure" />
+    <MESSAGE value="Changes in metadata scheme, introduction of entity manager. Can't make it work because of import problems ... so untested" />
+    <option name="LAST_COMMIT_MESSAGE" value="Changes in metadata scheme, introduction of entity manager. Can't make it work because of import problems ... so untested" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/MetadataGenerator$main.coverage" NAME="main Coverage Results" MODIFIED="1704841435131" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
+    <SUITE FILE_PATH="coverage/MetadataGenerator$main.coverage" NAME="main Coverage Results" MODIFIED="1704872317595" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
     <SUITE FILE_PATH="coverage/MetadataGenerator$metadatascheme.coverage" NAME="metadatascheme Coverage Results" MODIFIED="1704839673854" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/soilpulse" />
   </component>
 </project>
