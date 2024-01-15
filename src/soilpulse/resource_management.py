@@ -17,30 +17,19 @@ class ResourceManager:
         self.URI = uri
         # list of Dataset class instances contained within this resource
         self.datasets = []
-        # the singleton instance of the metadata mapping
-        self.metadataScheme = MetadataStructureMap
-
-class Repository:
-
-    def __init__(self):
-        # list of Dataset class instances contained within this repository
-        self.resources = []
-        pass
-
-    def getType(self):
-        pass
 
 class Dataset:
     """
-    This represents a set of data with consistent structure saved in a particular format
+    Represents a set of data with consistent structure saved in a particular format
     """
     def __init__(self):
-        # elements that
+        # data containers that the dataset consists of
         self.containers = []
-
+        # the instance of the metadata mapping
         self.metadataImage = MetadataStructureMap
 
-class FileSystemRepository(Repository):
+class FileSystemDataset(Dataset):
+    datasetFormat = "File system"
     def __init__(self):
         # list of all the directories that belong to the repository
         self.directories = []
@@ -48,8 +37,14 @@ class FileSystemRepository(Repository):
         self.files = []
         pass
 
-class DatabaseRepository(Repository):
+class DatabaseDataset(Dataset):
+    datasetFormat = "Database"
+    def __init__(self):
+        self.databaseName = None
+        self.tables = []
+        self.foreignKeys = []
     pass
 
-class XMLrepository(Repository):
+class XMLDataset(Dataset):
+    datasetFormat = "XML"
     pass
