@@ -31,7 +31,7 @@ class EntityManager:
     Manages the entity type classes, provides access to entity instances, takes care about limiting number of instances of a particular type
     """
 
-    # directory of various entity classes
+    # directory of registered entity classes
     metadataEntities = {}
     # minimum number of instances per dataset
     minCounts = {}
