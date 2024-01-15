@@ -10,17 +10,27 @@ from soilpulse.metadatascheme import *
 
 if __name__ == "__main__":
     resource = ResourceManager
-    em = EntityManager
+    entityFactory = EntityManager
 
-    print(em.metadataEntities)
+    title = entityFactory.createEntityInstance("title", "This is a first tile", "cs", "utf-8")
+    title2 = entityFactory.createEntityInstance("title", "This is a second tile", "cs", "utf-8")
 
-    try:
-        title = em.createEntityInstance("title", "This is a first tile")
-        # title2 = em.createEntityInstance("title", "This is a second tile")
-    except MetadataSchemeException:
-        print("Too many entities")
+    # em.showEntityCount()
+    print("Minimum count check results:")
+    for entity in entityFactory.checkMinCounts():
+        if entity[2]<entity[1]:
+            print("\tmissing element type '{}' (minimum count {}, current count {})".format(entity[0], entity[1], entity[2]))
 
-    print(title)
+    print("")
 
-    print(em.currentCount)
-    print("done.")
+    print("Maximum count check results:")
+    for entity in entityFactory.checkMaxCounts():
+        if entity[2] > entity[1]:
+            print("\ttoo many elements of type '{}' (maximum count {}, current count {})".format(entity[0], entity[1], entity[2]))
+
+    # print("min counts: {}".format(em.checkMinCounts()))
+    # print("max counts: {}".format(em.checkMaxCounts()))
+    # em.showKeywordsMapping()
+
+
+    print("\ndone.")

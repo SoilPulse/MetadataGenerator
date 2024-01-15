@@ -38,7 +38,7 @@ class Dataset:
         # elements that
         self.containers = []
 
-        self.metadataImage
+        self.metadataImage = MetadataStructureMap
 
 class FileSystemRepository(Repository):
     def __init__(self):
