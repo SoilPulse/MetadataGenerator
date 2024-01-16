@@ -12,6 +12,7 @@ class MetadataStructureMap:
     """
     def __init__(self):
         self.elements = []
+        self.entityManager = EntityManager()
 
         return
     def saveToDatabase(self):
@@ -183,6 +184,15 @@ class GeographicalMetadataEntity(MetadataEntity):
         # the EPSG code of the coordinate system of the element
         self.EPSGcode = epsg
 
+class RoleMetadataEntity(MetadataEntity):
+    """
+    Abstract interface class of metadata element with role value
+    """
+
+    def __init__(self, value):
+        # the actual value of the metadata element
+        super(RoleMetadataEntity, self).__init__(value)
+        return
 
 class Title(TextMetadataEntity):
     ID = "1"

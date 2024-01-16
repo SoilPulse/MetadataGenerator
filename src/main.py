@@ -5,15 +5,33 @@
 
 
 from soilpulse.resource_management import ResourceManager
+from soilpulse.resource_management import DatasetHandlerFactory
 from soilpulse.metadatascheme import *
 
 
 if __name__ == "__main__":
-    resource = ResourceManager
+    exampleDOI = "10.5281/zenodo.6654150"
+
+    ###### the resource initiation #####################
+    # ResourceManager instance
+    RM = ResourceManager("Jonas Lenz's dissertation files", exampleDOI)
+    RM.showContents()
+
+    # # this will be done by the UI
+    # newDataset = DatasetHandlerFactory.createHandler("filesystem")
+    # RM.datasets.append(newDataset)
+
+
+    ###### dataset crawling and metadata structure mapping ################
     entityFactory = EntityManager
 
+    # something like this will happen
+    # RM.dataset.MetadataStructureMap = newDatset.crawler.crawl()
+
+    # but for now let's do it manually
     title = entityFactory.createEntityInstance("title", "This is a first tile", "cs", "utf-8")
     title2 = entityFactory.createEntityInstance("title", "This is a second tile", "cs", "utf-8")
+
 
     # em.showEntityCount()
     print("Minimum count check results:")
