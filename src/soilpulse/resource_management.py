@@ -203,3 +203,28 @@ class XMLDataset(DatasetHandler):
         pass
 
 DatasetHandlerFactory.registerDatasetType(XMLDataset, "xml")
+
+class Pointer:
+    """
+    Points to an exact location in a dataset and defines a way to extract the value of a particular matedata entity instance.
+    Concrete implementation defined in subclasses.
+    """
+    pass
+
+class FileSystemPointer(Pointer):
+    def __init__(self, filename, start, length):
+        # full path to the file of appearance
+        self.filename = filename
+        # index of place where the value starts
+        self.start = start
+        # length of the value in characters
+        self.length = length
+        pass
+
+    pass
+
+class DatabasePointer(Pointer):
+    pass
+
+class XMLPointer(Pointer):
+    pass

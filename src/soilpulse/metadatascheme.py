@@ -11,7 +11,9 @@ class MetadataStructureMap:
     Realisation of a metadata element set and relationships describing particular dataset
     """
     def __init__(self):
+        # list of all metadata entities and their locator in the structure map [[MetadataEntity, Pointer], ...]
         self.elements = []
+
         self.entityManager = EntityManager()
 
         return
@@ -115,17 +117,17 @@ class MetadataEntity:
     minMultiplicity = 0
     # highest number of appearances in resource (None meaning infinity)
     maxMultiplicity = None
-    # class of the super-element
+    # ? class of the super-element
     subtypeOf = None
-    # data type that the element can be
+    # ? data type that the element can be
     dataType = None
-    # value domain the element can have
+    # ? value domain the element can have
     domain = None
     # list of keywords used for identification of the element in the data resource
     keywords = None
 
     def __init__(self, value):
-        # the actual value of the metadata element
+        # the actual value of the metadata element instance
         self.value = value
         # list of child metadata elements
         self.childElements = []
@@ -356,7 +358,7 @@ class GeographicalBoundingBox(GeographicalMetadataEntity):
     Lower left corner and upper right corner. Each point is defined by its longitude and latitude value."
     minMultiplicity = 1
     maxMultiplicity = 1
-    keywords = ["bounding box", "extent", "geographical"]
+    keywords = ["bounding box", "extent", "geographical", "covers"]
 
     def __init__(self, northLat, southLat, westLong, eastLong, coordinateSystem, epsg = None):
         super(GeographicalBoundingBox, self).__init__(coordinateSystem, epsg)
