@@ -4,6 +4,7 @@
 import requests
 
 from .metadatascheme import MetadataStructureMap
+from .metadatascheme import EntityManager
 from .exceptions import DOIdataRetrievalException
 
 # general functions declaration
@@ -137,9 +138,11 @@ class DatasetHandler:
         # data containers that the dataset consists of
         self.containers = []
         # the instance of the metadata mapping
-        self.metadataImage = MetadataStructureMap
+        self.metadataMap = MetadataStructureMap()
     def showContents(self):
         pass
+    def checkMetadataStructure(self):
+        self.metadataMap.checkConsistency()
 
 class FileSystemDataset(DatasetHandler):
     datasetFormat = "File system"

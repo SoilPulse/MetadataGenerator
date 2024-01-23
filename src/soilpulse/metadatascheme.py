@@ -13,10 +13,41 @@ class MetadataStructureMap:
     def __init__(self):
         # list of all metadata entities and their locator in the structure map [[MetadataEntity, Pointer], ...]
         self.elements = []
-
-        self.entityManager = EntityManager()
+        # entity factory for this MetadataStructureMap
+        self.entityFactory = EntityManager()
 
         return
+
+    def addEntity(self, entity, pointer):
+        """
+        Adds an entity-pointer pair to elements list
+
+        :param entity: MetadataEntity instance
+        :param pointer: Pointer instance
+        """
+        self.elements.append([entity, pointer])
+        return
+
+    def removeEntity(self, index):
+        """
+        Removes an entity-pointer pair from elements list by index
+
+        :param index: list index of the entity-pointer pair to be removed
+        """
+        del self.elements[index]
+
+    def mergeEntities(self):
+        """
+        Merges two entities into one.
+
+        """
+        return
+
+    def splitEntity(self):
+        """
+        Splits one entity into two
+        """
+
     def saveToDatabase(self):
         """
         Saves the structure map to a database
@@ -27,6 +58,24 @@ class MetadataStructureMap:
         """
         Checks the number of appearances of entity types
         """
+        # self.entityFactory.checkMinCounts()
+        # self.entityFactory.checkMaxCounts()
+
+        print("Minimum count check results:")
+        for entity in self.entityFactory.checkMinCounts():
+            if entity[2] < entity[1]:
+                print("\tmissing element type '{}' (minimum count {}, current count {})".format(entity[0], entity[1],
+                                                                                                entity[2]))
+
+        print("")
+
+        print("Maximum count check results:")
+        for entity in self.entityFactory.checkMaxCounts():
+            if entity[2] > entity[1]:
+                print(
+                    "\ttoo many elements of type '{}' (maximum count {}, current count {})".format(entity[0], entity[1],
+                                                                                                   entity[2]))
+
         return
 
 class EntityManager:
@@ -47,10 +96,7 @@ class EntityManager:
 
     _instance = None
     def __init__(self):
-        def __new__(class_, *args, **kwargs):
-            if not isinstance(class_._instance, class_):
-                class_._instance = object.__new__(class_, *args, **kwargs)
-            return class_._instance
+        return
 
     @classmethod
     def registerMetadataEntityType(cls, entityClass):
