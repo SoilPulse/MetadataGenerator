@@ -11,7 +11,6 @@ It pickles to cache metadata.
 """
 
 import streamlit as st
-import requests
 import pickle
 # import shutil
 import os
@@ -19,8 +18,7 @@ import pandas as pd
 import sys
 import re
 sys.path.insert(0, './src/soilpulse')
-import get_metadata as gm
-# from soilpulse import get_metadata as gm
+import get_data as gd
 
 
 def _writes_cache():
@@ -77,26 +75,16 @@ if ('metainf' in st.session_state and
 
     getZenodoFiles = st.button("Download selected Zenodo files")
     if getZenodoFiles:
-        for file in download_files:
-            url = str("https://zenodo.org/records/" +
-                      st.session_state.metainf['zenodo_id'] +
-                      "/files/" + file)
-            response = requests.get(url, params={"download": "1"})
-            st.write(response.url)
-            if response.ok:
-                with open("catalogue/"+cache_dir+"/data"+"/"+file,
-                          mode="wb") as filesave:
-                    filesave.write(response.content)
-            if(".zip" in file ):
-                from zipfile import ZipFile
-                with ZipFile("catalogue/"+cache_dir+"/data"+"/"+file) as my_zip_file:
-                    my_zip_file.extractall("catalogue/"+cache_dir+"/data/")
-                os.remove("catalogue/"+cache_dir+"/data"+"/"+file)
-                st.write("automatic unzip of "+file)
+        URL = str("https://zenodo.org/records/" +
+                  st.session_state.metainf['zenodo_id'] +
+                  "/files/")
+        res = gd.download_data(URL,
+                               download_files,
+                               target_dir="catalogue/"+cache_dir+"/data/")
+        st.write(res)
 
-            # print(base64.b64decode(response['data']['attributes']['xml']))
 
-#    for file in os.listdir("catalogue/"+cache_dir+"/data"):
+# print(base64.b64decode(response['data']['attributes']['xml']))
 
 
     if os.listdir("catalogue/"+cache_dir+"/data"):
