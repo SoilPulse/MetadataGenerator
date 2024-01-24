@@ -23,36 +23,87 @@ import pandas as pd
 
 st.title("Here the content of a single file can be explored.")
 
-# fill this list from file selection of Data Crwaler
-files = ["./catalogue/105281zenodo6654150/data/lenz2022/database/ready2.csv"]
-encodings = ["ANSI", "UTF-8"]
-# encodings might be guesed by #import chardet -> chardet.detect(f)
+# fill this list from file selection of Data Crawler
+files = ["./catalogue/105281zenodo6654150/data/lenz2022/database/ready2.csv",
+         "./catalogue/105281zenodo6654150/data/lenz2022/export/meta.csv"]
+file = st.selectbox("Choose file", files)
+encodings = ["ANSI", "UTF-8"] # fill list of possible encodings (Is there a generic Python function?)
+# encodings might be also guesed by #import chardet -> chardet.detect(f), now it is done by file open
 
-for file in files:
-    if not os.path.isfile(file):
-        st.write("Please go back to file download!")
-    else:
-        st.write("Looking at file: "+file)
-        st.write("The first three lines look like: ")
-        file1 = open(file, 'r')
+#if 'test' not in st.session_state:
+#    st.session_state['test'] = False
+
+if not os.path.isfile(file):
+    st.write("Please go back to file download, the file can not be found!")
+else:
+    file1 = open(file, 'r')
+    encodings = [file1.encoding]+encodings
+    if st.checkbox("Show head of the raw file"):
         Lines = file1.readlines()
-        encodings = [file1.encoding]+encodings
+        st.write("The first three lines look like: ")
         for line in Lines[0:3]:
             st.write(line)
+    with st.expander("file options",
+#                     expanded=st.session_state['test'],
+                     ):
         encoding_gues = st.radio("choose encoding", encodings, horizontal=True)
         separator = st.text_input("choose separator", value=",")
-        try:
-            filedata = pd.read_csv(file, encoding=encoding_gues, sep=separator)
-            filedata
-            filedata[['Lon4326', 'Lat4326']] = filedata['coordinates'].str.split(
-                ' \\| ', expand=True)
-            filedata['Lon4326'] = pd.to_numeric(filedata['Lon4326'])
-            filedata['Lat4326'] = pd.to_numeric(filedata['Lat4326'])
+    try:
+        filedata = pd.read_csv(file, encoding=encoding_gues, sep=separator)
+    except:
+        st.write("Encoding not correctly guesed, change file options.")
+#        st.session_state['test'] = True
+
+# filedata = pd.read_csv("../catalogue/105281zenodo6654150/data/lenz2022/database/ready2.csv", encoding="ANSI", sep=" ")
+
+if 'filedata' in locals() or 'filedata' in globals():
+    columnrecon = pd.DataFrame(columns=['SoilPulse Entity',
+                                        'Given unit',
+                                        'Factor to SI',
+                                        'Na value',
+                                        'Str.split',
+                                        'split to 1',
+                                        'split to 2',
+                                        'links to'
+                                        ],
+#                               index = ["coordinates"]
+                               index=filedata.columns
+                               )
+
+    columnrecon.loc["date", "SoilPulse Entity"] = "['Lon4326','Lat4326']"
+    columnrecon.loc["coordinates", "Str.split"] = " \\| "
+    columnrecon.loc["coordinates", "split to 1"] = "Lon4326"
+    columnrecon.loc["coordinates", "split to 2"] = "Lat4326"
+
+    columnrecon.loc["date", "SoilPulse Entity"] = "Date"
+    columnrecon.loc["date", "Given unit"] = "YYYY-MM-DD"
+
+    with st.expander("Table Meta"):
+        st.data_editor(columnrecon,
+                   hide_index=False,
+                   )
+
+    for col, meta in columnrecon.iterrows():
+        if not pd.isna(meta["Str.split"]):
+            try:
+                st.write("Split column '"+col+"'")
+                filedata[[meta["split to 1"], meta["split to 2"]]] = filedata[
+                    col].str.split(meta["Str.split"], expand=True)
+#                st.write("Split success!")
+                filedata[meta["split to 1"]] = pd.to_numeric(
+                    filedata[meta["split to 1"]])
+                filedata[meta["split to 2"]] = pd.to_numeric(
+                    filedata[meta["split to 2"]])
+#                st.write("numeric convert!")
+            except:
+                pass
+
+    with st.expander("Table Data"):
+        filedata
+
+    if st.checkbox("Data visualisation"):
+        if 'Lon4326' in filedata and 'Lat4326' in filedata:
             st.map(filedata, latitude="Lat4326", longitude="Lon4326")
-
-        except:
-            st.write("Encoding not correctly guesed.")
-
 
 # recipe instructions from user dialog:
 #   - file encoding and separator
