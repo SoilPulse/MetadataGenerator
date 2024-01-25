@@ -4,7 +4,6 @@
 import requests
 
 from .metadatascheme import MetadataStructureMap
-from .metadatascheme import EntityManager
 from .exceptions import DOIdataRetrievalException
 
 # general functions declaration
@@ -18,9 +17,22 @@ def getRAofDOI(doi, meta=False):
     :return: complete registration agency json if meta = True, else registration agency name string
     """
     url = "https://doi.org/ra/" + doi
-    RAjson = requests.get(url).json()
+    try:
+        print("obtaining DOI registration agency ...")
+        RAjson = requests.get(url).json()
+    except requests.exceptions.ConnectionError:
+        print("A connection error occurred. Check your internet connection.")
+    except requests.exceptions.Timeout:
+        print("The request timed out.")
+    except requests.exceptions.HTTPError as e:
+        print("HTTP Error:", e)
+    except requests.exceptions.RequestException as e:
+        print("An error occurred:", e)
+    else:
+        print("\t... successful")
+
     if not RAjson:
-        raise DOIdataRetrievalException("Invalid DOI provided, or DOI not registred '{}'".format(doi))
+        raise DOIdataRetrievalException("Invalid DOI provided, or DOI not registered '{}'".format(doi))
     else:
         if (meta):
             return RAjson
@@ -39,7 +51,22 @@ def getMetadataJSON(doi):
         url = "https://api.datacite.org/dois/" + doi
         headers = {"accept": "application/vnd.api+json"}
 
-        return requests.get(url, headers=headers).json()
+        try:
+            print("obtaining metadata from DOI registrar ...")
+            output = requests.get(url, headers=headers).json()
+
+        except requests.exceptions.ConnectionError:
+            print("A connection error occurred. Check your internet connection.")
+        except requests.exceptions.Timeout:
+            print("The request timed out.")
+        except requests.exceptions.HTTPError as e:
+            print("HTTP Error:", e)
+        except requests.exceptions.RequestException as e:
+            print("An error occurred:", e)
+        else:
+            print("\t... successful")
+
+        return output
     else:
         raise DOIdataRetrievalException('Unsupported registration agency')
 
@@ -56,18 +83,33 @@ def getFileListOfDOI(doi):
     if "zenodo.org" in datasetURL:
         zenodo_id = datasetURL.split("/")[-1].split(".")[-1]
         #    print("retrieving information for Zenodo dataset: "+zenodo_id)
-        response = requests.get("https://zenodo.org/api/deposit/depositions/" + zenodo_id + "/files").json()
-        if isinstance(response, list):
-            fileList = []
-            for file in response:
-                if file['filename'].endswith(".zip"):
-                    fileList.append(
-                        "https://zenodo.org/records/" + zenodo_id
-                        + "/files/" + file['filename'] + "?download=1"
-                    )
-            return (fileList)
+
+        try:
+            print("obtaining data from Zenodo ...")
+            response = requests.get("https://zenodo.org/api/deposit/depositions/" + zenodo_id + "/files").json()
+
+        except requests.exceptions.ConnectionError:
+            print("A connection error occurred. Check your internet connection.")
+        except requests.exceptions.Timeout:
+            print("The request timed out.")
+        except requests.exceptions.HTTPError as e:
+            print("HTTP Error:", e)
+        except requests.exceptions.RequestException as e:
+            print("An error occurred:", e)
         else:
-            raise DOIdataRetrievalException("Dataset files can not be retrieved - incorrect response structure.")
+            print("\t... successful")
+
+            if isinstance(response, list):
+                fileList = []
+                for file in response:
+                    if file['filename'].endswith(".zip"):
+                        fileList.append(
+                            "https://zenodo.org/records/" + zenodo_id
+                            + "/files/" + file['filename'] + "?download=1"
+                        )
+                return (fileList)
+            else:
+                raise DOIdataRetrievalException("Dataset files can not be retrieved - incorrect response structure.")
     else:
         raise DOIdataRetrievalException("Unsupported data repository - currently only implemented for Zenodo")
 
@@ -89,8 +131,13 @@ class ResourceManager:
         self.doi = doi
         self.URI = uri
         if doi:
-            dataset = DatasetHandlerFactory.createHandler('filesystem', name, doi)
-            self.datasets.append(dataset)
+            self.addDataset(DatasetHandlerFactory.createHandler('filesystem', name, doi))
+
+    def addDataset(self, dataset):
+        self.datasets.append(dataset)
+
+    def removeDatset(self, index):
+        del self.datasets[index]
 
     def showContents(self):
         for ds in self.datasets:
@@ -113,8 +160,9 @@ class DatasetHandlerFactory:
             return class_._instance
 
     @classmethod
-    def registerDatasetType(cls, datasetTypeClass, kye):
-        cls.datasetTypes[kye] = datasetTypeClass
+    def registerDatasetType(cls, datasetTypeClass, key):
+        cls.datasetTypes[key] = datasetTypeClass
+        # print("DatasetHandler of type '{}' registered".format(key))
         return
 
     @classmethod
@@ -128,7 +176,7 @@ class DatasetHandlerFactory:
 class DatasetHandler:
     """
     Represents a set of data with consistent structure saved in a particular format.
-    The
+    The instance has its own MetadataStructureMap that is being composed during the metadata generation phase
     """
     def __init__(self, name, doi = None):
         # dataset name
@@ -144,90 +192,27 @@ class DatasetHandler:
     def checkMetadataStructure(self):
         self.metadataMap.checkConsistency()
 
-class FileSystemDataset(DatasetHandler):
-    datasetFormat = "File system"
-    def __init__(self, name, doi = None):
-        super(FileSystemDataset, self).__init__(name, doi)
-        # list of all the directories that belong to the repository
-        self.directories = []
-        # list of all the files that belong to the repository
-        self.files = []
-        # directory where the script will have access to write
-        self.tempDir = None
-
-        if doi:
-            self.files.extend(getFileListOfDOI(doi))
-
-    def downloadFiles(self, URLlist):
-        for url in URLlist:
-            try:
-                # download a single request
-                pass
-            except:
-
-                pass
-            else:
-
-                pass
-    def showContents(self):
-        print("{}:".format(self.name))
-        print(self.files)
-
-    def unzipToDir(self, zipfile, targetDir):
-
-        return
-
-    def scanFileStructure(self, directory):
-        """
-        scans a parent directory to fill inner properties
-        """
-        return
-
-DatasetHandlerFactory.registerDatasetType(FileSystemDataset, "filesystem")
-
-class DatabaseDataset(DatasetHandler):
-    datasetFormat = "Database"
-    def __init__(self, name, doi = None):
-        super(DatabaseDataset, self).__init__(name, doi)
-        self.databaseName = None
-        self.tables = []
-        self.foreignKeys = []
-
-    def showContents(self):
-        pass
-DatasetHandlerFactory.registerDatasetType(DatabaseDataset, "database")
-
-class XMLDataset(DatasetHandler):
-    datasetFormat = "XML"
-    def __init__(self, name, doi = None):
-        super(DatabaseDataset, self).__init__(name, doi)
-
-    def showContents(self):
-        pass
-
-DatasetHandlerFactory.registerDatasetType(XMLDataset, "xml")
 
 class Pointer:
     """
     Points to an exact location in a dataset and defines a way to extract the value of a particular matedata entity instance.
-    Concrete implementation defined in subclasses.
+    Concrete implementations defined in subclasses.
     """
     pass
 
-class FileSystemPointer(Pointer):
-    def __init__(self, filename, start, length):
-        # full path to the file of appearance
-        self.filename = filename
-        # index of place where the value starts
-        self.start = start
-        # length of the value in characters
-        self.length = length
+
+class Crawler:
+    """
+    Top level abstract class of the metadata/data crawler
+    """
+
+    def __init__(self, resurceURI):
+        self.resourceURI = resurceURI
         pass
 
-    pass
-
-class DatabasePointer(Pointer):
-    pass
-
-class XMLPointer(Pointer):
-    pass
+    def getMetadataStructure(self):
+        """
+        Parses the source and translate it to metadata elements structure
+        :return:
+        """
+        return
