@@ -100,14 +100,7 @@ def getFileListOfDOI(doi):
             print("\t... successful")
 
             if isinstance(response, list):
-                fileList = []
-                for file in response:
-                    if file['filename'].endswith(".zip"):
-                        fileList.append(
-                            "https://zenodo.org/records/" + zenodo_id
-                            + "/files/" + file['filename'] + "?download=1"
-                        )
-                return (fileList)
+                return (response)
             else:
                 raise DOIdataRetrievalException("Dataset files can not be retrieved - incorrect response structure.")
     else:
