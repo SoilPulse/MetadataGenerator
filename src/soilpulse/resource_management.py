@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import requests
+import os
 
 from .metadatascheme import MetadataStructureMap
 from .exceptions import DOIdataRetrievalException
@@ -130,8 +131,12 @@ class ResourceManager:
         self.name = name
         self.doi = doi
         self.URI = uri
+        self.tempDir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "downloaded_files")
+
         if doi:
-            self.addDataset(DatasetHandlerFactory.createHandler('filesystem', name, doi))
+            newDataset = DatasetHandlerFactory.createHandler('filesystem', name, self.tempDir, doi)
+
+            self.addDataset(newDataset)
 
     def addDataset(self, dataset):
         self.datasets.append(dataset)

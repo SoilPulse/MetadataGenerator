@@ -3,7 +3,6 @@
 @author: Jan Devátý, Jonas Lenz
 """
 
-
 from soilpulse.resource_management import *
 from soilpulse.resource_managers.filesystem import *
 from soilpulse.resource_managers.mysql import *
@@ -12,7 +11,6 @@ from soilpulse.metadatascheme import *
 
 
 if __name__ == "__main__":
-
     exampleDOI = "10.5281/zenodo.6654150"
 
     ###### the resource initiation #####################

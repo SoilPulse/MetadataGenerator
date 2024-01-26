@@ -134,6 +134,7 @@ class EntityManager:
                 if cls.currentCount[entityType] > entityClass.maxMultiplicity:
                     elementCounts.append([entityClass.name, cls.maxCounts[entityType], cls.currentCount[entityType]])
         return elementCounts
+
     @classmethod
     def showKeywordsMapping(cls):
         print("\nkeywords mapping:")
@@ -169,8 +170,15 @@ class MetadataEntity:
     dataType = None
     # ? value domain the element can have
     domain = None
-    # list of keywords used for identification of the element in the data resource
+    # list of keywords used for identification of the element in the data resource - should be loaded from an external storage (DB)
     keywords = None
+
+    @classmethod
+    def loadKeywords(cls):
+        """
+        Load the keywords and search strings from database
+        """
+        return
 
     def __init__(self, value):
         # the actual value of the metadata element instance
@@ -195,6 +203,8 @@ class MetadataEntity:
         """
 
         pass
+
+
 
 class TextMetadataEntity(MetadataEntity):
     """
@@ -232,14 +242,14 @@ class GeographicalMetadataEntity(MetadataEntity):
         # the EPSG code of the coordinate system of the element
         self.EPSGcode = epsg
 
-class RoleMetadataEntity(MetadataEntity):
+class SubjectMetadataEntity(MetadataEntity):
     """
-    Abstract interface class of metadata element with role value
+    Abstract interface class of metadata element with person or institution value
     """
 
     def __init__(self, value):
         # the actual value of the metadata element
-        super(RoleMetadataEntity, self).__init__(value)
+        super(SubjectMetadataEntity, self).__init__(value)
         return
 
 class Title(TextMetadataEntity):
@@ -286,23 +296,11 @@ class GraphicOverview(MetadataEntity):
     keywords = ["scheme"]
 EntityManager.registerMetadataEntityType(GraphicOverview)
 
-# replaced by DateMetadataEntity superclass
-# class Date(MetadataEntity):
-#     ID = "5"
-#     key = "date"
-#     name = "Date"
-#     description = "The date when the dataset was or will be made ..."
-#     minMultiplicity = 4
-#     maxMultiplicity = None
-#     keywords = ["date"]
-# EntityManager.registerMetadataEntityType(Date)
-
 class DateAccapted(DateMetadataEntity):
     ID = "5.1"
     key = "date_accepted"
     name = "Date accepted"
     description = "The date that the publisher accepted the resource into their system."
-    # subtypeOf = Date
     minMultiplicity = 0
     maxMultiplicity = 1
     keywords = ["accapted"]
@@ -313,7 +311,6 @@ class DateAvailable(DateMetadataEntity):
     key = "date_available"
     name = "Date available"
     description = "The date the resource was or will be made publicly available."
-    # subtypeOf = Date
     minMultiplicity = 1
     maxMultiplicity = 1
     keywords = ["available"]
@@ -324,7 +321,6 @@ class DateCollected(DateMetadataEntity):
     key = "date_collected"
     name = "Date collected"
     description = "The date or date range in which the dataset content was collected."
-    # subtypeOf = Date
     minMultiplicity = 0
     maxMultiplicity = 2
     keywords = ["collected"]
@@ -335,7 +331,6 @@ class DateCopyrighted(DateMetadataEntity):
     key = "date_copyrighted"
     name = "Date copyrighted"
     description = "The specific, documented date at which the dataset receives a copyrighted status, if applicable."
-    # subtypeOf = Date
     minMultiplicity = 0
     maxMultiplicity = 1
     keywords = ["copyrighted", "copyright"]
@@ -346,7 +341,6 @@ class DateCreated(DateMetadataEntity):
     key = "date_created"
     name = "Date created"
     description = "The date the dataset itself was put together; a single date for a final component (e.g. the finalised file with all of the data)."
-    # subtypeOf = Date
     minMultiplicity = 1
     maxMultiplicity = 1
     keywords = ["created"]
@@ -356,8 +350,6 @@ class DateIssued(DateMetadataEntity):
     ID = "5.6"
     key = "date_issued"
     name = "Date issued"
-    description = "The date that the dataset is published or distributed to the data centre."
-    # subtypeOf = Date
     minMultiplicity = 1
     maxMultiplicity = 1
     keywords = ["issued"]
@@ -368,7 +360,6 @@ class DateSubmitted(DateMetadataEntity):
     key = "date_submitted"
     name = "Date submitted"
     description = "The date the author submits the resource to the publisher. This could be different from “Accepted” if the publisher then applies a selection process."
-    # subtypeOf = Date
     minMultiplicity = 0
     maxMultiplicity = 1
     keywords = ["submitted"]
@@ -379,7 +370,6 @@ class DateUpdated(DateMetadataEntity):
     key = "date_updated"
     name = "Date updated"
     description = "The date of the last update (last revision) to the dataset, when the dataset is being added to."
-    # subtypeOf = Date
     minMultiplicity = 1
     maxMultiplicity = 1
     keywords = ["updated", "update", "revised", "revision"]
@@ -390,7 +380,6 @@ class DateValid(DateMetadataEntity):
     key = "date_valid"
     name = "Date valid"
     description = "The date or date range during which the dataset or resource is accurate."
-    # subtypeOf = Date
     minMultiplicity = 1
     maxMultiplicity = 1
     keywords = ["valid", "valid until"]
@@ -423,5 +412,9 @@ class TemporalExtent(DateMetadataEntity):
     minMultiplicity = 0
     maxMultiplicity = 1
     keywords = ["temporal extent"]
+
+    def __init__(self):
+        self.start = None
+        self.end = None
 
 EntityManager.registerMetadataEntityType(TemporalExtent)
