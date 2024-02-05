@@ -7,10 +7,12 @@ from soilpulse.resource_management import *
 from soilpulse.resource_managers.filesystem import *
 from soilpulse.resource_managers.mysql import *
 from soilpulse.resource_managers.xml import *
-from soilpulse.metadatascheme import *
+from soilpulse.metadata_scheme import *
+from soilpulse.db_access import DBconnector
 
 
 if __name__ == "__main__":
+
     exampleDOI = "10.5281/zenodo.6654150"
 
     ###### the resource initiation #####################
@@ -50,7 +52,7 @@ if __name__ == "__main__":
 
     # print("min counts: {}".format(em.checkMinCounts()))
     # print("max counts: {}".format(em.checkMaxCounts()))
-    # em.showKeywordsMapping()
+    EF.showKeywordsMapping()
 
 
     print("\ndone.")

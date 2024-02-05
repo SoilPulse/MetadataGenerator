@@ -4,7 +4,8 @@
 """
 
 
-from .exceptions import MetadataSchemeException
+from .exceptions import DatabaseFetchError
+from .db_access import DBconnector
 
 class MetadataStructureMap:
     """
@@ -94,7 +95,7 @@ class EntityManager:
     #
     keywordMapping = {}
 
-    _instance = None
+    # _instance = None
     def __init__(self):
         return
 
@@ -104,8 +105,17 @@ class EntityManager:
         cls.minCounts[entityClass.key] = entityClass.minMultiplicity
         cls.maxCounts[entityClass.key] = entityClass.maxMultiplicity
         cls.currentCount[entityClass.key] = 0
-        for kw in entityClass.keywords:
-            cls.keywordMapping.update({kw: entityClass.key})
+
+        # connect to SoilPulse database and load the keywords for the entity type being registered
+        dbc = DBconnector()
+        try:
+            print(dbc.loadKeywords(entityClass.ID))
+            entityClass.keywords.update(dbc.loadKeywords(entityClass.ID))
+        except DatabaseFetchError as e:
+            print(e)
+
+        # for kw in entityClass.keywords:
+        #     cls.keywordMapping.update({kw: entityClass.key})
         return
 
     @classmethod
@@ -259,7 +269,7 @@ class Title(TextMetadataEntity):
     description = "A characteristic, unique name by which the dataset is known."
     minMultiplicity = 1
     maxMultiplicity = 1
-    keywords = ["title", "<h1>"]
+    keywords = {}
 
     def __str__(self):
         return "metadata entity 'Title'"
@@ -273,7 +283,7 @@ class AlternateTitle(TextMetadataEntity):
     description = "A short name by which the dataset is also known."
     minMultiplicity = 0
     maxMultiplicity = None
-    keywords = ["<h2>"]
+    keywords = {}
 EntityManager.registerMetadataEntityType(AlternateTitle)
 
 class Summary(TextMetadataEntity):
@@ -283,7 +293,7 @@ class Summary(TextMetadataEntity):
     description = "Brief narrative summary of the content of the dataset."
     minMultiplicity = 1
     maxMultiplicity = None
-    keywords = ["<h2>"]
+    keywords = {}
 EntityManager.registerMetadataEntityType(Summary)
 
 class GraphicOverview(MetadataEntity):
@@ -293,7 +303,7 @@ class GraphicOverview(MetadataEntity):
     description = "Graphic that provides an illustration of the dataset."
     minMultiplicity = 0
     maxMultiplicity = None
-    keywords = ["scheme"]
+    keywords = {}
 EntityManager.registerMetadataEntityType(GraphicOverview)
 
 class DateAccapted(DateMetadataEntity):
@@ -303,7 +313,7 @@ class DateAccapted(DateMetadataEntity):
     description = "The date that the publisher accepted the resource into their system."
     minMultiplicity = 0
     maxMultiplicity = 1
-    keywords = ["accapted"]
+    keywords = {}
 EntityManager.registerMetadataEntityType(DateAccapted)
 
 class DateAvailable(DateMetadataEntity):
@@ -313,7 +323,7 @@ class DateAvailable(DateMetadataEntity):
     description = "The date the resource was or will be made publicly available."
     minMultiplicity = 1
     maxMultiplicity = 1
-    keywords = ["available"]
+    keywords = {}
 EntityManager.registerMetadataEntityType(DateAvailable)
 
 class DateCollected(DateMetadataEntity):
@@ -323,7 +333,7 @@ class DateCollected(DateMetadataEntity):
     description = "The date or date range in which the dataset content was collected."
     minMultiplicity = 0
     maxMultiplicity = 2
-    keywords = ["collected"]
+    keywords = {}
 EntityManager.registerMetadataEntityType(DateCollected)
 
 class DateCopyrighted(DateMetadataEntity):
@@ -333,7 +343,7 @@ class DateCopyrighted(DateMetadataEntity):
     description = "The specific, documented date at which the dataset receives a copyrighted status, if applicable."
     minMultiplicity = 0
     maxMultiplicity = 1
-    keywords = ["copyrighted", "copyright"]
+    keywords = {}
 EntityManager.registerMetadataEntityType(DateCopyrighted)
 
 class DateCreated(DateMetadataEntity):
@@ -343,7 +353,7 @@ class DateCreated(DateMetadataEntity):
     description = "The date the dataset itself was put together; a single date for a final component (e.g. the finalised file with all of the data)."
     minMultiplicity = 1
     maxMultiplicity = 1
-    keywords = ["created"]
+    keywords = {}
 EntityManager.registerMetadataEntityType(DateCreated)
 
 class DateIssued(DateMetadataEntity):
@@ -352,7 +362,7 @@ class DateIssued(DateMetadataEntity):
     name = "Date issued"
     minMultiplicity = 1
     maxMultiplicity = 1
-    keywords = ["issued"]
+    keywords = {}
 EntityManager.registerMetadataEntityType(DateIssued)
 
 class DateSubmitted(DateMetadataEntity):
@@ -362,27 +372,27 @@ class DateSubmitted(DateMetadataEntity):
     description = "The date the author submits the resource to the publisher. This could be different from “Accepted” if the publisher then applies a selection process."
     minMultiplicity = 0
     maxMultiplicity = 1
-    keywords = ["submitted"]
+    keywords = {}
 EntityManager.registerMetadataEntityType(DateSubmitted)
 
 class DateUpdated(DateMetadataEntity):
-    ID = "5.7"
+    ID = "5.8"
     key = "date_updated"
     name = "Date updated"
     description = "The date of the last update (last revision) to the dataset, when the dataset is being added to."
     minMultiplicity = 1
     maxMultiplicity = 1
-    keywords = ["updated", "update", "revised", "revision"]
+    keywords = {}
 EntityManager.registerMetadataEntityType(DateUpdated)
 
 class DateValid(DateMetadataEntity):
-    ID = "5.8"
+    ID = "5.9"
     key = "date_valid"
     name = "Date valid"
     description = "The date or date range during which the dataset or resource is accurate."
     minMultiplicity = 1
     maxMultiplicity = 1
-    keywords = ["valid", "valid until"]
+    keywords = {}
 EntityManager.registerMetadataEntityType(DateValid)
 
 class GeographicalBoundingBox(GeographicalMetadataEntity):
@@ -393,7 +403,7 @@ class GeographicalBoundingBox(GeographicalMetadataEntity):
     Lower left corner and upper right corner. Each point is defined by its longitude and latitude value."
     minMultiplicity = 1
     maxMultiplicity = 1
-    keywords = ["bounding box", "extent", "geographical", "covers"]
+    keywords = {}
 
     def __init__(self, northLat, southLat, westLong, eastLong, coordinateSystem, epsg = None):
         super(GeographicalBoundingBox, self).__init__(coordinateSystem, epsg)
@@ -411,7 +421,7 @@ class TemporalExtent(DateMetadataEntity):
     description = "The time period in which the resource content was collected (e.g. From 2008-01-01 to 2008-12-31)"
     minMultiplicity = 0
     maxMultiplicity = 1
-    keywords = ["temporal extent"]
+    keywords = {}
 
     def __init__(self):
         self.start = None

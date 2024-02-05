@@ -4,7 +4,7 @@
 import requests
 import os
 
-from .metadatascheme import MetadataStructureMap
+from .metadata_scheme import MetadataStructureMap
 from .exceptions import DOIdataRetrievalException
 
 # general functions declaration
@@ -198,6 +198,13 @@ class Pointer:
     """
     pass
 
+class SessionPointer(Pointer):
+    """
+    Pointer that is not related to any provided file/table.
+    For metadata elements that are established directly by the user within a session.
+    """
+
+    pass
 
 class Crawler:
     """
