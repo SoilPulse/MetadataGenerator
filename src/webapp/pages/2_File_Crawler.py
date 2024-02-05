@@ -78,10 +78,10 @@ if 'filedata' in locals() or 'filedata' in globals():
     columnrecon.loc["date", "SoilPulse Entity"] = "Date"
     columnrecon.loc["date", "Given unit"] = "YYYY-MM-DD"
 
-    with st.expander("Table Meta"):
-        st.data_editor(columnrecon,
-                   hide_index=False,
-                   )
+    with st.expander("Table recipe"):
+        columnrecon = st.data_editor(columnrecon,
+                                     hide_index=False,
+                                     )
 
     for col, meta in columnrecon.iterrows():
         if not pd.isna(meta["Str.split"]):
@@ -96,14 +96,52 @@ if 'filedata' in locals() or 'filedata' in globals():
                     filedata[meta["split to 2"]])
 #                st.write("numeric convert!")
             except:
-                pass
+                st.write("Could not split.")
+
+    if st.button("save recipe"):
+        columnrecon.to_csv(file+".recipe")
 
     with st.expander("Table Data"):
         filedata
 
     if st.checkbox("Data visualisation"):
         if 'Lon4326' in filedata and 'Lat4326' in filedata:
-            st.map(filedata, latitude="Lat4326", longitude="Lon4326")
+            pointsdf = filedata[["Lat4326", "Lon4326"]]
+            pointsdf["dataset"] = 2000
+            if st.checkbox("add dataset 1"):
+                df2 = pd.DataFrame([
+                        [51.0796, 13.2912],
+                        [51.0706, 13.2912],
+                        [51.0746, 13.2912],
+                        [51.0736, 13.2912]
+                        ],
+                    columns=['Lat4326',
+                             'Lon4326'
+                             ])
+                df2["dataset"] = 2
+                pointsdf = pd.concat([df2, pointsdf])
+            if st.checkbox("add dataset 2"):
+                df2 = pd.DataFrame([
+                        [50.0006, 13.3912],
+                        [50.0006, 13.2812],
+                        [50.0860, 13.3912],
+                        [50.0860, 13.2812]
+                        ],
+                    columns=['Lat4326',
+                             'Lon4326'])
+                df2["dataset"] = 30
+                pointsdf = pd.concat([df2, pointsdf])
+#            pointsdf["color"] = "#000000"
+#            pointsdf["color"][pointsdf["dataset"]>1] = "#808080"
+#            pointsdf
+            st.map(pointsdf,
+                   latitude="Lat4326",
+                   longitude="Lon4326",
+                   size="dataset",
+#                   color="" # color does not work
+                   )
+        else:
+            st.write("missing datapoints")
 
 # recipe instructions from user dialog:
 #   - file encoding and separator
