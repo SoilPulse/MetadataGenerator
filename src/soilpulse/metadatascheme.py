@@ -11,10 +11,43 @@ class MetadataStructureMap:
     Realisation of a metadata element set and relationships describing particular dataset
     """
     def __init__(self):
+        # list of all metadata entities and their locator in the structure map [[MetadataEntity, Pointer], ...]
         self.elements = []
-        self.entityManager = EntityManager()
+        # entity factory for this MetadataStructureMap
+        self.entityFactory = EntityManager()
 
         return
+
+    def addEntity(self, entity, pointer):
+        """
+        Adds an entity-pointer pair to elements list
+
+        :param entity: MetadataEntity instance
+        :param pointer: Pointer instance
+        """
+        self.elements.append([entity, pointer])
+        return
+
+    def removeEntity(self, index):
+        """
+        Removes an entity-pointer pair from elements list by index
+
+        :param index: list index of the entity-pointer pair to be removed
+        """
+        del self.elements[index]
+
+    def mergeEntities(self):
+        """
+        Merges two entities into one.
+
+        """
+        return
+
+    def splitEntity(self):
+        """
+        Splits one entity into two
+        """
+
     def saveToDatabase(self):
         """
         Saves the structure map to a database
@@ -25,6 +58,24 @@ class MetadataStructureMap:
         """
         Checks the number of appearances of entity types
         """
+        # self.entityFactory.checkMinCounts()
+        # self.entityFactory.checkMaxCounts()
+
+        print("Minimum count check results:")
+        for entity in self.entityFactory.checkMinCounts():
+            if entity[2] < entity[1]:
+                print("\tmissing element type '{}' (minimum count {}, current count {})".format(entity[0], entity[1],
+                                                                                                entity[2]))
+
+        print("")
+
+        print("Maximum count check results:")
+        for entity in self.entityFactory.checkMaxCounts():
+            if entity[2] > entity[1]:
+                print(
+                    "\ttoo many elements of type '{}' (maximum count {}, current count {})".format(entity[0], entity[1],
+                                                                                                   entity[2]))
+
         return
 
 class EntityManager:
@@ -45,10 +96,7 @@ class EntityManager:
 
     _instance = None
     def __init__(self):
-        def __new__(class_, *args, **kwargs):
-            if not isinstance(class_._instance, class_):
-                class_._instance = object.__new__(class_, *args, **kwargs)
-            return class_._instance
+        return
 
     @classmethod
     def registerMetadataEntityType(cls, entityClass):
@@ -115,17 +163,17 @@ class MetadataEntity:
     minMultiplicity = 0
     # highest number of appearances in resource (None meaning infinity)
     maxMultiplicity = None
-    # class of the super-element
+    # ? class of the super-element
     subtypeOf = None
-    # data type that the element can be
+    # ? data type that the element can be
     dataType = None
-    # value domain the element can have
+    # ? value domain the element can have
     domain = None
     # list of keywords used for identification of the element in the data resource
     keywords = None
 
     def __init__(self, value):
-        # the actual value of the metadata element
+        # the actual value of the metadata element instance
         self.value = value
         # list of child metadata elements
         self.childElements = []
@@ -356,7 +404,7 @@ class GeographicalBoundingBox(GeographicalMetadataEntity):
     Lower left corner and upper right corner. Each point is defined by its longitude and latitude value."
     minMultiplicity = 1
     maxMultiplicity = 1
-    keywords = ["bounding box", "extent", "geographical", "geoLocations"]
+    keywords = ["bounding box", "extent", "geographical", "covers", "geoLocations"]
 
     def __init__(self, northLat, southLat, westLong, eastLong, coordinateSystem, epsg = None):
         super(GeographicalBoundingBox, self).__init__(coordinateSystem, epsg)
