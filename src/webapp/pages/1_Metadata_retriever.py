@@ -85,9 +85,7 @@ if ('metainf' in st.session_state and 'doiorg' in st.session_state.metainf):
     if ('RA' in st.session_state.metainf['doiorg']):
         st.write("DOI is registered at: " +
                  st.session_state.metainf['doiorg']['RA'])
-
         if (st.session_state.metainf['doiorg']['RA'] == "DataCite"):
-
             getDatacite = st.button("Get DataCite Metadata")
             if getDatacite:
                 st.session_state.metainf['Datacite'] = gm.doi_meta(doi)
@@ -117,16 +115,13 @@ if ('metainf' in st.session_state and "zenodo.org" in dataset_url):
 
     getZenodo = st.button("Get Zenodo file list")
     if getZenodo:
-        response = requests.get(
-            "https://zenodo.org/api/deposit/depositions/" +
-            st.session_state.metainf['zenodo_id']+"/files"
-            ).json()
+        response = gm.doi_files(doi)
         if (type(response) is dict):
             st.write("Data set can not be retrieved.")
         else:
             st.session_state.metainf['ZenodoFiles'] = response
-    else:
-        st.write("Not a Zenodo Dataset - up to now not treated.")
+else:
+    st.write("Not a Zenodo Dataset - up to now not treated.")
 
 
 if "metainf" in st.session_state:

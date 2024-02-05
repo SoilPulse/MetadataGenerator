@@ -80,17 +80,7 @@ def doi_files(doi):
     #    print("retrieving information for Zenodo dataset: "+zenodo_id)
         response = requests.get("https://zenodo.org/api/deposit/depositions/"
                                 + zenodo_id+"/files").json()
-        if (type(response) == dict):
-            print("Data set can not be retrieved.")
-        else:
-            file_list = []
-            for file in response:
-                if (".zip" in file['filename']):
-                    file_list.append(
-                        "https://zenodo.org/records/"+zenodo_id
-                        + "/files/"+file['filename']+"?download=1"
-                        )
-        return (file_list)
+        return (response)
     else:
         return ("Can not retrieve files. - This is currently implemented \
                 ONLY for Zenodo.")
