@@ -87,7 +87,9 @@ def getFileListOfDOI(doi):
 
         try:
             print("obtaining data from Zenodo ...")
-            response = requests.get("https://zenodo.org/api/deposit/depositions/" + zenodo_id + "/files").json()
+            response = requests.get(
+                "https://zenodo.org/api/records/" +
+                zenodo_id + "/files").json()
 
         except requests.exceptions.ConnectionError:
             print("A connection error occurred. Check your internet connection.")
@@ -101,7 +103,8 @@ def getFileListOfDOI(doi):
             print("\t... successful")
 
             if isinstance(response, list):
-                return (response)
+                linklist = [z['links']['content'] for z in response['entries']]
+                return (linklist)
             else:
                 raise DOIdataRetrievalException("Dataset files can not be retrieved - incorrect response structure.")
     else:
