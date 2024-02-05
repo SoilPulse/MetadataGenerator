@@ -273,7 +273,7 @@ class Summary(TextMetadataEntity):
     description = "Brief narrative summary of the content of the dataset."
     minMultiplicity = 1
     maxMultiplicity = None
-    keywords = ["<h2>"]
+    keywords = ["<h2>", "description"]
 EntityManager.registerMetadataEntityType(Summary)
 
 class GraphicOverview(MetadataEntity):
@@ -404,7 +404,7 @@ class GeographicalBoundingBox(GeographicalMetadataEntity):
     Lower left corner and upper right corner. Each point is defined by its longitude and latitude value."
     minMultiplicity = 1
     maxMultiplicity = 1
-    keywords = ["bounding box", "extent", "geographical", "covers"]
+    keywords = ["bounding box", "extent", "geographical", "covers", "geoLocations"]
 
     def __init__(self, northLat, southLat, westLong, eastLong, coordinateSystem, epsg = None):
         super(GeographicalBoundingBox, self).__init__(coordinateSystem, epsg)
