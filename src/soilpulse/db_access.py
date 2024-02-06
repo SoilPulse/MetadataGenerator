@@ -35,24 +35,29 @@ class DBconnector:
             print(e)
         else:
             # print ("successfully connected to SoilPulse database")
-            return
-        return None
+            pass
 
-    def loadKeywords(self, entityID):
+
+    def loadSearchPatterns(self, entity):
         """
-        Loads search strings stored in the DB for given entityID (string ID from metadata scheme definition)
+        Loads search patterns stored in the DB for given entityID (string ID from metadata scheme definition).
+        Returns dictionary
+
+        :param entity: MetadataEntity subclass
+
+        :return: dictionary of regular expression patterns with group names {unique group name: search pattern, ...}
         """
         # get the cursor for current connection
         thecursor = self.db_connection.cursor()
         # execute the query and fetch the results
-        thecursor.execute("SELECT `string_name`, `search_string` FROM `entity_keywords` WHERE `entity_id` = '{}'".format(entityID))
+        thecursor.execute("SELECT `group_name`, `search_pattern` FROM `search_patterns` WHERE `entity_id` = '{}'".format(entity.ID))
         results = thecursor.fetchall()
 
         if thecursor.rowcount > 0:
-            keywords = {}
+            patterns = {}
             for ss in results:
-                keywords.update({ss[0]: ss[1]})
-            return keywords
+                patterns.update({entity.key+"_"+ss[0]: str(ss[1])})
+            return patterns
         else:
-            raise DatabaseFetchError("No search strings found for entity_id = '{}'".format(entityID))
+            raise DatabaseFetchError("No search strings found for entity_id = '{}'".format(entity.ID))
         return None

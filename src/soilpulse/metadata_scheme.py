@@ -93,7 +93,7 @@ class EntityManager:
     # current count of instances
     currentCount = {}
     #
-    keywordMapping = {}
+    searchExpressions = {}
 
     # _instance = None
     def __init__(self):
@@ -109,12 +109,15 @@ class EntityManager:
         # connect to SoilPulse database and load the keywords for the entity type being registered
         dbc = DBconnector()
         try:
-            print(dbc.loadKeywords(entityClass.ID))
-            entityClass.keywords.update(dbc.loadKeywords(entityClass.ID))
+            # get the search expressions from the DB for the entity type
+            entityClass.searchPatterns = dbc.loadSearchPatterns(entityClass)
         except DatabaseFetchError as e:
             print(e)
+        else:
+            # and if successful put them into the entity managers mapping
+            cls.searchExpressions.update({entityClass.key: entityClass.searchPatterns})
 
-        # for kw in entityClass.keywords:
+        # for kw in entityClass.searchPatterns:
         #     cls.keywordMapping.update({kw: entityClass.key})
         return
 
@@ -148,8 +151,10 @@ class EntityManager:
     @classmethod
     def showKeywordsMapping(cls):
         print("\nkeywords mapping:")
-        for k,v in cls.keywordMapping.items():
-            print("{}: {}".format(k,v))
+        for k,v in cls.searchExpressions.items():
+            print("\t{}".format(k))
+            for l, w in v.items():
+                print("\t\t{}: {}".format(l, w))
 
     @classmethod
     def showEntityCount(cls):
@@ -180,15 +185,8 @@ class MetadataEntity:
     dataType = None
     # ? value domain the element can have
     domain = None
-    # list of keywords used for identification of the element in the data resource - should be loaded from an external storage (DB)
-    keywords = None
-
-    @classmethod
-    def loadKeywords(cls):
-        """
-        Load the keywords and search strings from database
-        """
-        return
+    # dictionary of regular expressions used for identification of the element in the data resource { local group name: search pattern, ...}
+    searchPatterns = None
 
     def __init__(self, value):
         # the actual value of the metadata element instance
@@ -269,7 +267,6 @@ class Title(TextMetadataEntity):
     description = "A characteristic, unique name by which the dataset is known."
     minMultiplicity = 1
     maxMultiplicity = 1
-    keywords = {}
 
     def __str__(self):
         return "metadata entity 'Title'"
@@ -283,7 +280,7 @@ class AlternateTitle(TextMetadataEntity):
     description = "A short name by which the dataset is also known."
     minMultiplicity = 0
     maxMultiplicity = None
-    keywords = {}
+
 EntityManager.registerMetadataEntityType(AlternateTitle)
 
 class Summary(TextMetadataEntity):
@@ -293,7 +290,7 @@ class Summary(TextMetadataEntity):
     description = "Brief narrative summary of the content of the dataset."
     minMultiplicity = 1
     maxMultiplicity = None
-    keywords = {}
+
 EntityManager.registerMetadataEntityType(Summary)
 
 class GraphicOverview(MetadataEntity):
@@ -303,7 +300,7 @@ class GraphicOverview(MetadataEntity):
     description = "Graphic that provides an illustration of the dataset."
     minMultiplicity = 0
     maxMultiplicity = None
-    keywords = {}
+
 EntityManager.registerMetadataEntityType(GraphicOverview)
 
 class DateAccapted(DateMetadataEntity):
@@ -313,7 +310,7 @@ class DateAccapted(DateMetadataEntity):
     description = "The date that the publisher accepted the resource into their system."
     minMultiplicity = 0
     maxMultiplicity = 1
-    keywords = {}
+
 EntityManager.registerMetadataEntityType(DateAccapted)
 
 class DateAvailable(DateMetadataEntity):
@@ -323,7 +320,7 @@ class DateAvailable(DateMetadataEntity):
     description = "The date the resource was or will be made publicly available."
     minMultiplicity = 1
     maxMultiplicity = 1
-    keywords = {}
+
 EntityManager.registerMetadataEntityType(DateAvailable)
 
 class DateCollected(DateMetadataEntity):
@@ -333,7 +330,7 @@ class DateCollected(DateMetadataEntity):
     description = "The date or date range in which the dataset content was collected."
     minMultiplicity = 0
     maxMultiplicity = 2
-    keywords = {}
+
 EntityManager.registerMetadataEntityType(DateCollected)
 
 class DateCopyrighted(DateMetadataEntity):
@@ -343,7 +340,7 @@ class DateCopyrighted(DateMetadataEntity):
     description = "The specific, documented date at which the dataset receives a copyrighted status, if applicable."
     minMultiplicity = 0
     maxMultiplicity = 1
-    keywords = {}
+
 EntityManager.registerMetadataEntityType(DateCopyrighted)
 
 class DateCreated(DateMetadataEntity):
@@ -353,7 +350,7 @@ class DateCreated(DateMetadataEntity):
     description = "The date the dataset itself was put together; a single date for a final component (e.g. the finalised file with all of the data)."
     minMultiplicity = 1
     maxMultiplicity = 1
-    keywords = {}
+
 EntityManager.registerMetadataEntityType(DateCreated)
 
 class DateIssued(DateMetadataEntity):
@@ -362,7 +359,7 @@ class DateIssued(DateMetadataEntity):
     name = "Date issued"
     minMultiplicity = 1
     maxMultiplicity = 1
-    keywords = {}
+
 EntityManager.registerMetadataEntityType(DateIssued)
 
 class DateSubmitted(DateMetadataEntity):
@@ -372,7 +369,7 @@ class DateSubmitted(DateMetadataEntity):
     description = "The date the author submits the resource to the publisher. This could be different from “Accepted” if the publisher then applies a selection process."
     minMultiplicity = 0
     maxMultiplicity = 1
-    keywords = {}
+
 EntityManager.registerMetadataEntityType(DateSubmitted)
 
 class DateUpdated(DateMetadataEntity):
@@ -382,7 +379,7 @@ class DateUpdated(DateMetadataEntity):
     description = "The date of the last update (last revision) to the dataset, when the dataset is being added to."
     minMultiplicity = 1
     maxMultiplicity = 1
-    keywords = {}
+
 EntityManager.registerMetadataEntityType(DateUpdated)
 
 class DateValid(DateMetadataEntity):
@@ -392,7 +389,7 @@ class DateValid(DateMetadataEntity):
     description = "The date or date range during which the dataset or resource is accurate."
     minMultiplicity = 1
     maxMultiplicity = 1
-    keywords = {}
+
 EntityManager.registerMetadataEntityType(DateValid)
 
 class GeographicalBoundingBox(GeographicalMetadataEntity):
@@ -403,7 +400,6 @@ class GeographicalBoundingBox(GeographicalMetadataEntity):
     Lower left corner and upper right corner. Each point is defined by its longitude and latitude value."
     minMultiplicity = 1
     maxMultiplicity = 1
-    keywords = {}
 
     def __init__(self, northLat, southLat, westLong, eastLong, coordinateSystem, epsg = None):
         super(GeographicalBoundingBox, self).__init__(coordinateSystem, epsg)
@@ -421,7 +417,6 @@ class TemporalExtent(DateMetadataEntity):
     description = "The time period in which the resource content was collected (e.g. From 2008-01-01 to 2008-12-31)"
     minMultiplicity = 0
     maxMultiplicity = 1
-    keywords = {}
 
     def __init__(self):
         self.start = None
