@@ -16,9 +16,8 @@ import shutil
 import os
 import sys
 import re
-sys.path.insert(0, './src/soilpulse')
-import get_metadata as gm
-# from soilpulse import get_metadata as gm
+sys.path.insert(0, './src')
+import soilpulse.resource_management as rm
 
 
 def _writes_cache():
@@ -80,7 +79,7 @@ st.header("Retrieve metadata")
 getra = st.button("Get doi.org metadata")
 if getra:
     st.session_state.metainf = {}
-    st.session_state.metainf['doiorg'] = gm.doi_ra(doi, meta=True)[0]
+    st.session_state.metainf['doiorg'] = rm.getRAofDOI(doi, meta=True)[0]
 if ('metainf' in st.session_state and 'doiorg' in st.session_state.metainf):
     if ('RA' in st.session_state.metainf['doiorg']):
         st.write("DOI is registered at: " +
@@ -90,7 +89,7 @@ if ('metainf' in st.session_state and 'doiorg' in st.session_state.metainf):
 
             getDatacite = st.button("Get DataCite Metadata")
             if getDatacite:
-                st.session_state.metainf['Datacite'] = gm.doi_meta(doi)
+                st.session_state.metainf['Datacite'] = rm.getMetadataJSON(doi)
 
 dataset_url = ""
 
