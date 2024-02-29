@@ -21,4 +21,6 @@
 - maroccian data through IPRO contacts
 
 - supplementary to publication
-  - experiments in Pujab (India) as https://doi.org/10.3390/geosciences8110396; https://www.mdpi.com/2076-3263/8/11/396/s1.
+  - experiments in Punjab (India) as https://doi.org/10.3390/geosciences8110396; https://www.mdpi.com/2076-3263/8/11/396/s1.
+
+- SoilGrids: worldwide ML-generated Soil Maps - may be used to infer missing data points; Rest-API: https://rest.isric.org/soilgrids/v2.0/docs#/default/query_layer_properties_properties_query_get
