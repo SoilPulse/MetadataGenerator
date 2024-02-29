@@ -5,7 +5,8 @@
 
 
 from .exceptions import DatabaseFetchError
-from .db_access import DBconnector
+from .db_access import EntitySearchPatternsDB
+from .db_access import EntityKeywordsDB
 
 class MetadataStructureMap:
     """
@@ -106,11 +107,17 @@ class EntityManager:
         cls.maxCounts[entityClass.key] = entityClass.maxMultiplicity
         cls.currentCount[entityClass.key] = 0
 
-        # connect to SoilPulse database and load the keywords for the entity type being registered
-        dbc = DBconnector()
+        # connect to entity_types database and load search patterns and keywords for the entity type being registered
+        spDB = EntitySearchPatternsDB()
         try:
-            # get the search expressions from the DB for the entity type
-            entityClass.searchPatterns = dbc.loadSearchPatterns(entityClass)
+            # get the search expressions and keywords from the DB for the entity type
+            search_patterns = spDB.loadSearchPatterns(entityClass)
+            # if something found put it in class' search_patterns dict
+            if search_patterns:
+                entityClass.searchPatterns = search_patterns
+
+            entityClass.showSearchPatterns()
+
         except DatabaseFetchError as e:
             print(e)
         else:
@@ -155,12 +162,23 @@ class EntityManager:
             print("\t{}".format(k))
             for l, w in v.items():
                 print("\t\t{}: {}".format(l, w))
+        return
 
     @classmethod
     def showEntityCount(cls):
         print("\ncurrent entity count:")
         for k,v in cls.currentCount.items():
             print("{}: {}".format(k,v))
+        return
+
+    @classmethod
+    def loadKeywords(cls, datasetType):
+        """
+        Induces loading of keywords of appropriate dataset type
+        """
+        for entClass in cls.metadataEntities:
+            entClass.loadKeywords(datasetType)
+        return
 
 class MetadataEntity:
     """
@@ -186,7 +204,10 @@ class MetadataEntity:
     # ? value domain the element can have
     domain = None
     # dictionary of regular expressions used for identification of the element in the data resource { local group name: search pattern, ...}
-    searchPatterns = None
+    searchPatterns = {}
+    # dictionary of keywords used for identification of the element in the data resource { local group name: keyword, ...}
+    # this waythe keywords are translatable but need to be converted to search patterns before use
+    keywords = {}
 
     def __init__(self, value):
         # the actual value of the metadata element instance
@@ -212,7 +233,10 @@ class MetadataEntity:
 
         pass
 
-
+    @classmethod
+    def showSearchPatterns(cls):
+        print(cls.searchPatterns)
+        return
 
 class TextMetadataEntity(MetadataEntity):
     """

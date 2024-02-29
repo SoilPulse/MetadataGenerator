@@ -4,6 +4,7 @@
 from src.soilpulse.resource_management import DatasetHandler, DatasetHandlerFactory, Pointer, Crawler
 
 class XMLDataset(DatasetHandler):
+    datasetType = 'xml'
     datasetFormat = "XML"
     def __init__(self, name, doi = None):
         super(XMLDataset, self).__init__(name, doi)
@@ -11,7 +12,7 @@ class XMLDataset(DatasetHandler):
     def showContents(self):
         pass
 
-DatasetHandlerFactory.registerDatasetType(XMLDataset, "xml")
+DatasetHandlerFactory.registerDatasetType(XMLDataset, XMLDataset.datasetType)
 
 class XMLPointer(Pointer):
     pass

@@ -32,8 +32,8 @@ if __name__ == "__main__":
     # but for now let's do it manually
     dataset = RM.datasets[0]
     EF = dataset.metadataMap.entityFactory
-    title = dataset.metadataMap.addEntity(EF.createEntityInstance("title", "This is a first tile", "cs", "utf-8"), Pointer())
-    title2 = dataset.metadataMap.addEntity(EF.createEntityInstance("title", "This is a second tile", "cs", "utf-8"), Pointer())
+    title = dataset.metadataMap.addEntity(EF.createEntityInstance("title", "This is a first tile", "en", "utf-8"), Pointer())
+    title2 = dataset.metadataMap.addEntity(EF.createEntityInstance("title", "This is a second tile", "en", "utf-8"), Pointer())
 
     dataset.checkMetadataStructure()
 

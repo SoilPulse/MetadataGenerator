@@ -4,14 +4,15 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="0d8e6823-2450-4805-9015-a6f4ccc5becb" name="Changes" comment="metadata entity types registration in the EntityManager works,">
-      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/MetadataGenerator.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/MetadataGenerator.iml" afterDir="false" />
+    <list default="true" id="0d8e6823-2450-4805-9015-a6f4ccc5becb" name="Changes" comment="adujstments to the search patterns loading&#10;in EntityManager&#10;first code in filesystem crawler (not tested, not working)">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/soilpulse/exceptions.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/soilpulse/exceptions.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/soilpulse/metadatascheme.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/soilpulse/metadatascheme.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/soilpulse/db_access.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/soilpulse/db_access.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/soilpulse/metadata_scheme.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/soilpulse/metadata_scheme.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/soilpulse/resource_management.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/soilpulse/resource_management.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/soilpulse/resource_managers/filesystem.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/soilpulse/resource_managers/filesystem.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/soilpulse/resource_managers/mysql.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/soilpulse/resource_managers/mysql.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/soilpulse/resource_managers/xml.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/soilpulse/resource_managers/xml.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -31,10 +32,24 @@
   <component name="Git.Settings">
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
-        <entry key="$PROJECT_DIR$" value="c910c4dfdb0cd1c3725de57c482bea0aefb4e882" />
+        <entry key="$PROJECT_DIR$" value="Start_Data_Analyzer" />
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="UPDATE_TYPE" value="REBASE" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">
+    <option name="selectedUrlAndAccountId">
+      <UrlAndAccount>
+        <option name="accountId" value="73db7c28-de19-41b0-ad16-fd48acc31b6b" />
+        <option name="url" value="https://github.com/SoilPulse/MetadataGenerator/" />
+      </UrlAndAccount>
+    </option>
   </component>
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
@@ -44,19 +59,25 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "WebServerToolWindowFactoryState": "false",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/Dokumenty/RUNOFFDB/runoffdb_miner&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  },
+  &quot;keyToStringList&quot;: {
+    &quot;DatabaseDriversLRU&quot;: [
+      &quot;mysql&quot;
+    ]
   }
-}]]></component>
+}</component>
   <component name="RunManager">
     <configuration name="main" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="MetadataGenerator" />
@@ -83,6 +104,7 @@
     <recent_temporary>
       <list>
         <item itemvalue="Python.main" />
+        <item itemvalue="Python.main" />
       </list>
     </recent_temporary>
   </component>
@@ -96,6 +118,13 @@
       <updated>1702900558845</updated>
       <workItem from="1702900563598" duration="44754000" />
       <workItem from="1704977345451" duration="27645000" />
+      <workItem from="1706768028162" duration="6179000" />
+      <workItem from="1707123406900" duration="27953000" />
+      <workItem from="1707488145789" duration="2687000" />
+      <workItem from="1708331095718" duration="972000" />
+      <workItem from="1708348587898" duration="601000" />
+      <workItem from="1708353636567" duration="3241000" />
+      <workItem from="1708941217046" duration="25606000" />
     </task>
     <task id="LOCAL-00001" summary="Establish basic elements structure and entities">
       <created>1702907681115</created>
@@ -160,7 +189,35 @@
       <option name="project" value="LOCAL" />
       <updated>1704997523198</updated>
     </task>
-    <option name="localTasksCounter" value="10" />
+    <task id="LOCAL-00010" summary="Change the file structure of the project so the resource type related classes are in a separate files in &quot;resource_managers&quot; directory to allow for modularity">
+      <created>1706171927561</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1706171927561</updated>
+    </task>
+    <task id="LOCAL-00011" summary="working re-implementation fo the file downloading and unzipping functions to FileSystemDataset, minor changes to metadata scheme">
+      <created>1706265763603</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1706265763603</updated>
+    </task>
+    <task id="LOCAL-00012" summary="first implementation of storing&amp;loading the search strings for entity types from MySQL database - it works when there's MySQL server running on &quot;localhost&quot; (whichever computer it is as long as the python interpreter is on the same machine)">
+      <created>1707140397620</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1707140397620</updated>
+    </task>
+    <task id="LOCAL-00013" summary="adujstments to the search patterns loading&#10;in EntityManager&#10;first code in filesystem crawler (not tested, not working)">
+      <created>1707258650626</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1707258650626</updated>
+    </task>
+    <option name="localTasksCounter" value="14" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -223,10 +280,14 @@
     <MESSAGE value="Changes in metadata scheme, introduction of entity manager. Can't make it work because of import problems ... so untested" />
     <MESSAGE value="Change import statements to correct and working form" />
     <MESSAGE value="metadata entity types registration in the EntityManager works," />
-    <option name="LAST_COMMIT_MESSAGE" value="metadata entity types registration in the EntityManager works," />
+    <MESSAGE value="Change the file structure of the project so the resource type related classes are in a separate files in &quot;resource_managers&quot; directory to allow for modularity" />
+    <MESSAGE value="working re-implementation fo the file downloading and unzipping functions to FileSystemDataset, minor changes to metadata scheme" />
+    <MESSAGE value="first implementation of storing&amp;loading the search strings for entity types from MySQL database - it works when there's MySQL server running on &quot;localhost&quot; (whichever computer it is as long as the python interpreter is on the same machine)" />
+    <MESSAGE value="adujstments to the search patterns loading&#10;in EntityManager&#10;first code in filesystem crawler (not tested, not working)" />
+    <option name="LAST_COMMIT_MESSAGE" value="adujstments to the search patterns loading&#10;in EntityManager&#10;first code in filesystem crawler (not tested, not working)" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/MetadataGenerator$main.coverage" NAME="main Coverage Results" MODIFIED="1705324122786" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
+    <SUITE FILE_PATH="coverage/MetadataGenerator$main.coverage" NAME="main Coverage Results" MODIFIED="1709139631137" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
     <SUITE FILE_PATH="coverage/MetadataGenerator$metadatascheme.coverage" NAME="metadatascheme Coverage Results" MODIFIED="1704839673854" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/soilpulse" />
   </component>
 </project>

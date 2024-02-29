@@ -48,6 +48,8 @@ def getMetadataJSON(doi):
     :param doi: doi string of the resource
     :return: json of metadata
     """
+    # TODO implement other metadata providers
+
     if (getRAofDOI(doi) == 'DataCite'):
         url = "https://api.datacite.org/dois/" + doi
         headers = {"accept": "application/vnd.api+json"}
@@ -78,6 +80,8 @@ def getFileListOfDOI(doi):
     :param doi: doi string of the resource
     :return: list of files
     """
+    # TODO implement other data providers
+
     metadataJSON = getMetadataJSON(doi)
     datasetURL = metadataJSON['data']['attributes']['url']
 
@@ -127,17 +131,40 @@ class ResourceManager:
         self.name = name
         self.doi = doi
         self.URI = uri
+        # dedicated directory where files can be stored
         self.tempDir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "downloaded_files")
+        # language of the resource
+        self.language = None
 
         if doi:
             newDataset = DatasetHandlerFactory.createHandler('filesystem', name, self.tempDir, doi)
 
             self.addDataset(newDataset)
 
+    def downloadFilesFromURL(self, url):
+        """
+        handles all needed steps to download (unpack archives if necessary) and create file structure tree
+        """
+        return
+
+    def uploadFilesFromSession(self, files):
+        """
+        handles all needed steps to upload files from a session (unpack archives if necessary) and create file structure tree
+        """
+        return
+
+
     def addDataset(self, dataset):
+        """
+        Adds DatasetHandler instance to dataset list
+        """
         self.datasets.append(dataset)
+        return
 
     def removeDatset(self, index):
+        """
+        Removes DatasetHandler instance to dataset list
+        """
         del self.datasets[index]
 
     def showContents(self):
@@ -179,6 +206,10 @@ class DatasetHandler:
     Represents a set of data with consistent structure saved in a particular format.
     The instance has its own MetadataStructureMap that is being composed during the metadata generation phase
     """
+    datasetType = None
+    datasetFormat = None
+    keywordsDBname = None
+
     def __init__(self, name, doi = None):
         # dataset name
         self.name = name
@@ -188,7 +219,11 @@ class DatasetHandler:
         self.containers = []
         # the instance of the metadata mapping
         self.metadataMap = MetadataStructureMap()
+
+
+
     def showContents(self):
+
         pass
     def checkMetadataStructure(self):
         self.metadataMap.checkConsistency()

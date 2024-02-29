@@ -8,13 +8,15 @@ import io
 from collections import Counter
 
 from src.soilpulse.resource_management import DatasetHandler, DatasetHandlerFactory, Pointer, Crawler
-
+from src.soilpulse.db_access import EntityKeywordsDB
 # just for the standalone functions - will be changed
 from src.soilpulse.resource_management import *
 
 
 class FileSystemDataset(DatasetHandler):
+    datasetType = 'filesystem'
     datasetFormat = "File system"
+    keywordsDBname = "keywords_filesystem"
     def __init__(self, name, downloadDir, doi=None):
         super(FileSystemDataset, self).__init__(name, doi)
         # list of all the directories that belong to the repository
@@ -33,6 +35,10 @@ class FileSystemDataset(DatasetHandler):
                 print("\n")
             # self.sourceURLs.extend(URLlist)
             # self.downloadFiles(URLlist, self.downloadDir, True)
+
+    def loadKeywords(self, cls, entity):
+        kwDB = EntityKeywordsDB(cls.keywordsDBname)
+        return kwDB.loadKeywords(entity)
 
     def downloadFiles(self, url_list, target_dir, unzip=True):
         """
@@ -86,13 +92,14 @@ class FileSystemDataset(DatasetHandler):
         print("\t... successful")
         return result
 
-    def extractZipFile(self, theZip):
+    def extractZipFile(self, theZip, targetDir = None):
         from zipfile import ZipFile
 
+        outDir = targetDir if targetDir else os.path.dirname(theZip)
         try:
             print("extracting '{}'".format(theZip))
             with ZipFile(theZip) as my_zip_file:
-                my_zip_file.extractall(os.path.dirname(theZip))
+                my_zip_file.extractall(outDir)
         except ZipFile.BadZipfile:
             print("File '{}' is not a valid ZIP archive and couldn't be extracted".format(theZip))
         else:
@@ -105,26 +112,22 @@ class FileSystemDataset(DatasetHandler):
         print("{}:".format(self.name))
         print(self.sourceURLs)
 
-    def unzipToDir(self, zipfile, targetDir):
-
-        return
-
     def scanFileStructure(self, directory):
         """
         scans a parent directory to fill inner properties
         """
         return
 
-DatasetHandlerFactory.registerDatasetType(FileSystemDataset, "filesystem")
+DatasetHandlerFactory.registerDatasetType(FileSystemDataset, FileSystemDataset.datasetType)
 
 class FileSystemPointer(Pointer):
-    def __init__(self, filename, start, length):
+    def __init__(self, filename, startChar, numChars):
         # full path to the file of appearance
         self.filename = filename
         # index of place where the value starts
-        self.start = start
+        self.startChar = startChar
         # length of the value in characters
-        self.length = length
+        self.numChars = numChars
         pass
 
     pass
