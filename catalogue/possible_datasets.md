@@ -5,6 +5,7 @@
 - CTU: https://runoffdb.fsv.cvut.cz/
 - TUBAF - Lenz2022: https://zenodo.org/record/6654150/files/lenz2022.zip?download=1 ./export
 - GRDB: https://www.bafg.de/GRDC/EN/01_GRDC/13_dtbse/database_node.html
+- Roger-Dataset: Publication: 10.5194/essd-12-245-2020 Data: 10.6094/UNIFR/151460
 
 - E4D - Project TU Dresden/TUBAF
 
