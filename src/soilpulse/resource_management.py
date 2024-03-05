@@ -126,9 +126,11 @@ class ResourceManager:
                 class_._instance = object.__new__(class_, *args, **kwargs)
             return class_._instance
 
+        # arbitrary resurce name for easy identification
+        self.name = name
         # list of Dataset class instances contained within this resource
         self.datasets = []
-        self.name = name
+
         self.doi = doi
         self.URI = uri
         # dedicated directory where files can be stored
@@ -137,15 +139,89 @@ class ResourceManager:
         self.language = None
 
         if doi:
-            newDataset = DatasetHandlerFactory.createHandler('filesystem', name, self.tempDir, doi)
+
+            newDataset = Dataset(name)
 
             self.addDataset(newDataset)
 
-    def downloadFilesFromURL(self, url):
+    def downloadFiles(self, url_list, target_dir, unzip=True):
         """
-        handles all needed steps to download (unpack archives if necessary) and create file structure tree
+        Download files from url list and unzips zip files.
+
+        :param url_list: list of urls to be downloaded
+        :param target_dir: local directory that will be used to download and optionally extract archives
+        :param unzip: if the downloaded file is a .zip archive it will be extracted if unzip=True
+
+        :return: dictionary of file types for input URLs
+        """
+        # create the target directory if not exists
+        if not os.path.isdir(target_dir):
+            os.mkdir(target_dir)
+
+        result = {}
+        for url in url_list:
+            url_host = "/".join(url.split("/")[0:3])
+            file_name = url.split("/")[-1].split("?")[0]
+            print("downloading file '{}' from {}.".format(file_name, url_host))
+            local_file_path = os.path.join(target_dir, file_name)
+            try:
+                response = requests.get(url, params={"download": "1"})
+            except requests.exceptions.ConnectionError:
+                print("\t\tA connection error occurred. Check your internet connection.")
+                return False
+            except requests.exceptions.Timeout:
+                print("\t\tThe request timed out.")
+                return False
+            except requests.exceptions.HTTPError as e:
+                print("\t\tHTTP Error:", e)
+                return False
+            except requests.exceptions.RequestException as e:
+                print("\t\tAn error occurred:", e)
+                return False
+            else:
+                # the parameter download = 1 is specific to Zenodo
+                if response.ok:
+                    with open(local_file_path, mode="wb") as filesave:
+                        filesave.write(response.content)
+                else:
+                    # something needs to be done if the response is not OK ...
+                    print("\t\tThe response was not OK!")
+                    return False
+
+                if (file_name.endswith(".zip") and unzip):
+                    self.extractZipFile(local_file_path)
+                    result[url] = "unzipped zip file"
+                else:
+                    result[url] = "raw file"
+        print("\t... successful")
+        return result
+
+    def extractZipFile(self, theZip, targetDir = None):
+        from zipfile import ZipFile
+
+        outDir = targetDir if targetDir else os.path.dirname(theZip)
+        try:
+            print("extracting '{}'".format(theZip))
+            with ZipFile(theZip) as my_zip_file:
+                my_zip_file.extractall(outDir)
+        except ZipFile.BadZipfile:
+            print("File '{}' is not a valid ZIP archive and couldn't be extracted".format(theZip))
+        else:
+            try:
+                os.remove(theZip)
+            except OSError:
+                print("\nFile '{}' couldn't be deleted. It may be locked by another application.".format(theZip))
+
+    def showContents(self):
+        print("{}:".format(self.name))
+        print(self.sourceURLs)
+
+    def scanFileStructure(self, directory):
+        """
+        scans a parent directory to fill inner properties
         """
         return
+
 
     def uploadFilesFromSession(self, files):
         """
@@ -172,13 +248,35 @@ class ResourceManager:
             ds.showContents()
         return
 
-class DatasetHandlerFactory:
+
+class Dataset:
     """
-    Dataset object factory
+    Represents a set of data containers that form together a distinct collection of data represented by a MetadataStructureMap.
+    The instance has its own MetadataStructureMap that is being composed during the metadata generation phase
     """
 
-    # directory of registered dataset types classes
-    datasetTypes = {}
+    def __init__(self, name):
+        # dataset name
+        self.name = name
+        # data containers that the dataset consists of
+        self.containers = []
+        # the instance of the metadata mapping
+        self.metadataMap = MetadataStructureMap()
+
+    def showContents(self):
+
+        pass
+
+    def checkMetadataStructure(self):
+        self.metadataMap.checkConsistency()
+
+class ContainerHandlerFactory:
+    """
+    Container object factory
+    """
+
+    # directory of registered containers types classes
+    containerTypes = {}
 
     _instance = None
     def __init__(self, uri):
@@ -188,46 +286,25 @@ class DatasetHandlerFactory:
             return class_._instance
 
     @classmethod
-    def registerDatasetType(cls, datasetTypeClass, key):
-        cls.datasetTypes[key] = datasetTypeClass
+    def registerContainerType(cls, containerTypeClass, key):
+        cls.containerTypes[key] = containerTypeClass
         # print("DatasetHandler of type '{}' registered".format(key))
         return
 
     @classmethod
-    def createHandler(cls, datasetType, *args):
-        if datasetType not in cls.datasetTypes.keys():
-            raise ValueError("Unsupported dataset handler type '{}'".format(datasetType))
+    def createHandler(cls, containerType, *args):
+        if containerType not in cls.containerTypes.keys():
+            raise ValueError("Unsupported dataset handler type '{}'".format(containerType))
         else:
-            return cls.datasetTypes[datasetType](*args)
+            return cls.datasetTypes[containerType](*args)
 
-
-class DatasetHandler:
+class ContainerHandler:
     """
-    Represents a set of data with consistent structure saved in a particular format.
-    The instance has its own MetadataStructureMap that is being composed during the metadata generation phase
+    Represents a single data container (file/db table) that can be crawled and analyzed
     """
-    datasetType = None
-    datasetFormat = None
+    containerType = None
+    containerFormat = None
     keywordsDBname = None
-
-    def __init__(self, name, doi = None):
-        # dataset name
-        self.name = name
-        # DOI if has any
-        self.doi = doi
-        # data containers that the dataset consists of
-        self.containers = []
-        # the instance of the metadata mapping
-        self.metadataMap = MetadataStructureMap()
-
-
-
-    def showContents(self):
-
-        pass
-    def checkMetadataStructure(self):
-        self.metadataMap.checkConsistency()
-
 
 class Pointer:
     """
@@ -253,9 +330,9 @@ class Crawler:
         self.resourceURI = resurceURI
         pass
 
-    def getMetadataStructure(self):
+    def crawl(self):
         """
         Parses the source and translate it to metadata elements structure
-        :return:
+        :return: MetadataStructureMap
         """
         return

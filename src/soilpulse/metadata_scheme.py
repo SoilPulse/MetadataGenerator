@@ -93,11 +93,15 @@ class EntityManager:
     maxCounts = {}
     # current count of instances
     currentCount = {}
-    #
-    searchExpressions = {}
+    # collection of all search patterns from all MetadataEntity subclasses
+    searchPatterns = {}
+    keywordPatterns = {}
+    # kyewords database to load keywords from
+    keywordDatabases = {}
 
     # _instance = None
     def __init__(self):
+
         return
 
     @classmethod
@@ -107,22 +111,27 @@ class EntityManager:
         cls.maxCounts[entityClass.key] = entityClass.maxMultiplicity
         cls.currentCount[entityClass.key] = 0
 
-        # connect to entity_types database and load search patterns and keywords for the entity type being registered
-        spDB = EntitySearchPatternsDB()
+        # connect to local database and load search patterns and keywords for the entity type being registered
         try:
-            # get the search expressions and keywords from the DB for the entity type
-            search_patterns = spDB.loadSearchPatterns(entityClass)
+            # get the search expressions from the DB for the entity type
+            search_patterns = EntitySearchPatternsDB.loadSearchPatterns(entityClass)
             # if something found put it in class' search_patterns dict
             if search_patterns:
                 entityClass.searchPatterns = search_patterns
 
-            entityClass.showSearchPatterns()
+            # get the search keywords from the DB for the entity type
+            keywords = EntityKeywordsDB().loadKeywords(entityClass)
+            if keywords:
+                entityClass.keywords = keywords
+
+            # entityClass.showSearchPhrases()
 
         except DatabaseFetchError as e:
             print(e)
         else:
             # and if successful put them into the entity managers mapping
-            cls.searchExpressions.update({entityClass.key: entityClass.searchPatterns})
+            cls.searchPatterns.update({entityClass.key: entityClass.searchPatterns})
+            cls.keywordPatterns.update({entityClass.key: entityClass.keywords})
 
         # for kw in entityClass.searchPatterns:
         #     cls.keywordMapping.update({kw: entityClass.key})
@@ -156,12 +165,25 @@ class EntityManager:
         return elementCounts
 
     @classmethod
-    def showKeywordsMapping(cls):
-        print("\nkeywords mapping:")
-        for k,v in cls.searchExpressions.items():
-            print("\t{}".format(k))
-            for l, w in v.items():
-                print("\t\t{}: {}".format(l, w))
+    def showSearchExpressions(cls):
+        print("\nEntityManager search patterns:")
+        for k,v in cls.searchPatterns.items():
+            if len(v) > 0:
+                print("\t{}".format(k))
+                for l, w in v.items():
+                    print("\t\t{}: {}".format(l, w))
+            else:
+                print("\t{}: None".format(k))
+
+        print("\nEntityManager keywords search patterns:")
+        for k,v in cls.keywordPatterns.items():
+            if len(v) > 0:
+                print("\t{}".format(k))
+                for l, w in v.items():
+                    print("\t\t{}: {}".format(l, w))
+            else:
+                print("\t{}: None".format(k))
+
         return
 
     @classmethod
@@ -171,14 +193,6 @@ class EntityManager:
             print("{}: {}".format(k,v))
         return
 
-    @classmethod
-    def loadKeywords(cls, datasetType):
-        """
-        Induces loading of keywords of appropriate dataset type
-        """
-        for entClass in cls.metadataEntities:
-            entClass.loadKeywords(datasetType)
-        return
 
 class MetadataEntity:
     """
@@ -234,8 +248,11 @@ class MetadataEntity:
         pass
 
     @classmethod
-    def showSearchPatterns(cls):
+    def showSearchPhrases(cls):
+        print("search patterns of '{}':".format(cls.name))
         print(cls.searchPatterns)
+        print("keywords of '{}':".format(cls.name))
+        print(cls.keywords)
         return
 
 class TextMetadataEntity(MetadataEntity):

@@ -8,11 +8,11 @@ from soilpulse.resource_managers.filesystem import *
 from soilpulse.resource_managers.mysql import *
 from soilpulse.resource_managers.xml import *
 from soilpulse.metadata_scheme import *
-from soilpulse.db_access import DBconnector
+from soilpulse.db_access import EntityKeywordsDB
 
 
 if __name__ == "__main__":
-
+    print(EntityKeywordsDB.DBs)
     exampleDOI = "10.5281/zenodo.6654150"
 
     ###### the resource initiation #####################
@@ -35,7 +35,7 @@ if __name__ == "__main__":
     title = dataset.metadataMap.addEntity(EF.createEntityInstance("title", "This is a first tile", "en", "utf-8"), Pointer())
     title2 = dataset.metadataMap.addEntity(EF.createEntityInstance("title", "This is a second tile", "en", "utf-8"), Pointer())
 
-    dataset.checkMetadataStructure()
+    # dataset.checkMetadataStructure()
 
     # em.showEntityCount()
     # print("Minimum count check results:")
@@ -51,8 +51,9 @@ if __name__ == "__main__":
     #         print("\ttoo many elements of type '{}' (maximum count {}, current count {})".format(entity[0], entity[1], entity[2]))
 
     # print("min counts: {}".format(em.checkMinCounts()))
-    # print("max counts: {}".format(em.checkMaxCounts()))
-    EF.showKeywordsMapping()
+    # print("max counts: {}".format(em.checkMaxCounts()))EF.showSearchExpressions()
+
+    EF.showSearchExpressions()
 
 
     print("\ndone.")

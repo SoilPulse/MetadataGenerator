@@ -1,20 +1,28 @@
 # coding = utf-8
 # -*- coding: utf-8 -*-
 
-from src.soilpulse.resource_management import DatasetHandler, DatasetHandlerFactory, Pointer, Crawler
+from src.soilpulse.resource_management import ContainerHandler, ContainerHandlerFactory, Pointer, Crawler
+from src.soilpulse.db_access import EntityKeywordsDB
 
-class MySQLDataset(DatasetHandler):
-    datasetType = 'mysql'
-    datasetFormat = "MySQL"
+type = 'mysql'
+format = "MySQL"
+keywordsDBfilename = "keywords_mysql"
+
+class MySQLContainer(ContainerHandler):
+    containerType = type
+    containerFormat = format
+    keywordsDBname = keywordsDBfilename
+
     def __init__(self, name, doi = None):
-        super(MySQLDataset, self).__init__(name, doi)
+        super(MySQLContainer, self).__init__(name, doi)
         self.databaseName = None
         self.tables = []
         self.foreignKeys = []
 
     def showContents(self):
         pass
-DatasetHandlerFactory.registerDatasetType(MySQLDataset, MySQLDataset.datasetType)
+ContainerHandlerFactory.registerContainerType(MySQLContainer, MySQLContainer.containerType)
+EntityKeywordsDB.registerKeywordsDB(MySQLContainer.containerType, MySQLContainer.keywordsDBname)
 
 class MySQLPointer(Pointer):
     def __init__(self, tableName, indexColumnName, indexValue, valueColumnName, startChar = None, numChars = None):

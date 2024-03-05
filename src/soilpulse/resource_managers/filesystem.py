@@ -7,18 +7,21 @@ import csv
 import io
 from collections import Counter
 
-from src.soilpulse.resource_management import DatasetHandler, DatasetHandlerFactory, Pointer, Crawler
+from src.soilpulse.resource_management import ContainerHandler, ContainerHandlerFactory, Pointer, Crawler
 from src.soilpulse.db_access import EntityKeywordsDB
 # just for the standalone functions - will be changed
 from src.soilpulse.resource_management import *
 
+type = 'filesystem'
+format = "File system"
+keywordsDBfilename = "keywords_filesystem"
 
-class FileSystemDataset(DatasetHandler):
-    datasetType = 'filesystem'
-    datasetFormat = "File system"
-    keywordsDBname = "keywords_filesystem"
+class FileSystemContainer(ContainerHandler):
+    containerType = type
+    containerFormat = format
+    keywordsDBname = keywordsDBfilename
     def __init__(self, name, downloadDir, doi=None):
-        super(FileSystemDataset, self).__init__(name, doi)
+        super(FileSystemContainer, self).__init__(name, doi)
         # list of all the directories that belong to the repository
         self.directories = []
         # list of all the files that belong to the repository
@@ -36,91 +39,13 @@ class FileSystemDataset(DatasetHandler):
             # self.sourceURLs.extend(URLlist)
             # self.downloadFiles(URLlist, self.downloadDir, True)
 
-    def loadKeywords(self, cls, entity):
-        kwDB = EntityKeywordsDB(cls.keywordsDBname)
-        return kwDB.loadKeywords(entity)
-
-    def downloadFiles(self, url_list, target_dir, unzip=True):
-        """
-        Download files from url list and unzips zip files.
-
-        :param url_list: list of urls to be downloaded
-        :param target_dir: local directory that will be used to download and optionally extract archives
-        :param unzip: if the downloaded file is a .zip archive it will be extracted if unzip=True
-
-        :return: dictionary of file types for input URLs
-        """
-        # create the target directory if not exists
-        if not os.path.isdir(target_dir):
-            os.mkdir(target_dir)
-
-        result = {}
-        for url in url_list:
-            url_host = "/".join(url.split("/")[0:3])
-            file_name = url.split("/")[-1].split("?")[0]
-            print("downloading file '{}' from {}.".format(file_name, url_host))
-            local_file_path = os.path.join(target_dir, file_name)
-            try:
-                response = requests.get(url, params={"download": "1"})
-            except requests.exceptions.ConnectionError:
-                print("\t\tA connection error occurred. Check your internet connection.")
-                return False
-            except requests.exceptions.Timeout:
-                print("\t\tThe request timed out.")
-                return False
-            except requests.exceptions.HTTPError as e:
-                print("\t\tHTTP Error:", e)
-                return False
-            except requests.exceptions.RequestException as e:
-                print("\t\tAn error occurred:", e)
-                return False
-            else:
-                # the parameter download = 1 is specific to Zenodo
-                if response.ok:
-                    with open(local_file_path, mode="wb") as filesave:
-                        filesave.write(response.content)
-                else:
-                    # something needs to be done if the response is not OK ...
-                    print("\t\tThe response was not OK!")
-                    return False
-
-                if (file_name.endswith(".zip") and unzip):
-                    self.extractZipFile(local_file_path)
-                    result[url] = "unzipped zip file"
-                else:
-                    result[url] = "raw file"
-        print("\t... successful")
-        return result
-
-    def extractZipFile(self, theZip, targetDir = None):
-        from zipfile import ZipFile
-
-        outDir = targetDir if targetDir else os.path.dirname(theZip)
-        try:
-            print("extracting '{}'".format(theZip))
-            with ZipFile(theZip) as my_zip_file:
-                my_zip_file.extractall(outDir)
-        except ZipFile.BadZipfile:
-            print("File '{}' is not a valid ZIP archive and couldn't be extracted".format(theZip))
-        else:
-            try:
-                os.remove(theZip)
-            except OSError:
-                print("\nFile '{}' couldn't be deleted. It may be locked by another application.".format(theZip))
-
-    def showContents(self):
-        print("{}:".format(self.name))
-        print(self.sourceURLs)
-
-    def scanFileStructure(self, directory):
-        """
-        scans a parent directory to fill inner properties
-        """
-        return
-
-DatasetHandlerFactory.registerDatasetType(FileSystemDataset, FileSystemDataset.datasetType)
+ContainerHandlerFactory.registerContainerType(FileSystemContainer, FileSystemContainer.containerType)
+EntityKeywordsDB.registerKeywordsDB(FileSystemContainer.containerType, FileSystemContainer.keywordsDBname)
 
 class FileSystemPointer(Pointer):
+
+    pointerType = type
+
     def __init__(self, filename, startChar, numChars):
         # full path to the file of appearance
         self.filename = filename

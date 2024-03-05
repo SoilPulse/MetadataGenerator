@@ -1,18 +1,26 @@
 # coding = utf-8
 # -*- coding: utf-8 -*-
 
-from src.soilpulse.resource_management import DatasetHandler, DatasetHandlerFactory, Pointer, Crawler
+from src.soilpulse.resource_management import ContainerHandler, ContainerHandlerFactory, Pointer, Crawler
+from src.soilpulse.db_access import EntityKeywordsDB
 
-class XMLDataset(DatasetHandler):
-    datasetType = 'xml'
-    datasetFormat = "XML"
+type = 'xml'
+format = "XML"
+keywordsDBfilename = "keywords_xml"
+
+class XMLContainer(ContainerHandler):
+    containerType = type
+    containerFormat = format
+    keywordsDBname = keywordsDBfilename
+
     def __init__(self, name, doi = None):
-        super(XMLDataset, self).__init__(name, doi)
+        super(XMLContainer, self).__init__(name, doi)
 
     def showContents(self):
         pass
 
-DatasetHandlerFactory.registerDatasetType(XMLDataset, XMLDataset.datasetType)
+ContainerHandlerFactory.registerContainerType(XMLContainer, XMLContainer.containerType)
+EntityKeywordsDB.registerKeywordsDB(XMLContainer.containerType, XMLContainer.keywordsDBname)
 
 class XMLPointer(Pointer):
     pass
