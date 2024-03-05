@@ -32,7 +32,7 @@ def getRAofDOI(doi, meta=False):
     else:
         print("\t... successful")
 
-    if not RAjson:
+    if not RAjson or 'status' in RAjson[0]:
         raise DOIdataRetrievalException("Invalid DOI provided, or DOI not registered '{}'".format(doi))
     else:
         if (meta):
