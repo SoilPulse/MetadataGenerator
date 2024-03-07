@@ -13,14 +13,15 @@ class MySQLContainer(ContainerHandler):
     containerFormat = format
     keywordsDBname = keywordsDBfilename
 
-    def __init__(self, name, doi = None):
-        super(MySQLContainer, self).__init__(name, doi)
+    def __init__(self, name):
+        super(MySQLContainer, self).__init__(name)
         self.databaseName = None
         self.tables = []
         self.foreignKeys = []
 
     def showContents(self):
         pass
+
 ContainerHandlerFactory.registerContainerType(MySQLContainer, MySQLContainer.containerType)
 EntityKeywordsDB.registerKeywordsDB(MySQLContainer.containerType, MySQLContainer.keywordsDBname)
 

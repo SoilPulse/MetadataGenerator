@@ -120,7 +120,7 @@ class EntityManager:
                 entityClass.searchPatterns = search_patterns
 
             # get the search keywords from the DB for the entity type
-            keywords = EntityKeywordsDB().loadKeywords(entityClass)
+            keywords = EntityKeywordsDB.loadKeywords(entityClass)
             if keywords:
                 entityClass.keywords = keywords
 
@@ -133,8 +133,6 @@ class EntityManager:
             cls.searchPatterns.update({entityClass.key: entityClass.searchPatterns})
             cls.keywordPatterns.update({entityClass.key: entityClass.keywords})
 
-        # for kw in entityClass.searchPatterns:
-        #     cls.keywordMapping.update({kw: entityClass.key})
         return
 
     @classmethod
@@ -293,12 +291,28 @@ class GeographicalMetadataEntity(MetadataEntity):
 
 class SubjectMetadataEntity(MetadataEntity):
     """
-    Abstract interface class of metadata element with person or institution value
+    Abstract interface class of metadata element that represents a person or an institution that is responsible
+    for producing (collecting, managing, distributing, or otherwise contributing to the development of the
+    dataset) the data, or has relation to authors of the publication
+    """
+
+    roleTypes = ["Data Collector", "Data Curator", "Editor"]
+    def __init__(self, value):
+        # the actual value of the metadata element
+        super(SubjectMetadataEntity, self).__init__(value)
+
+        return
+
+class OrganizationMetadataEntity(MetadataEntity):
+    """
+    Abstract interface class of metadata element that represents some institutional subject that is responsible
+    for producing (collecting, managing, distributing, or otherwise contributing to the development of the
+    dataset) the data, or has relation to authors of the publication
     """
 
     def __init__(self, value):
         # the actual value of the metadata element
-        super(SubjectMetadataEntity, self).__init__(value)
+        super(OrganizationMetadataEntity, self).__init__(value)
         return
 
 class Title(TextMetadataEntity):
@@ -315,14 +329,44 @@ class Title(TextMetadataEntity):
 EntityManager.registerMetadataEntityType(Title)
 
 class AlternateTitle(TextMetadataEntity):
-    ID = "2"
+    ID = "2.1"
     key = "alternate_title"
     name = "Alternate title"
     description = "A short name by which the dataset is also known."
     minMultiplicity = 0
-    maxMultiplicity = None
+    maxMultiplicity = 1
 
 EntityManager.registerMetadataEntityType(AlternateTitle)
+
+class Subtitle(TextMetadataEntity):
+    ID = "2.2"
+    key = "subtitle"
+    name = "Subtitle"
+    description = ""
+    minMultiplicity = 0
+    maxMultiplicity = 1
+
+EntityManager.registerMetadataEntityType(Subtitle)
+
+class TranslatedTitle(TextMetadataEntity):
+    ID = "2.3"
+    key = "translated_title"
+    name = "Subtitle"
+    description = ""
+    minMultiplicity = 0
+    maxMultiplicity = 1
+
+EntityManager.registerMetadataEntityType(TranslatedTitle)
+
+class OtherAlternateTitle(TextMetadataEntity):
+    ID = "2.4"
+    key = "other_alternate_title"
+    name = "Other alternate title"
+    description = ""
+    minMultiplicity = 0
+    maxMultiplicity = 1
+
+EntityManager.registerMetadataEntityType(OtherAlternateTitle)
 
 class Summary(TextMetadataEntity):
     ID = "3"
@@ -432,6 +476,49 @@ class DateValid(DateMetadataEntity):
     maxMultiplicity = 1
 
 EntityManager.registerMetadataEntityType(DateValid)
+
+class ResponsiblePerson(SubjectMetadataEntity):
+    ID = "6"
+    key = "responsible_party"
+    name = "Responsible party"
+    description = "The main researchers involved in producing (collecting, managing, distributing, or otherwise\
+            contributing to the development of the dataset) the data, or the authors of the publication, \
+            in priority order. Will be cited if Author is used as contact type."
+    minMultiplicity = None
+    maxMultiplicity = None
+
+EntityManager.registerMetadataEntityType(ResponsiblePerson)
+
+class Dummy(MetadataEntity):
+    ID = ""
+    key = ""
+    name = ""
+    description = ""
+    minMultiplicity = None
+    maxMultiplicity = None
+
+EntityManager.registerMetadataEntityType()
+
+class Dummy(MetadataEntity):
+    ID = ""
+    key = ""
+    name = ""
+    description = ""
+    minMultiplicity = None
+    maxMultiplicity = None
+
+EntityManager.registerMetadataEntityType()
+
+
+class Dummy(MetadataEntity):
+    ID = ""
+    key = ""
+    name = ""
+    description = ""
+    minMultiplicity = None
+    maxMultiplicity = None
+
+EntityManager.registerMetadataEntityType()
 
 class GeographicalBoundingBox(GeographicalMetadataEntity):
     ID = "9"

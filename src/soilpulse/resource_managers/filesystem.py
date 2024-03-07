@@ -20,24 +20,10 @@ class FileSystemContainer(ContainerHandler):
     containerType = type
     containerFormat = format
     keywordsDBname = keywordsDBfilename
-    def __init__(self, name, downloadDir, doi=None):
-        super(FileSystemContainer, self).__init__(name, doi)
-        # list of all the directories that belong to the repository
-        self.directories = []
-        # list of all the files that belong to the repository
-        self.sourceURLs = []
-        # directory where the script will have access to write
-        self.downloadDir = downloadDir
+    def __init__(self, name, downloadDir):
+        super(FileSystemContainer, self).__init__(name)
 
-        if doi:
-            response = getFileListOfDOI(doi)
-            print("dict of info from Zenodo:")
-            for item in response:
-                for key, value in item.items():
-                    print("{}: {}".format(key, value))
-                print("\n")
-            # self.sourceURLs.extend(URLlist)
-            # self.downloadFiles(URLlist, self.downloadDir, True)
+
 
 ContainerHandlerFactory.registerContainerType(FileSystemContainer, FileSystemContainer.containerType)
 EntityKeywordsDB.registerKeywordsDB(FileSystemContainer.containerType, FileSystemContainer.keywordsDBname)

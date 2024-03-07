@@ -117,8 +117,9 @@ def getFileListOfDOI(doi):
 
 class ResourceManager:
     """
-    Singleton for a given resource
+    Singleton for a running session (only one Resource can be edited and managed at a time)
     """
+
     _instance = None
     def __init__(self, name = None, doi = None, uri = None):
         def __new__(class_, *args, **kwargs):
@@ -130,6 +131,8 @@ class ResourceManager:
         self.name = name
         # list of Dataset class instances contained within this resource
         self.datasets = []
+        # the tree structure of included files and other container types
+        self.containerTree = None
 
         self.doi = doi
         self.URI = uri
@@ -144,7 +147,7 @@ class ResourceManager:
 
             self.addDataset(newDataset)
 
-    def downloadFiles(self, url_list, target_dir, unzip=True):
+    def downloadFiles(self, url_list, unzip=True):
         """
         Download files from url list and unzips zip files.
 
@@ -155,15 +158,15 @@ class ResourceManager:
         :return: dictionary of file types for input URLs
         """
         # create the target directory if not exists
-        if not os.path.isdir(target_dir):
-            os.mkdir(target_dir)
+        if not os.path.isdir(self.tempDir):
+            os.mkdir(self.tempDir)
 
         result = {}
         for url in url_list:
             url_host = "/".join(url.split("/")[0:3])
             file_name = url.split("/")[-1].split("?")[0]
             print("downloading file '{}' from {}.".format(file_name, url_host))
-            local_file_path = os.path.join(target_dir, file_name)
+            local_file_path = os.path.join(self.tempDir, file_name)
             try:
                 response = requests.get(url, params={"download": "1"})
             except requests.exceptions.ConnectionError:
@@ -211,6 +214,23 @@ class ResourceManager:
                 os.remove(theZip)
             except OSError:
                 print("\nFile '{}' couldn't be deleted. It may be locked by another application.".format(theZip))
+
+
+    def create_tree(self, sub_folder_dict):
+        tree = []
+        for k, v in sub_folder_dict.items():
+            tree.append(self.create_node(k, v, sub_folder_dict))
+        return tree
+
+    def create_node(self, abs_path, sub_folders, sub_folder_dict):
+        node = {"label": abs_path.split('\\')[-1], "value": abs_path}
+        if sub_folders:
+            node["children"] = []
+            for sub_folder in sub_folders:
+                abs_path = os.path.join(abs_path, sub_folder)
+                # if os.path.isdir(abs_path):
+                node["children"].append(self.create_node(abs_path, sub_folder_dict.get(abs_path, []), sub_folder_dict))
+        return node
 
     def showContents(self):
         print("{}:".format(self.name))
@@ -305,6 +325,19 @@ class ContainerHandler:
     containerType = None
     containerFormat = None
     keywordsDBname = None
+
+    def __init__(self, name):
+        # container name (filename/database name/table name ...)
+        self.name = name
+        # data containers that the container consists of
+        self.containers = []
+
+
+    def showContents(self, depth = 0):
+        print(self.name)
+        depth += 1
+        for cont in self.containers:
+            cont.showContents(depth)
 
 class Pointer:
     """
