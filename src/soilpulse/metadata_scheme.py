@@ -296,7 +296,7 @@ class SubjectMetadataEntity(MetadataEntity):
     dataset) the data, or has relation to authors of the publication
     """
 
-    roleTypes = ["Data Collector", "Data Curator", "Editor"]
+    roleTypes = ["Data Collector", "Data Curator", "Editor", ""]
     def __init__(self, value):
         # the actual value of the metadata element
         super(SubjectMetadataEntity, self).__init__(value)
@@ -478,10 +478,10 @@ class DateValid(DateMetadataEntity):
 EntityManager.registerMetadataEntityType(DateValid)
 
 class ResponsiblePerson(SubjectMetadataEntity):
-    ID = "6"
-    key = "responsible_party"
-    name = "Responsible party"
-    description = "The main researchers involved in producing (collecting, managing, distributing, or otherwise\
+    ID = "6.1"
+    key = "responsible_person"
+    name = "Responsible person"
+    description = "Person involved in producing (collecting, managing, distributing, or otherwise\
             contributing to the development of the dataset) the data, or the authors of the publication, \
             in priority order. Will be cited if Author is used as contact type."
     minMultiplicity = None
@@ -489,36 +489,38 @@ class ResponsiblePerson(SubjectMetadataEntity):
 
 EntityManager.registerMetadataEntityType(ResponsiblePerson)
 
-class Dummy(MetadataEntity):
-    ID = ""
-    key = ""
-    name = ""
-    description = ""
+class ResponsibleOrganization(SubjectMetadataEntity):
+    ID = "6.2"
+    key = "responsible_organization"
+    name = "Responsible organization"
+    description = "Institution involved in producing (collecting, managing, distributing, or otherwise\
+            contributing to the development of the dataset) the data, or the authors of the publication, \
+            in priority order."
     minMultiplicity = None
     maxMultiplicity = None
 
-EntityManager.registerMetadataEntityType()
+EntityManager.registerMetadataEntityType(ResponsibleOrganization)
 
-class Dummy(MetadataEntity):
-    ID = ""
-    key = ""
-    name = ""
-    description = ""
-    minMultiplicity = None
-    maxMultiplicity = None
-
-EntityManager.registerMetadataEntityType()
-
-
-class Dummy(MetadataEntity):
-    ID = ""
-    key = ""
-    name = ""
-    description = ""
-    minMultiplicity = None
-    maxMultiplicity = None
-
-EntityManager.registerMetadataEntityType()
+# class Dummy(MetadataEntity):
+#     ID = ""
+#     key = ""
+#     name = ""
+#     description = ""
+#     minMultiplicity = None
+#     maxMultiplicity = None
+#
+# EntityManager.registerMetadataEntityType()
+#
+#
+# class Dummy(MetadataEntity):
+#     ID = ""
+#     key = ""
+#     name = ""
+#     description = ""
+#     minMultiplicity = None
+#     maxMultiplicity = None
+#
+# EntityManager.registerMetadataEntityType()
 
 class GeographicalBoundingBox(GeographicalMetadataEntity):
     ID = "9"
