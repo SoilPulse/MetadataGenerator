@@ -13,16 +13,32 @@ from soilpulse.db_access import EntityKeywordsDB
 
 if __name__ == "__main__":
     print(EntityKeywordsDB.DBs)
+
+
+
     exampleDOI = "10.5281/zenodo.6654150"
 
     ###### the resource initiation #####################
     # ResourceManager instance
     RM = ResourceManager("Jonas Lenz's dissertation files", exampleDOI)
+    # on initiation (or change of DOI) the RM:
+        # loads files that are part of the DOI provided
+        # unpacks archives
+        # goes through the files, recognizes their type
+        # creates ContainerHandler instances for all of them
+            # ContainerHandlers execute inner structure recognition and fill their properties acoording to type
+        # create the content tree of the ResourceManager
+
+        # loads metadata information that are part of data obtained from DOI record or data host record
+
+
+    newDataset = Dataset("Dataset 1")
+    RM.addDataset(newDataset)
+
+
     RM.showContents()
 
-    # # this will be done by the UI
-    # newDataset = DatasetHandlerFactory.createHandler("filesystem")
-    # RM.datasets.append(newDataset)
+
 
     ###### dataset crawling and metadata structure mapping ################
 
@@ -30,10 +46,10 @@ if __name__ == "__main__":
     # RM.dataset.MetadataStructureMap = newDataset.crawler.crawl()
 
     # but for now let's do it manually
-    dataset = RM.datasets[0]
-    EF = dataset.metadataMap.entityFactory
-    title = dataset.metadataMap.addEntity(EF.createEntityInstance("title", "This is a first tile", "en", "utf-8"), Pointer())
-    title2 = dataset.metadataMap.addEntity(EF.createEntityInstance("title", "This is a second tile", "en", "utf-8"), Pointer())
+    # dataset = RM.datasets[0]
+    # EF = dataset.metadataMap.entityFactory
+    # title = dataset.metadataMap.addEntity(EF.createEntityInstance("title", "This is a first tile", "en", "utf-8"), Pointer())
+    # title2 = dataset.metadataMap.addEntity(EF.createEntityInstance("title", "This is a second tile", "en", "utf-8"), Pointer())
 
     # dataset.checkMetadataStructure()
 
@@ -53,7 +69,7 @@ if __name__ == "__main__":
     # print("min counts: {}".format(em.checkMinCounts()))
     # print("max counts: {}".format(em.checkMaxCounts()))EF.showSearchExpressions()
 
-    EF.showSearchExpressions()
+    # EF.showSearchExpressions()
 
 
     print("\ndone.")
