@@ -39,6 +39,15 @@ class ResourceManager:
             self.setDOI(doi)
 
     def setDOI(self, doi):
+        """
+        Changes the DOI of a resource with all appropriate actions
+        - reads the registration agency and publisher response metadata and assigns them to the ResourceManager
+        - check for files bound to the DOI record
+        - download the files (unpack archives if necessary)
+        - create container tree from files
+        - remove old files if there were any
+
+        """
         # if the __doi parameter already had some value
         if self.__doi:
             # and the new value differs from the previous one
@@ -50,10 +59,15 @@ class ResourceManager:
         self.__doi = doi
         # populate the metadata properties
         self.getMetadataFromDOI()
-        # download data
-        self.getDataOfDOI()
+        # get downloadable files information
+        self.getFileInfoOfDOI()
+        # download the files
+        self.downloadFiles(self.sourceFiles)
 
     def getDOI(self):
+        """
+        Private attribute __doi getter
+        """
         return self.__doi
 
     def deleteAllResourceFiles(self):
@@ -77,7 +91,10 @@ class ResourceManager:
     def getMetadataFromDOI(self):
 
         pass
-    def getDataOfDOI(self):
+    def getFileInfoOfDOI(self):
+        """
+        Gets the downloadable files information from the data publisher
+        """
         try:
             metadataJSON = self.getMetadataJSON(self.__doi)
         except DOIdataRetrievalException as e:
@@ -95,9 +112,6 @@ class ResourceManager:
                 raise DOIdataRetrievalException("Unsupported data repository - currently only implemented for Zenodo")
             # TODO implement other data providers
             print(" ... successful.\n")
-
-            # download the files
-            self.downloadFiles(self.sourceFiles)
 
         return
 
@@ -124,7 +138,6 @@ class ResourceManager:
         except requests.exceptions.RequestException as e:
             raise DOIdataRetrievalException("An unknown error occurred while getting registration agency of provided DOI:", e)
         else:
-            print(RAjson)
             if 'status' in RAjson[0].keys():
                 if RAjson['status'] == "Invalid DOI":
                     # raise DOIdataRetrievalException("Invalid DOI provided, or DOI not registered '{}'".format(doi))
@@ -279,12 +292,6 @@ class ResourceManager:
         print(" ... successful\n")
         return result
 
-    def scanFileStructure(self, directory):
-        """
-        scans a parent directory to fill inner properties
-        """
-        return
-
 
     def uploadFilesFromSession(self, files):
         """
@@ -307,7 +314,10 @@ class ResourceManager:
         del self.datasets[index]
 
     def showContainerTree(self):
-        print("{}\ncontainer tree:")
+        """
+        Induces printing contents of the whole container tree
+        """
+        print("{}\ncontainer tree:".format(self.name))
         for container in self.containerTree:
             container.showContents("")
 
@@ -348,7 +358,9 @@ class ContainerHandlerFactory:
     containerTypes = {}
     # next container ID
     nextContainerID = 1
-
+    # all the containers created so far
+    containers = {}
+    # the one and only instance
     _instance = None
     def __init__(self, uri):
 
@@ -356,6 +368,7 @@ class ContainerHandlerFactory:
             if not isinstance(class_._instance, class_):
                 class_._instance = object.__new__(class_, *args, **kwargs)
             return class_._instance
+
 
     @classmethod
     def registerContainerType(cls, containerTypeClass, key):
@@ -365,13 +378,18 @@ class ContainerHandlerFactory:
 
     @classmethod
     def createHandler(cls, containerType, *args):
+        """
+        Creates and returns instance of Container of given type
+        Keeps track of all the instances created
+        """
         if containerType not in cls.containerTypes.keys():
             raise ValueError("Unsupported dataset handler type '{}'".format(containerType))
         else:
             # assign id to container - unique in the ResourceManager scope
             newContainer = cls.containerTypes[containerType](*args)
-            cls.nextContainerID += 1
             newContainer.id = cls.nextContainerID
+            cls.containers.update({newContainer.id: newContainer})
+            cls.nextContainerID += 1
             return newContainer
 
 class ContainerHandler:
