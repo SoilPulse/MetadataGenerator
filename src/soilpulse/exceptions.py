@@ -23,3 +23,11 @@ class DatabaseFetchError(Exception):
     """
     def __init__(self, message):
         self.message = "Values requested from SoilPulse were not found:\n" + message
+
+class LocalFileManipulationError(Exception):
+    """
+    This exception is raised when there's something wrong with local files manipulation
+    """
+
+    def __init__(self, message):
+        self.message = "Problem occured while manipulating files on SoilPulse server:\n" + message

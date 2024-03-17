@@ -27,16 +27,16 @@ if __name__ == "__main__":
         # goes through the files, recognizes their type
         # creates ContainerHandler instances for all of them
             # ContainerHandlers execute inner structure recognition and fill their properties acoording to type
-        # create the content tree of the ResourceManager
+        # create the content tree of the ResourceManager - this tree should be returned to the frontend to display it to the user
 
         # loads metadata information that are part of data obtained from DOI record or data host record
 
 
     newDataset = Dataset("Dataset 1")
     RM.addDataset(newDataset)
+    # RM.setDOI("10.5281/zenodo.665415")
 
-
-    RM.showContents()
+    RM.showContainerTree()
 
 
 

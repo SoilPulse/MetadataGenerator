@@ -5,7 +5,7 @@ import requests
 import os
 
 from .metadata_scheme import MetadataStructureMap
-from .exceptions import DOIdataRetrievalException
+from .exceptions import DOIdataRetrievalException, LocalFileManipulationError
 
 class ResourceManager:
     """
@@ -27,7 +27,7 @@ class ResourceManager:
         # dictionary of source files that were added to the resource by any way
         self.sourceFiles = {}
         # the tree structure of included files and other container types
-        self.containerTree = None
+        self.containerTree = []
         # the DOI is private so it can't be changed without consequences - only setDOI(doi) can be used
         self.__doi = doi
         # dedicated directory where files can be stored
@@ -44,7 +44,7 @@ class ResourceManager:
             # and the new value differs from the previous one
             if self.__doi != doi:
                 # remove the files that were downladed from the DOI record before
-
+                self.deleteAllResourceFiles()
                 pass
         # set the new DOI
         self.__doi = doi
@@ -55,6 +55,25 @@ class ResourceManager:
 
     def getDOI(self):
         return self.__doi
+
+    def deleteAllResourceFiles(self):
+        failed = 0
+        for file in self.sourceFiles:
+            print(file)
+            filename = os.path.basename(file['local_path'])
+            try:
+                os.remove(file['local_path'])
+                print("File '{}' successfully deleted.".format(filename))
+            except:
+                raise LocalFileManipulationError("Failed to delete '{}' from local files storage '{}'."
+                                                 .format(os.path.basename(file['local_path']),
+                                                         os.path.dirname(file['local_path'])))
+                failed += 1
+
+        if failed > 0:
+            return False
+        return True
+
     def getMetadataFromDOI(self):
 
         pass
@@ -67,6 +86,7 @@ class ResourceManager:
             return None
         else:
             self.publisher = metadataJSON['data']['attributes']['publisher']
+            print("obtaining data from publisher ({}) ...".format(self.publisher))
 
             if self.publisher == "Zenodo":
                 zenodo_id = metadataJSON['data']['attributes']['suffix'].split(".")[-1]
@@ -74,15 +94,15 @@ class ResourceManager:
             else:
                 raise DOIdataRetrievalException("Unsupported data repository - currently only implemented for Zenodo")
             # TODO implement other data providers
+            print(" ... successful.\n")
 
-            print(self.sourceFiles)
             # download the files
             self.downloadFiles(self.sourceFiles)
 
         return
 
     @staticmethod
-    def getRAofDOI(doi, meta=False):
+    def getRegistrationAgencyOfDOI(doi, meta=False):
         """
         Get registration agency from doi.org API.
 
@@ -96,24 +116,31 @@ class ResourceManager:
             # print("obtaining DOI registration agency ...")
             RAjson = requests.get(url).json()
         except requests.exceptions.ConnectionError:
-            print("A connection error occurred. Check your internet connection.")
+            raise DOIdataRetrievalException("A connection error occurred while getting registration agency of provided DOI. Check your internet connection.")
         except requests.exceptions.Timeout:
-            print("The request timed out.")
+            raise DOIdataRetrievalException("The request timed out while getting registration agency of provided DOI.")
         except requests.exceptions.HTTPError as e:
-            print("HTTP Error:", e)
+            raise DOIdataRetrievalException("HTTP Error occured while getting registration agency of provided DOI:", e)
         except requests.exceptions.RequestException as e:
-            print("An error occurred:", e)
+            raise DOIdataRetrievalException("An unknown error occurred while getting registration agency of provided DOI:", e)
         else:
-            # print("\t... successful")
-            pass
-
-        if not RAjson:
-            raise DOIdataRetrievalException("Invalid DOI provided, or DOI not registered '{}'".format(doi))
-        else:
-            if (meta):
-                return RAjson
+            print(RAjson)
+            if 'status' in RAjson[0].keys():
+                if RAjson['status'] == "Invalid DOI":
+                    # raise DOIdataRetrievalException("Invalid DOI provided, or DOI not registered '{}'".format(doi))
+                    raise DOIdataRetrievalException("Provided DOI '{}' is invalid.".format(doi))
+                    return None
+                if RAjson['status'] == "DOI does not exist":
+                    # raise DOIdataRetrievalException("Invalid DOI provided, or DOI not registered '{}'".format(doi))
+                    raise DOIdataRetrievalException("Provided DOI '{}' is not registered.".format(doi))
+                    return None
             else:
-                return RAjson[0]['RA']
+                if (meta):
+                    return RAjson
+                else:
+                    return RAjson[0]['RA']
+
+
 
     @staticmethod
     def getMetadataJSON(doi):
@@ -124,7 +151,7 @@ class ResourceManager:
         :return: json of metadata
         """
         # TODO implement other metadata providers
-        RA = ResourceManager.getRAofDOI(doi)
+        RA = ResourceManager.getRegistrationAgencyOfDOI(doi)
         if (RA == 'DataCite'):
             url = "https://api.datacite.org/dois/" + doi
             headers = {"accept": "application/vnd.api+json"}
@@ -142,10 +169,10 @@ class ResourceManager:
             except requests.exceptions.RequestException as e:
                 print("An error occurred:", e)
             else:
-                if output['error']:
-                    raise DOIdataRetrievalException("Registration agency '{}' doesn't respond. Error {}: {}".format(ResourceManager.getRAofDOI(doi), output['status'], output['error']))
+                if 'error' in output.keys():
+                    raise DOIdataRetrievalException("Registration agency '{}' doesn't respond. Error {}: {}".format(ResourceManager.getRegistrationAgencyOfDOI(doi), output['status'], output['error']))
                     return None
-                print("\t... successful\n")
+                print(" ... successful\n")
                 return output
         else:
             print("Unsupported registration agency '{}'".format(RA))
@@ -161,7 +188,6 @@ class ResourceManager:
         """
 
         try:
-            print("obtaining file information from Zenodo ...")
             response = requests.get("https://zenodo.org/api/records/" + zenodo_id).json()
 
         except requests.exceptions.ConnectionError:
@@ -186,8 +212,7 @@ class ResourceManager:
                     source_url = URLroot+"/"+key
                     fileinfo.update({'filename': key, 'id': id, 'size': size, 'checksum': checksum, 'source_url': source_url, 'local_path': None})
 
-                allFilesInfo.append()
-                print("\t... successful")
+                    allFilesInfo.append(fileinfo)
                 return (allFilesInfo)
             else:
                 raise DOIdataRetrievalException(
@@ -196,30 +221,23 @@ class ResourceManager:
 
     def downloadFiles(self, unzip=True):
         """
-        Download files from url list and unzips zip files.
+        Download files that are stored in self.sourceFiles dictionary
 
-        :param url_dict: dictionary of urls to be downloaded, filename is the key
-        :param target_dir: local directory that will be used to download and optionally extract archives
         :param unzip: if the downloaded file is a .zip archive it will be extracted if unzip=True
-
         :return: dictionary of file types for input URLs
         """
         # create the target directory if not exists
+        print("downloading remote files to local storage ('{}') ...".format(self.tempDir))
+
         if not os.path.isdir(self.tempDir):
             os.mkdir(self.tempDir)
 
         result = {}
         for sourceFile in self.sourceFiles:
             url = sourceFile['source_url']
-            print(url)
-            # url_host = "/".join(url.split("/")[0:3])
-            file_name = url.split("/")[-1].split("?")[0]
-            # print("downloading file '{}' from {}.".format(file_name, url_host))
-            local_file_path = os.path.join(self.tempDir, sourceFile['key'])
-            sourceFile.upddate({'local_path': local_file_path})
+            local_file_path = os.path.join(self.tempDir, sourceFile['filename'])
+
             try:
-                # print("/".join(url.split("/")[:-1]))
-                # response = requests.get("/".join(url.split("/")[:-1]))
                 response = requests.get(url+"/content")
             except requests.exceptions.ConnectionError:
                 print("\t\tA connection error occurred. Check your internet connection.")
@@ -238,55 +256,28 @@ class ResourceManager:
                 if response.ok:
                     with open(local_file_path, mode="wb") as filesave:
                         filesave.write(response.content)
+
+                    # write local path of downloaded file to its dictionary
+                    sourceFile['local_path'] = local_file_path
+
+                    # create a container from the file with all related actions
+                    newContainer = ContainerHandlerFactory.createHandler('filesystem', sourceFile['filename'], local_file_path)
+                    self.containerTree.append(newContainer)
+                    #
+                    # if (local_file_path.endswith(".zip") and unzip):
+                    #     self.extractZipFile(local_file_path)
+                    #     result[url] = "unzipped zip file"
+                    # else:
+                    #     result[url] = "raw file"
                 else:
                     # something needs to be done if the response is not OK ...
                     print("\t\tThe response was not OK!")
+                    sourceFile['local_path'] = None
+
                     return False
 
-                if (local_file_path.endswith(".zip") and unzip):
-                    self.extractZipFile(local_file_path)
-                    result[url] = "unzipped zip file"
-                else:
-                    result[url] = "raw file"
-        print("\t... successful")
+        print(" ... successful\n")
         return result
-
-    def extractZipFile(self, theZip, targetDir = None):
-        from zipfile import ZipFile
-
-        outDir = targetDir if targetDir else os.path.dirname(theZip)
-        try:
-            print("extracting '{}'".format(theZip))
-            with ZipFile(theZip) as my_zip_file:
-                my_zip_file.extractall(outDir)
-        except ZipFile.BadZipfile:
-            print("File '{}' is not a valid ZIP archive and couldn't be extracted".format(theZip))
-        else:
-            try:
-                os.remove(theZip)
-            except OSError:
-                print("\nFile '{}' couldn't be deleted. It may be locked by another application.".format(theZip))
-
-
-    def create_tree(self, sub_folder_dict):
-        tree = []
-        for k, v in sub_folder_dict.items():
-            tree.append(self.create_node(k, v, sub_folder_dict))
-        return tree
-
-    def create_node(self, abs_path, sub_folders, sub_folder_dict):
-        node = {"label": abs_path.split('\\')[-1], "value": abs_path}
-        if sub_folders:
-            node["children"] = []
-            for sub_folder in sub_folders:
-                abs_path = os.path.join(abs_path, sub_folder)
-                # if os.path.isdir(abs_path):
-                node["children"].append(self.create_node(abs_path, sub_folder_dict.get(abs_path, []), sub_folder_dict))
-        return node
-
-    def showContents(self):
-        print("{}:".format(self.name))
-        print(self.sourceURLs)
 
     def scanFileStructure(self, directory):
         """
@@ -315,7 +306,13 @@ class ResourceManager:
         """
         del self.datasets[index]
 
-    def showContents(self):
+    def showContainerTree(self):
+        print("{}\ncontainer tree:")
+        for container in self.containerTree:
+            container.showContents("")
+
+
+    def showDatasetsContents(self):
         for ds in self.datasets:
             ds.showContents()
         return
@@ -349,9 +346,12 @@ class ContainerHandlerFactory:
 
     # directory of registered containers types classes
     containerTypes = {}
+    # next container ID
+    nextContainerID = 1
 
     _instance = None
     def __init__(self, uri):
+
         def __new__(class_, *args, **kwargs):
             if not isinstance(class_._instance, class_):
                 class_._instance = object.__new__(class_, *args, **kwargs)
@@ -368,7 +368,11 @@ class ContainerHandlerFactory:
         if containerType not in cls.containerTypes.keys():
             raise ValueError("Unsupported dataset handler type '{}'".format(containerType))
         else:
-            return cls.datasetTypes[containerType](*args)
+            # assign id to container - unique in the ResourceManager scope
+            newContainer = cls.containerTypes[containerType](*args)
+            cls.nextContainerID += 1
+            newContainer.id = cls.nextContainerID
+            return newContainer
 
 class ContainerHandler:
     """
@@ -378,18 +382,40 @@ class ContainerHandler:
     containerFormat = None
     keywordsDBname = None
 
+    def recognizeType(cls):
+        pass
     def __init__(self, name):
+        # unique ID in the ResourceManagers scope
+        self.id = None
         # container name (filename/database name/table name ...)
         self.name = name
-        # data containers that the container containes
+        # data containers that the container contains
         self.containers = []
 
+        # make the class properties accessible through instance properties
+        self.containerType = type(self).containerType
+        self.containerFormat = type(self).containerFormat
+        self.keywordsDBname = type(self).keywordsDBname
 
-    def showContents(self, depth = 0):
-        print(self.name)
-        depth += 1
+    def showContents(self, t = ""):
+        print("{}{} - {} ({}) [{}]".format(t, self.id, self.name, self.containerType, len(self.containers)))
+        t += "\t"
+
         for cont in self.containers:
-            cont.showContents(depth)
+            # if isinstance(cont, list):
+            #     print("{} is list".format(cont))
+            cont.showContents(t)
+
+    def createTree(self):
+        pass
+
+class FileArchiveContainer(ContainerHandler):
+    containerType = "file_archive"
+    containerFormat = "File Archive"
+
+    def __init__(self, name, archive_type = None):
+        super(FileArchiveContainer, self).__init__(name)
+        self.archiveType = archive_type
 
 class Pointer:
     """

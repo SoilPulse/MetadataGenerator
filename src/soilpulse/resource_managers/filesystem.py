@@ -6,6 +6,7 @@ import re
 import csv
 import io
 from collections import Counter
+# import magic
 
 from src.soilpulse.resource_management import ContainerHandler, ContainerHandlerFactory, Pointer, Crawler
 from src.soilpulse.db_access import EntityKeywordsDB
@@ -20,10 +21,64 @@ class FileSystemContainer(ContainerHandler):
     containerType = type
     containerFormat = format
     keywordsDBname = keywordsDBfilename
-    def __init__(self, name, downloadDir):
+
+    def __init__(self, name, path):
         super(FileSystemContainer, self).__init__(name)
+        # the file type
+        self.path = path
+        # get mime type of the file
+        self.mimeType = self.getMimeType()
+        # get other useful of the file (size, date of creation ...)
+        self.size = None
+        self.dateCreated = None
+        self.dateLastChange = None
+        # extension
+        self.fileExtension = path.split(".")[-1]
+        # if the file is zip - unpack and create the containers from content
+        if self.fileExtension == "zip":
+            self.containers = self.extractZipFile(self.path)
 
+    def getMimeType(self):
+        # magic.from_file(self.path)
+        return
 
+    def extractZipFile(self, theZip, targetDir = None, removeZip = True):
+        from zipfile import ZipFile, BadZipfile
+
+        extractDirName = ".".join(os.path.basename(theZip).split(".")[:-1])+"_zip"
+        outDir = targetDir if targetDir else os.path.join(os.path.dirname(theZip), extractDirName)
+        try:
+            print("\t\textracting to '{}'".format(outDir))
+            with ZipFile(theZip) as my_zip_file:
+                my_zip_file.extractall(outDir)
+        except BadZipfile:
+            print("File '{}' is not a valid ZIP archive and couldn't be extracted".format(theZip))
+        else:
+            if removeZip:
+                try:
+                    os.remove(theZip)
+                except OSError:
+                    print("\nFile '{}' couldn't be deleted. It may be locked by another application.".format(theZip))
+
+            self.path = extractDirName
+            return self.createTree(outDir, "")
+
+    def createTree(self, folder, t = ""):
+        tree = []
+        for f in os.listdir(folder):
+            fullpath = os.path.join(folder, f)
+            if os.path.isfile(fullpath):
+                tree.append(ContainerHandlerFactory.createHandler('filesystem', f, fullpath))
+            elif os.path.isdir(os.path.join(folder, f)):
+                t += "\t"
+                dirCont = ContainerHandlerFactory.createHandler('filesystem', f, fullpath)
+                dirCont.containers = self.createTree(fullpath, t)
+                tree.append(dirCont)
+
+            else:
+                print("{} /// weird {}".format(t, os.path.join(folder, f)))
+
+        return tree
 
 ContainerHandlerFactory.registerContainerType(FileSystemContainer, FileSystemContainer.containerType)
 EntityKeywordsDB.registerKeywordsDB(FileSystemContainer.containerType, FileSystemContainer.keywordsDBname)
