@@ -7,6 +7,7 @@ from soilpulse.resource_management import *
 from soilpulse.resource_managers.filesystem import *
 from soilpulse.resource_managers.mysql import *
 from soilpulse.resource_managers.xml import *
+from soilpulse.data_publishers import *
 from soilpulse.metadata_scheme import *
 from soilpulse.db_access import EntityKeywordsDB
 

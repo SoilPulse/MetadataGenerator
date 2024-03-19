@@ -102,12 +102,13 @@ class ResourceManager:
             print(e.message)
             return None
         else:
-            self.publisher = metadataJSON['data']['attributes']['publisher']
-            print("obtaining data from publisher ({}) ...".format(self.publisher))
+            publisher = metadataJSON['data']['attributes']['publisher']
+            print("obtaining data from publisher ({}) ...".format(publisher))
 
-            if self.publisher == "Zenodo":
+            if publisher == "Zenodo":
                 zenodo_id = metadataJSON['data']['attributes']['suffix'].split(".")[-1]
-                self.sourceFiles = self.getFileInfoFromZenodo(zenodo_id)
+                self.publisher = PublisherFactory.createHandler(publisher, zenodo_id)
+                self.sourceFiles = self.publisher.getFileInfo()
             else:
                 raise DOIdataRetrievalException("Unsupported data repository - currently only implemented for Zenodo")
             # TODO implement other data providers
@@ -428,6 +429,57 @@ class ContainerHandler:
             cont.showContents(t)
 
     def createTree(self):
+        pass
+
+class PublisherFactory:
+    """
+    Publisher object factory
+    """
+
+    # directory of registered publisher types classes
+    publishers = {}
+
+    # the one and only instance
+    _instance = None
+    def __init__(self, uri):
+
+        def __new__(class_, *args, **kwargs):
+            if not isinstance(class_._instance, class_):
+                class_._instance = object.__new__(class_, *args, **kwargs)
+            return class_._instance
+
+    @classmethod
+    def registerPublisher(cls, publisherClass, key):
+        cls.publishers[key] = publisherClass
+        print("Publisher '{}' registered".format(key))
+        return
+
+    @classmethod
+    def createHandler(cls, publisherKey, *args):
+        """
+        Creates and returns instance of Publisher of given key
+        """
+        if publisherKey not in cls.publishers.keys():
+            raise ValueError("Unsupported publisher handler type '{}'.\nRegistred data publishers are: {}".format(publisherKey, ",".join(["'"+k+"'" for k in cls.publishers.keys()])))
+        else:
+            newPublisher = cls.publishers[publisherKey](*args)
+            cls.publishers.update({newPublisher.publisherKey: newPublisher})
+
+            return newPublisher
+
+class Publisher():
+    publisherKey = None
+    publisherName = None
+
+    def __init__(self):
+        # make the class properties accessible through instance properties
+        self.publisherKey = type(self).publisherKey
+        self.publisherName = type(self).publisherName
+
+    def getFileInfo(self, *args):
+
+        pass
+    def getMetadata(self, *args):
         pass
 
 class FileArchiveContainer(ContainerHandler):
