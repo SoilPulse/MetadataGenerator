@@ -98,7 +98,7 @@ class ResourceManager:
         try:
             metadataJSON = self.getMetadataJSON(self.__doi)
         except DOIdataRetrievalException as e:
-            print("Error occured while retrieving metadata.")
+            print("Error occurred while retrieving metadata.")
             print(e.message)
             return None
         else:
@@ -394,7 +394,7 @@ class ContainerHandlerFactory:
 
 class ContainerHandler:
     """
-    Represents a single data container (file/db table) that can be crawled and analyzed
+    Represents a single data container (file/db/table ) that can be crawled and analyzed
     """
     containerType = None
     containerFormat = None
@@ -409,6 +409,8 @@ class ContainerHandler:
         self.name = name
         # data containers that the container contains
         self.containers = []
+        # metadata entities that the container containes
+        self.metadataElements = []
 
         # make the class properties accessible through instance properties
         self.containerType = type(self).containerType
@@ -416,12 +418,13 @@ class ContainerHandler:
         self.keywordsDBname = type(self).keywordsDBname
 
     def showContents(self, t = ""):
+        """
+        Print basic info about the container and invokes showContents on all of its containers
+        """
         print("{}{} - {} ({}) [{}]".format(t, self.id, self.name, self.containerType, len(self.containers)))
         t += "\t"
 
         for cont in self.containers:
-            # if isinstance(cont, list):
-            #     print("{} is list".format(cont))
             cont.showContents(t)
 
     def createTree(self):

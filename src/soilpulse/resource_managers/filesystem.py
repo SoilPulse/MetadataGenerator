@@ -5,6 +5,7 @@ import os
 import re
 import csv
 import io
+import datetime
 from collections import Counter
 # import magic
 
@@ -30,17 +31,43 @@ class FileSystemContainer(ContainerHandler):
         self.mimeType = self.getMimeType()
         # get other useful of the file (size, date of creation ...)
         self.size = None
-        self.dateCreated = None
-        self.dateLastChange = None
+        self.dateCreated = datetime.datetime.fromtimestamp(os.path.getctime(path))
+        self.dateLastModified = datetime.datetime.fromtimestamp(os.path.getmtime(path))
         # extension
         self.fileExtension = path.split(".")[-1]
         # if the file is zip - unpack and create the containers from content
         if self.fileExtension == "zip":
             self.containers = self.extractZipFile(self.path)
 
+    def showContents(self, t = ""):
+        """
+        Print basic info about the container and invokes showContents on all of its containers
+        """
+        dateFormat = "%d.%m.%Y"
+        print("{}{} - {} ({}, {}, {}/{}) [{}]".format(t, self.id, self.name, self.containerType, self.getFileSizeFormated(), self.dateCreated.strftime(dateFormat), self.dateLastModified.strftime(dateFormat), len(self.containers)))
+        t += "\t"
+
+        for cont in self.containers:
+            cont.showContents(t)
+
     def getMimeType(self):
-        # magic.from_file(self.path)
+        # self.mimeType = magic.from_file(self.path)
         return
+
+    def getFileSize(self):
+        return os.stat(self.path).st_size if os.path.isfile(self.path) else None
+
+    def getFileSizeFormated(self):
+        suffix = "B"
+        size = self.getFileSize()
+        if size:
+            for unit in ("", "k", "M", "G", "T", "P", "E", "Z"):
+                if abs(size) < 1024.0:
+                    return f"{size:3.1f} {unit}{suffix}"
+                size /= 1024.0
+            return f"{size:.1f}Yi{suffix}"
+        else:
+            return None
 
     def extractZipFile(self, theZip, targetDir = None, removeZip = True):
         from zipfile import ZipFile, BadZipfile

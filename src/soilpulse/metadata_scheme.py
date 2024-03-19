@@ -221,7 +221,9 @@ class MetadataEntity:
     # this waythe keywords are translatable but need to be converted to search patterns before use
     keywords = {}
 
-    def __init__(self, value):
+    def __init__(self, sourceString, value = None):
+        # the piece of text from which the value was derived
+        self.sourceString = sourceString
         # the actual value of the metadata element instance
         self.value = value
         # list of child metadata elements
@@ -296,7 +298,7 @@ class SubjectMetadataEntity(MetadataEntity):
     dataset) the data, or has relation to authors of the publication
     """
 
-    roleTypes = ["Data Collector", "Data Curator", "Editor", ""]
+    roleTypes = []
     def __init__(self, value):
         # the actual value of the metadata element
         super(SubjectMetadataEntity, self).__init__(value)
@@ -472,7 +474,7 @@ class DateValid(DateMetadataEntity):
     key = "date_valid"
     name = "Date valid"
     description = "The date or date range during which the dataset or resource is accurate."
-    minMultiplicity = 1
+    minMultiplicity = 0
     maxMultiplicity = 1
 
 EntityManager.registerMetadataEntityType(DateValid)
@@ -487,6 +489,29 @@ class ResponsiblePerson(SubjectMetadataEntity):
     minMultiplicity = None
     maxMultiplicity = None
 
+    roleTypes = {"Data Collector": 0,
+                 "Data Curator": 0,
+                 "Editor": 0,
+                 "Producer": 0,
+                 "Project leader": 1,
+                 "Project manager": 0,
+                 "Project member": 0,
+                 "Related person": 0,
+                 "Researcher": 0,
+                 "Rights Holder": 0,
+                 "Sponsor": 0,
+                 "Supervisor": 0,
+                 "Work package leader": 0,
+                 "Author": 1,
+                 "Custodian": 0,
+                 "Originator": 0,
+                 "Owner": 0,
+                 "Point of contact": 0,
+                 "Principal investigator": 0,
+                 "Processor": 0,
+                 "User": 0
+                 }
+
 EntityManager.registerMetadataEntityType(ResponsiblePerson)
 
 class ResponsibleOrganization(SubjectMetadataEntity):
@@ -498,6 +523,20 @@ class ResponsibleOrganization(SubjectMetadataEntity):
             in priority order."
     minMultiplicity = None
     maxMultiplicity = None
+
+    roleTypes = {"Hosting institution": 0,
+                 "Registration agency": 0,
+                 "Registration authority": 0,
+                 "Research group": 0,
+                 "Rights Holder": 0,
+                 "Sponsor": 0,
+                 "Distributor": 0,
+                 "Owner": 0,
+                 "Point of contact": 0,
+                 "Processor": 0,
+                 "Publisher": 0,
+                 "Resource provider": 0
+                 }
 
 EntityManager.registerMetadataEntityType(ResponsibleOrganization)
 
