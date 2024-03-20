@@ -24,8 +24,13 @@ class ResourceManager:
 
         # list of Dataset class instances contained within this resource
         self.datasets = []
+
+        # registration agency of the DOI
+        self.registrationAgency = None
+        # metadata package from DOI record
+        self.DOImetadata = None
         # dictionary of source files that were added to the resource by any way
-        self.sourceFiles = {}
+        self.filesOfDOI = {}
         # the tree structure of included files and other container types
         self.containerTree = []
         # the DOI is private so it can't be changed without consequences - only setDOI(doi) can be used
@@ -57,12 +62,23 @@ class ResourceManager:
                 pass
         # set the new DOI
         self.__doi = doi
+        # populate the registration agency
+        self.registrationAgency = ResourceManager.getRegistrationAgencyOfDOI(self.__doi)
         # populate the metadata properties
-        self.getMetadataFromDOI()
+        self.DOImetadata = self.getDOImetadata(doi)
+        # append the JSON container to the containers
+        self.containerTree.append(self.getDOIMetadataContainer(self.__doi))
+
+        self.publisher = self.getPublisher()
         # get downloadable files information
-        self.getFileInfoOfDOI()
+        self.filesOfDOI = self.publisher.getFileInfo()
         # download the files
-        self.downloadFiles(self.sourceFiles)
+        self.downloadFiles(self.filesOfDOI)
+
+        # self.getMetadataFromPublisher()
+
+        # self.getFileInfoFromPublisher()
+
 
     def getDOI(self):
         """
@@ -88,25 +104,19 @@ class ResourceManager:
             return False
         return True
 
-    def getMetadataFromDOI(self):
-
-        pass
-    def getFileInfoOfDOI(self):
-        """
-        Gets the downloadable files information from the data publisher
-        """
+    def getMetadataFromPublisher(self):
         try:
-            metadataJSON = self.getMetadataJSON(self.__doi)
+            RAmetadata = self.getDOImetadata(self.__doi)
         except DOIdataRetrievalException as e:
             print("Error occurred while retrieving metadata.")
             print(e.message)
             return None
         else:
-            publisher = metadataJSON['data']['attributes']['publisher']
-            print("obtaining data from publisher ({}) ...".format(publisher))
+            publisher = RAmetadata['data']['attributes']['publisher']
+            print("obtaining metadata from publisher ({}) ...".format(publisher))
 
             if publisher == "Zenodo":
-                zenodo_id = metadataJSON['data']['attributes']['suffix'].split(".")[-1]
+                zenodo_id = RAmetadata['data']['attributes']['suffix'].split(".")[-1]
                 self.publisher = PublisherFactory.createHandler(publisher, zenodo_id)
                 self.sourceFiles = self.publisher.getFileInfo()
             else:
@@ -115,6 +125,33 @@ class ResourceManager:
             print(" ... successful.\n")
 
         return
+
+        pass
+
+    def getPublisher(self):
+        """
+        Gets the Publisher instance based on DOI record
+        """
+
+        try:
+            DOImetadata = self.getDOImetadata(self.__doi)
+        except DOIdataRetrievalException as e:
+            print("Error occurred while retrieving metadata.")
+            print(e.message)
+            return None
+        else:
+            publisherKey = DOImetadata['data']['attributes']['publisher']
+            print("obtaining data from publisher ({}) ...".format(publisherKey))
+
+            if publisherKey == "Zenodo":
+                zenodo_id = DOImetadata['data']['attributes']['suffix'].split(".")[-1]
+                publisher = PublisherFactory.createHandler(publisherKey, zenodo_id)
+            else:
+                raise DOIdataRetrievalException("Unsupported data repository - currently only implemented for Zenodo")
+            # TODO implement other data providers
+            print(" ... successful.\n")
+
+        return publisher
 
     @staticmethod
     def getRegistrationAgencyOfDOI(doi, meta=False):
@@ -157,7 +194,7 @@ class ResourceManager:
 
 
     @staticmethod
-    def getMetadataJSON(doi):
+    def getDOImetadata(doi):
         """
         Get metadata in JSON from registration agency for provided DOI
 
@@ -192,46 +229,8 @@ class ResourceManager:
             print("Unsupported registration agency '{}'".format(RA))
             # raise DOIdataRetrievalException("Unsupported registration agency '{}'".format(RA))
 
-    @staticmethod
-    def getFileInfoFromZenodo(zenodo_id):
-        """
-        Collect resource files information from Zenodo record
-
-        :param zenodo_id: Zenodo record identifier
-        :return: dictionary of file info [{filename: name of the file, id: file id, size: file size, checksum: checksum, source_url: download link, local_path: path to local copy}, ...]
-        """
-
-        try:
-            response = requests.get("https://zenodo.org/api/records/" + zenodo_id).json()
-
-        except requests.exceptions.ConnectionError:
-            print("A connection error occurred. Check your internet connection.")
-        except requests.exceptions.Timeout:
-            print("The request timed out.")
-        except requests.exceptions.HTTPError as e:
-            print("HTTP Error:", e)
-        except requests.exceptions.RequestException as e:
-            print("An error occurred:", e)
-        else:
-
-            URLroot = response['links']['files']
-            if isinstance(response['files'], list):
-                allFilesInfo = []
-                for i in range(0, len(response['files'])):
-                    fileinfo = {}
-                    key = response['files'][i]['key']
-                    id = response['files'][i]['id']
-                    size = response['files'][i]['size']
-                    checksum = response['files'][i]['checksum']
-                    source_url = URLroot+"/"+key
-                    fileinfo.update({'filename': key, 'id': id, 'size': size, 'checksum': checksum, 'source_url': source_url, 'local_path': None})
-
-                    allFilesInfo.append(fileinfo)
-                return (allFilesInfo)
-            else:
-                raise DOIdataRetrievalException(
-                    "Dataset files can not be retrieved - incorrect response structure.")
-                return None
+    def getDOIMetadataContainer(self, DOImetadatada):
+        return ContainerHandlerFactory.createHandler("json", "Resource DOI metadata JSON", DOImetadatada)
 
     def downloadFiles(self, unzip=True):
         """
@@ -240,58 +239,61 @@ class ResourceManager:
         :param unzip: if the downloaded file is a .zip archive it will be extracted if unzip=True
         :return: dictionary of file types for input URLs
         """
-        # create the target directory if not exists
-        print("downloading remote files to local storage ('{}') ...".format(self.tempDir))
 
-        if not os.path.isdir(self.tempDir):
-            os.mkdir(self.tempDir)
+        if len(self.filesOfDOI) == 0:
+            print("The file list is empty.\n")
+        else:
+            # create the target directory if not exists
+            print("downloading remote files to local storage ('{}') ...".format(self.tempDir))
 
-        result = {}
-        for sourceFile in self.sourceFiles:
-            url = sourceFile['source_url']
-            local_file_path = os.path.join(self.tempDir, sourceFile['filename'])
+            if not os.path.isdir(self.tempDir):
+                os.mkdir(self.tempDir)
+            result = {}
+            for sourceFile in self.filesOfDOI:
+                url = sourceFile['source_url']
+                local_file_path = os.path.join(self.tempDir, sourceFile['filename'])
 
-            try:
-                response = requests.get(url+"/content")
-            except requests.exceptions.ConnectionError:
-                print("\t\tA connection error occurred. Check your internet connection.")
-                return False
-            except requests.exceptions.Timeout:
-                print("\t\tThe request timed out.")
-                return False
-            except requests.exceptions.HTTPError as e:
-                print("\t\tHTTP Error:", e)
-                return False
-            except requests.exceptions.RequestException as e:
-                print("\t\tAn error occurred:", e)
-                return False
-            else:
-                # the parameter download = 1 is specific to Zenodo
-                if response.ok:
-                    with open(local_file_path, mode="wb") as filesave:
-                        filesave.write(response.content)
-
-                    # write local path of downloaded file to its dictionary
-                    sourceFile['local_path'] = local_file_path
-
-                    # create a container from the file with all related actions
-                    newContainer = ContainerHandlerFactory.createHandler('filesystem', sourceFile['filename'], local_file_path)
-                    self.containerTree.append(newContainer)
-                    #
-                    # if (local_file_path.endswith(".zip") and unzip):
-                    #     self.extractZipFile(local_file_path)
-                    #     result[url] = "unzipped zip file"
-                    # else:
-                    #     result[url] = "raw file"
-                else:
-                    # something needs to be done if the response is not OK ...
-                    print("\t\tThe response was not OK!")
-                    sourceFile['local_path'] = None
-
+                try:
+                    response = requests.get(url+"/content")
+                except requests.exceptions.ConnectionError:
+                    print("\tA connection error occurred. Check your internet connection.")
                     return False
+                except requests.exceptions.Timeout:
+                    print("\tThe request timed out.")
+                    return False
+                except requests.exceptions.HTTPError as e:
+                    print("\tHTTP Error:", e)
+                    return False
+                except requests.exceptions.RequestException as e:
+                    print("\tAn error occurred:", e)
+                    return False
+                else:
+                    # the parameter download = 1 is specific to Zenodo
+                    if response.ok:
+                        with open(local_file_path, mode="wb") as filesave:
+                            filesave.write(response.content)
 
-        print(" ... successful\n")
-        return result
+                        # write local path of downloaded file to its dictionary
+                        sourceFile['local_path'] = local_file_path
+
+                        # create a container from the file with all related actions
+                        newContainer = ContainerHandlerFactory.createHandler('filesystem', sourceFile['filename'], local_file_path)
+                        self.containerTree.append(newContainer)
+                        #
+                        # if (local_file_path.endswith(".zip") and unzip):
+                        #     self.extractZipFile(local_file_path)
+                        #     result[url] = "unzipped zip file"
+                        # else:
+                        #     result[url] = "raw file"
+                    else:
+                        # something needs to be done if the response is not OK ...
+                        print("\t\tThe response was not OK!")
+                        sourceFile['local_path'] = None
+
+                        return False
+
+            print(" ... successful\n")
+            return result
 
 
     def uploadFilesFromSession(self, files):
@@ -363,8 +365,7 @@ class ContainerHandlerFactory:
     containers = {}
     # the one and only instance
     _instance = None
-    def __init__(self, uri):
-
+    def __init__(self):
         def __new__(class_, *args, **kwargs):
             if not isinstance(class_._instance, class_):
                 class_._instance = object.__new__(class_, *args, **kwargs)
@@ -374,7 +375,7 @@ class ContainerHandlerFactory:
     @classmethod
     def registerContainerType(cls, containerTypeClass, key):
         cls.containerTypes[key] = containerTypeClass
-        # print("DatasetHandler of type '{}' registered".format(key))
+        print("DatasetHandler '{}' registered".format(key))
         return
 
     @classmethod
@@ -384,7 +385,7 @@ class ContainerHandlerFactory:
         Keeps track of all the instances created
         """
         if containerType not in cls.containerTypes.keys():
-            raise ValueError("Unsupported dataset handler type '{}'".format(containerType))
+            raise ValueError("Unsupported container handler type '{}'. Supported are: {}".format(containerType, ",".join(["'"+k+"'" for k in cls.containerTypes.keys()])))
         else:
             # assign id to container - unique in the ResourceManager scope
             newContainer = cls.containerTypes[containerType](*args)
@@ -441,7 +442,7 @@ class PublisherFactory:
 
     # the one and only instance
     _instance = None
-    def __init__(self, uri):
+    def __init__(self):
 
         def __new__(class_, *args, **kwargs):
             if not isinstance(class_._instance, class_):
@@ -477,8 +478,8 @@ class Publisher():
         self.publisherName = type(self).publisherName
 
     def getFileInfo(self, *args):
-
         pass
+
     def getMetadata(self, *args):
         pass
 

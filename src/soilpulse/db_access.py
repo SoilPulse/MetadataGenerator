@@ -140,8 +140,8 @@ class EntityKeywordsDB:
 
     @classmethod
     def registerKeywordsDB(cls, type, dbFilename):
-        print("registering db: {} as {}".format(os.path.join(cls.dbDir, dbFilename), type))
         cls.DBs.update({type:os.path.join(cls.dbDir, dbFilename)})
+        print("Keywords database {} as '{}'".format(os.path.join(cls.dbDir, dbFilename), type))
         return
 
     @classmethod
