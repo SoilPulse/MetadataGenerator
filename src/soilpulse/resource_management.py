@@ -29,6 +29,8 @@ class ResourceManager:
         self.registrationAgency = None
         # metadata package from DOI record
         self.DOImetadata = None
+        # publisher instance
+        self.publisher = None
         # dictionary of source files that were added to the resource by any way
         self.filesOfDOI = {}
         # the tree structure of included files and other container types
@@ -57,7 +59,7 @@ class ResourceManager:
         if self.__doi:
             # and the new value differs from the previous one
             if self.__doi != doi:
-                # remove the files that were downladed from the DOI record before
+                # remove the files that were downloaded from the DOI record before
                 self.deleteAllResourceFiles()
                 pass
         # set the new DOI
@@ -65,11 +67,13 @@ class ResourceManager:
         # populate the registration agency
         self.registrationAgency = ResourceManager.getRegistrationAgencyOfDOI(self.__doi)
         # populate the metadata properties
-        self.DOImetadata = self.getDOImetadata(doi)
-        # append the JSON container to the containers
-        self.containerTree.append(self.getDOIMetadataContainer(self.__doi))
-
-        self.publisher = self.getPublisher()
+        self.DOImetadata = self.getDOImetadata(self.__doi)
+        # append the DOI metadata JSON container to the resourceManagers containers
+        self.containerTree.append(ContainerHandlerFactory.createHandler("json", "Resource DOI metadata JSON", self.DOImetadata))
+        # populate publisher with Publisher class instance
+        self.publisher = self.getPublisher(self.DOImetadata)
+        # append the publisher metadata JSON container to the resourceManagers containers
+        self.containerTree.append(ContainerHandlerFactory.createHandler("json", "{} metadata JSON".format(self.publisher.name), self.publisher.getMetadata()))
         # get downloadable files information
         self.filesOfDOI = self.publisher.getFileInfo()
         # download the files
@@ -128,30 +132,32 @@ class ResourceManager:
 
         pass
 
-    def getPublisher(self):
+    def getPublisher(self, DOI_metadata):
         """
-        Gets the Publisher instance based on DOI record
+        Gets the Publisher instance from the DOI metadata
         """
-
-        try:
-            DOImetadata = self.getDOImetadata(self.__doi)
-        except DOIdataRetrievalException as e:
-            print("Error occurred while retrieving metadata.")
-            print(e.message)
-            return None
+        if not DOI_metadata:
+            try:
+                DOImetadata = self.getDOImetadata(self.__doi)
+            except DOIdataRetrievalException as e:
+                print("Error occurred while retrieving DOI record metadata.")
+                print(e.message)
+                return None
         else:
-            publisherKey = DOImetadata['data']['attributes']['publisher']
-            print("obtaining data from publisher ({}) ...".format(publisherKey))
-
-            if publisherKey == "Zenodo":
-                zenodo_id = DOImetadata['data']['attributes']['suffix'].split(".")[-1]
-                publisher = PublisherFactory.createHandler(publisherKey, zenodo_id)
+            try:
+                publisherKey = DOI_metadata['data']['attributes']['publisher']
+            except AttributeError as e:
+                print("Couldn't find publisher value in the DOI registration agency metadata respnse.")
+                print(e.message)
             else:
-                raise DOIdataRetrievalException("Unsupported data repository - currently only implemented for Zenodo")
-            # TODO implement other data providers
-            print(" ... successful.\n")
+                if publisherKey == "Zenodo":
+                    zenodo_id = DOI_metadata['data']['attributes']['suffix'].split(".")[-1]
+                    publisher = PublisherFactory.createHandler(publisherKey, zenodo_id)
+                    return publisher
+                else:
+                    raise DOIdataRetrievalException("Unsupported data repository - currently only implemented for Zenodo")
+                return None
 
-        return publisher
 
     @staticmethod
     def getRegistrationAgencyOfDOI(doi, meta=False):
@@ -228,9 +234,6 @@ class ResourceManager:
         else:
             print("Unsupported registration agency '{}'".format(RA))
             # raise DOIdataRetrievalException("Unsupported registration agency '{}'".format(RA))
-
-    def getDOIMetadataContainer(self, DOImetadatada):
-        return ContainerHandlerFactory.createHandler("json", "Resource DOI metadata JSON", DOImetadatada)
 
     def downloadFiles(self, unzip=True):
         """
@@ -322,7 +325,7 @@ class ResourceManager:
         """
         print("{}\ncontainer tree:".format(self.name))
         for container in self.containerTree:
-            container.showContents("")
+            container.showContents(0)
 
 
     def showDatasetsContents(self):
@@ -411,7 +414,7 @@ class ContainerHandler:
         self.name = name
         # data containers that the container contains
         self.containers = []
-        # metadata entities that the container containes
+        # metadata entities that the container contains
         self.metadataElements = []
 
         # make the class properties accessible through instance properties
@@ -419,15 +422,23 @@ class ContainerHandler:
         self.containerFormat = type(self).containerFormat
         self.keywordsDBname = type(self).keywordsDBname
 
-    def showContents(self, t = ""):
+    def showContents(self, depth = 0, ind = ". "):
         """
-        Print basic info about the container and invokes showContents on all of its containers
-        """
-        print("{}{} - {} ({}) [{}]".format(t, self.id, self.name, self.containerType, len(self.containers)))
-        t += "\t"
+        Prints basic info about the container and invokes showContents on all of its containers
 
-        for cont in self.containers:
-            cont.showContents(t)
+        :param depth: current depth of showKeyValueStructure recursion
+        :param ind: string of a single level indentation
+        """
+        # get the indentation string
+        t = ind * depth
+        # print attributes of this container
+        print("{}{} - {} ({}) [{}]".format(t, self.id, self.name, self.containerType, len(self.containers)))
+
+        # invoke showContents of subcontainers
+        if self.containers:
+            depth += 1
+            for cont in self.containers:
+                cont.showContents(depth)
 
     def createTree(self):
         pass
@@ -464,18 +475,18 @@ class PublisherFactory:
             raise ValueError("Unsupported publisher handler type '{}'.\nRegistred data publishers are: {}".format(publisherKey, ",".join(["'"+k+"'" for k in cls.publishers.keys()])))
         else:
             newPublisher = cls.publishers[publisherKey](*args)
-            cls.publishers.update({newPublisher.publisherKey: newPublisher})
+            cls.publishers.update({newPublisher.key: newPublisher})
 
             return newPublisher
 
 class Publisher():
-    publisherKey = None
-    publisherName = None
+    key = None
+    name = None
 
     def __init__(self):
         # make the class properties accessible through instance properties
-        self.publisherKey = type(self).publisherKey
-        self.publisherName = type(self).publisherName
+        self.key = type(self).key
+        self.name = type(self).name
 
     def getFileInfo(self, *args):
         pass

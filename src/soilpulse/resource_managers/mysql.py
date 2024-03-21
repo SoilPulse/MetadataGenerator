@@ -4,14 +4,11 @@
 from src.soilpulse.resource_management import ContainerHandler, ContainerHandlerFactory, Pointer, Crawler
 from src.soilpulse.db_access import EntityKeywordsDB
 
-type = 'mysql'
-format = "MySQL"
-keywordsDBfilename = "keywords_mysql"
 
 class MySQLContainer(ContainerHandler):
-    containerType = type
-    containerFormat = format
-    keywordsDBname = keywordsDBfilename
+    containerType = 'mysql'
+    containerFormat = "MySQL"
+    keywordsDBname = "keywords_mysql"
 
     def __init__(self, name):
         super(MySQLContainer, self).__init__(name)

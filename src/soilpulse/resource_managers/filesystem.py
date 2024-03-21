@@ -14,14 +14,10 @@ from src.soilpulse.db_access import EntityKeywordsDB
 # just for the standalone functions - will be changed
 from src.soilpulse.resource_management import *
 
-type = 'filesystem'
-format = "File system"
-keywordsDBfilename = "keywords_filesystem"
-
 class FileSystemContainer(ContainerHandler):
-    containerType = type
-    containerFormat = format
-    keywordsDBname = keywordsDBfilename
+    containerType = 'filesystem'
+    containerFormat = "File system"
+    keywordsDBname = "keywords_filesystem"
 
     def __init__(self, name, path):
         super(FileSystemContainer, self).__init__(name)
@@ -39,16 +35,21 @@ class FileSystemContainer(ContainerHandler):
         if self.fileExtension == "zip":
             self.containers = self.extractZipFile(self.path)
 
-    def showContents(self, t = ""):
+    def showContents(self, depth = 0, ind = ". "):
         """
         Print basic info about the container and invokes showContents on all of its containers
+
+        :param depth: current depth of showKeyValueStructure recursion
+        :param ind: string of a single level indentation
         """
+        t = ind * depth
         dateFormat = "%d.%m.%Y"
         print("{}{} - {} ({}, {}, {}/{}) [{}]".format(t, self.id, self.name, self.containerType, self.getFileSizeFormated(), self.dateCreated.strftime(dateFormat), self.dateLastModified.strftime(dateFormat), len(self.containers)))
-        t += "\t"
 
-        for cont in self.containers:
-            cont.showContents(t)
+        if self.containers:
+            depth += 1
+            for cont in self.containers:
+                cont.showContents(depth)
 
     def getMimeType(self):
         # self.mimeType = magic.from_file(self.path)

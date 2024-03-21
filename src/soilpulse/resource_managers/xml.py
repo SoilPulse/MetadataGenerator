@@ -4,14 +4,11 @@
 from src.soilpulse.resource_management import ContainerHandler, ContainerHandlerFactory, Pointer, Crawler
 from src.soilpulse.db_access import EntityKeywordsDB
 
-type = 'xml'
-format = "XML"
-keywordsDBfilename = "keywords_xml"
 
 class XMLContainer(ContainerHandler):
-    containerType = type
-    containerFormat = format
-    keywordsDBname = keywordsDBfilename
+    containerType = 'xml'
+    containerFormat = "XML"
+    keywordsDBname = "keywords_xml"
 
     def __init__(self, name, doi = None):
         super(XMLContainer, self).__init__(name, doi)
