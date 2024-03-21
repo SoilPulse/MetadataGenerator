@@ -25,7 +25,7 @@ class JSONContainer(ContainerHandler):
         Prints basic info about the container and invokes showContents on all of its containers
 
         :param depth: current depth of showKeyValueStructure recursion
-        :param ind: string of a single level indentation
+        :param ind: string used for one level of indentation
         """
         t = ind * depth
 
@@ -46,13 +46,14 @@ class JSONContainer(ContainerHandler):
         :param t: the indentation from previous level of container
         :param depth: current depth of showKeyValueStructure recursion
         :param depthLimit: maximum depth of recursion to go to
-        :param ind: string of a single level indentation
+        :param ind: string used for one level of indentation
         :param sep: outer/inner indentation separator (outer is indentation from previous level of container, inner is within the JSON)
 
         :return: nothing
         """
         if depthLimit == 0 or depth < depthLimit:
             tt = ind * depth
+
             if isinstance(json, dict):
                 for k, v in json.items():
                     if isinstance(v, dict):
@@ -72,11 +73,14 @@ class JSONContainer(ContainerHandler):
                                 print(f"{t}{sep}{tt}{k}:")
                                 depth += 1
                                 self.showKeyValueStructure(v, t, depth, depthLimit)
+                        else:
+                            print(f"{t}{sep}{tt}{k}:")
+                            # depth += 1
+                            self.showKeyValueStructure(v, t, depth, depthLimit)
                     else:
                         print(f"{t}{sep}{tt}{k}: {v}")
 
             elif isinstance(json, list):
-                depth += 1
                 i = 0
                 for v in json:
                     if isinstance(v, (dict, list)):

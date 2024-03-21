@@ -31,12 +31,12 @@ class ResourceManager:
         self.DOImetadata = None
         # publisher instance
         self.publisher = None
-        # dictionary of source files that were added to the resource by any way
+        # dictionary of files that were published with the resource
         self.filesOfDOI = {}
         # the tree structure of included files and other container types
         self.containerTree = []
         # the DOI is private so it can't be changed without consequences - only setDOI(doi) can be used
-        self.__doi = doi
+        self.__doi = None
         # dedicated directory where files can be stored
         self.tempDir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "downloaded_files")
         # language of the resource
@@ -74,8 +74,8 @@ class ResourceManager:
         self.publisher = self.getPublisher(self.DOImetadata)
         # append the publisher metadata JSON container to the resourceManagers containers
         self.containerTree.append(ContainerHandlerFactory.createHandler("json", "{} metadata JSON".format(self.publisher.name), self.publisher.getMetadata()))
-        # get downloadable files information
-        self.filesOfDOI = self.publisher.getFileInfo()
+        # get downloadable files information from publisher
+        self.publishedFiles = self.publisher.getFileInfo()
         # download the files
         self.downloadFiles(self.filesOfDOI)
 
@@ -107,30 +107,6 @@ class ResourceManager:
         if failed > 0:
             return False
         return True
-
-    def getMetadataFromPublisher(self):
-        try:
-            RAmetadata = self.getDOImetadata(self.__doi)
-        except DOIdataRetrievalException as e:
-            print("Error occurred while retrieving metadata.")
-            print(e.message)
-            return None
-        else:
-            publisher = RAmetadata['data']['attributes']['publisher']
-            print("obtaining metadata from publisher ({}) ...".format(publisher))
-
-            if publisher == "Zenodo":
-                zenodo_id = RAmetadata['data']['attributes']['suffix'].split(".")[-1]
-                self.publisher = PublisherFactory.createHandler(publisher, zenodo_id)
-                self.sourceFiles = self.publisher.getFileInfo()
-            else:
-                raise DOIdataRetrievalException("Unsupported data repository - currently only implemented for Zenodo")
-            # TODO implement other data providers
-            print(" ... successful.\n")
-
-        return
-
-        pass
 
     def getPublisher(self, DOI_metadata):
         """
@@ -243,7 +219,7 @@ class ResourceManager:
         :return: dictionary of file types for input URLs
         """
 
-        if len(self.filesOfDOI) == 0:
+        if len(self.publishedFiles) == 0:
             print("The file list is empty.\n")
         else:
             # create the target directory if not exists
@@ -252,7 +228,7 @@ class ResourceManager:
             if not os.path.isdir(self.tempDir):
                 os.mkdir(self.tempDir)
             result = {}
-            for sourceFile in self.filesOfDOI:
+            for sourceFile in self.publishedFiles:
                 url = sourceFile['source_url']
                 local_file_path = os.path.join(self.tempDir, sourceFile['filename'])
 
