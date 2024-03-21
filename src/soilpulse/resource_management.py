@@ -77,7 +77,7 @@ class ResourceManager:
         # get downloadable files information
         self.filesOfDOI = self.publisher.getFileInfo()
         # download the files
-        self.downloadFiles(self.filesOfDOI)
+        self.downloadFiles()
 
         # self.getMetadataFromPublisher()
 
@@ -235,14 +235,12 @@ class ResourceManager:
             print("Unsupported registration agency '{}'".format(RA))
             # raise DOIdataRetrievalException("Unsupported registration agency '{}'".format(RA))
 
-    def downloadFiles(self, unzip=True):
+    def downloadFiles(self):
         """
-        Download files that are stored in self.sourceFiles dictionary
+        Download files that are stored in self.sourceFiles dictionary.
 
-        :param unzip: if the downloaded file is a .zip archive it will be extracted if unzip=True
         :return: dictionary of file types for input URLs
         """
-
         if len(self.filesOfDOI) == 0:
             print("The file list is empty.\n")
         else:
@@ -282,12 +280,7 @@ class ResourceManager:
                         # create a container from the file with all related actions
                         newContainer = ContainerHandlerFactory.createHandler('filesystem', sourceFile['filename'], local_file_path)
                         self.containerTree.append(newContainer)
-                        #
-                        # if (local_file_path.endswith(".zip") and unzip):
-                        #     self.extractZipFile(local_file_path)
-                        #     result[url] = "unzipped zip file"
-                        # else:
-                        #     result[url] = "raw file"
+
                     else:
                         # something needs to be done if the response is not OK ...
                         print("\t\tThe response was not OK!")
