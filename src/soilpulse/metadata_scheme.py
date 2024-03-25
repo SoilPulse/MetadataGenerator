@@ -4,7 +4,7 @@
 """
 
 
-from .exceptions import DatabaseFetchError
+from .exceptions import DatabaseFetchError, ValueNotInDomainError
 from .db_access import EntitySearchPatternsDB
 from .db_access import EntityKeywordsDB
 
@@ -291,6 +291,7 @@ class GeographicalMetadataEntity(MetadataEntity):
         # the EPSG code of the coordinate system of the element
         self.EPSGcode = epsg
 
+
 class SubjectMetadataEntity(MetadataEntity):
     """
     Abstract interface class of metadata element that represents a person or an institution that is responsible
@@ -298,24 +299,13 @@ class SubjectMetadataEntity(MetadataEntity):
     dataset) the data, or has relation to authors of the publication
     """
 
-    roleTypes = []
+    roleTypes = {}
     def __init__(self, value):
         # the actual value of the metadata element
         super(SubjectMetadataEntity, self).__init__(value)
 
         return
 
-class OrganizationMetadataEntity(MetadataEntity):
-    """
-    Abstract interface class of metadata element that represents some institutional subject that is responsible
-    for producing (collecting, managing, distributing, or otherwise contributing to the development of the
-    dataset) the data, or has relation to authors of the publication
-    """
-
-    def __init__(self, value):
-        # the actual value of the metadata element
-        super(OrganizationMetadataEntity, self).__init__(value)
-        return
 
 class Title(TextMetadataEntity):
     ID = "1"
@@ -486,9 +476,10 @@ class ResponsiblePerson(SubjectMetadataEntity):
     description = "Person involved in producing (collecting, managing, distributing, or otherwise\
             contributing to the development of the dataset) the data, or the authors of the publication, \
             in priority order. Will be cited if Author is used as contact type."
-    minMultiplicity = None
+    minMultiplicity = 2
     maxMultiplicity = None
 
+    # supported roleType values list
     roleTypes = {"Data Collector": 0,
                  "Data Curator": 0,
                  "Editor": 0,
@@ -512,6 +503,33 @@ class ResponsiblePerson(SubjectMetadataEntity):
                  "User": 0
                  }
 
+    def __init__(self, roleType):
+        # the roleType needs to be checked against ResponsiblePerson allowed roleTypes list
+        self.__roleType = self.setRoleType(roleType)
+
+        self.familyName = None
+        self.givenName = None
+        self.organization = None
+        self.position = None
+        # list of Identifier MetadataEntity instances
+        self.identifiers = []
+        self.phone =  None
+        self.fascimile = None
+        # an Address MetadataEntity instance
+        self.address = None
+        self.email = None
+
+
+
+    def setRoleType(self, roleType):
+        """
+        Setter for private __roleType attribute
+        """
+        if roleType not in ResponsiblePerson.roleTypes.keys():
+            raise ValueNotInDomainError("'{}' role is not supported for {}\nSupported role types are: {}".format(roleType, type(ResponsiblePerson), ", ".join(["'"+r+"'" for r in ResponsiblePerson.roleTypes.keys()])))
+        else:
+            self.__roleType = roleType
+
 EntityManager.registerMetadataEntityType(ResponsiblePerson)
 
 class ResponsibleOrganization(SubjectMetadataEntity):
@@ -519,11 +537,11 @@ class ResponsibleOrganization(SubjectMetadataEntity):
     key = "responsible_organization"
     name = "Responsible organization"
     description = "Institution involved in producing (collecting, managing, distributing, or otherwise\
-            contributing to the development of the dataset) the data, or the authors of the publication, \
+            contributing to the development of the dataset) the data, or having a relation to the authors of the publication, \
             in priority order."
     minMultiplicity = None
     maxMultiplicity = None
-
+    # supported roleType values list
     roleTypes = {"Hosting institution": 0,
                  "Registration agency": 0,
                  "Registration authority": 0,
@@ -538,17 +556,30 @@ class ResponsibleOrganization(SubjectMetadataEntity):
                  "Resource provider": 0
                  }
 
+    def __init__(self, roleType):
+        # the roleType needs to be checked against allowed roleTypes list
+        self.__roleType = self.setRoleType(roleType)
+
+    def setRoleType(self, roleType):
+        """
+        Setter for private __roleType attribute
+        """
+        if roleType not in ResponsibleOrganization.roleTypes.keys():
+            raise ValueNotInDomainError("'{}' role is not supported for {}\nSupported role types are: {}".format(roleType, type(ResponsibleOrganization), ", ".join(["'"+r+"'" for r in ResponsibleOrganization.roleTypes.keys()])))
+        else:
+            self.__roleType = roleType
+
 EntityManager.registerMetadataEntityType(ResponsibleOrganization)
 
-# class Dummy(MetadataEntity):
-#     ID = ""
-#     key = ""
-#     name = ""
-#     description = ""
-#     minMultiplicity = None
-#     maxMultiplicity = None
-#
-# EntityManager.registerMetadataEntityType()
+class FundingReference(MetadataEntity):
+    ID = "7"
+    key = "funding_reference"
+    name = "Funding reference"
+    description = "Information about financial support (funding) for the dataset being registered."
+    minMultiplicity = 1
+    maxMultiplicity = None
+
+EntityManager.registerMetadataEntityType(FundingReference)
 #
 #
 # class Dummy(MetadataEntity):
