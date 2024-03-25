@@ -231,7 +231,8 @@ class ResourceManager:
             result = {}
             for sourceFile in self.publishedFiles:
                 url = sourceFile['source_url']
-                local_file_path = os.path.join(self.tempDir, sourceFile['filename'])
+                filename = sourceFile['filename'].replace("\\", "_")
+                local_file_path = os.path.join(self.tempDir, filename)
 
                 try:
                     response = requests.get(url+"/content")
