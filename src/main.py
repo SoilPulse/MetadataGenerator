@@ -33,13 +33,17 @@ if __name__ == "__main__":
 
         # loads metadata information that are part of data obtained from DOI record or data host record
 
+    # download files associated with the publisher record
+    RM.downloadPublishedFiles()
+    # # show the whole container tree
+    # RM.showContainerTree()
 
-    newDataset = Dataset("Dataset 1")
-    RM.addDataset(newDataset)
-    # RM.setDOI("10.5281/zenodo.665415")
-
-    RM.showContainerTree()
-
+    # new empty dataset is created and added to the ResourceManager
+    newDataset = RM.newDataset("Dataset test 1")
+    # add some containers from the ResourceManager - will be done through the GUI
+    newDataset.addContainers(RM.getContainerByID([1, 2, 6]))
+    # show the dataset's container tree
+    newDataset.showContainerTree()
 
 
     ###### dataset crawling and metadata structure mapping ################

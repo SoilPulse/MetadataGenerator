@@ -47,7 +47,7 @@ class FileSystemContainer(ContainerHandler):
         """
         t = ind * depth
         dateFormat = "%d.%m.%Y"
-        print("{}{} - {} ({}, {}, {}/{}) [{}]".format(t, self.id, self.name, self.containerType, self.getFileSizeFormated(), self.dateCreated.strftime(dateFormat), self.dateLastModified.strftime(dateFormat), len(self.containers)))
+        print(f"{t}{self.id} - {self.name} ({self.containerType}, {self.getFileSizeFormated()}, {self.dateCreated.strftime(dateFormat)}/{self.dateLastModified.strftime(dateFormat)}) [{len(self.containers)}]")
 
         if self.containers:
             depth += 1
@@ -62,6 +62,9 @@ class FileSystemContainer(ContainerHandler):
         return os.stat(self.path).st_size if os.path.isfile(self.path) else None
 
     def getFileSizeFormated(self):
+        """
+        Returns a string of dynamically formatted file size
+        """
         suffix = "B"
         size = self.getFileSize()
         if size:
@@ -111,7 +114,8 @@ class FileSystemContainer(ContainerHandler):
 
         return tree
 
-
+    def getCrawled(self):
+        self.crawler.crawl()
 
 ContainerHandlerFactory.registerContainerType(FileSystemContainer, FileSystemContainer.containerType)
 EntityKeywordsDB.registerKeywordsDB(FileSystemContainer.containerType, FileSystemContainer.keywordsDBname)

@@ -38,3 +38,8 @@ class LocalFileManipulationError(Exception):
 
     def __init__(self, message):
         self.message = "Problem occured while manipulating files on SoilPulse server:\n" + message
+
+class ContainerStructureError(Exception):
+
+    def __init__(self, message):
+        self.message = "Container was requested that doesn't exist within this scope:\n" + message

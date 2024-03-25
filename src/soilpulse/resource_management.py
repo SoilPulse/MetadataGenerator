@@ -5,7 +5,7 @@ import requests
 import os
 
 from .metadata_scheme import MetadataStructureMap
-from .exceptions import DOIdataRetrievalException, LocalFileManipulationError
+from .exceptions import DOIdataRetrievalException, LocalFileManipulationError, ContainerStructureError
 
 class ResourceManager:
     """
@@ -31,8 +31,10 @@ class ResourceManager:
         self.DOImetadata = None
         # publisher instance
         self.publisher = None
-        # dictionary of files that were published with the resource
-        self.filesOfDOI = {}
+        # dictionary of files that were published with the resource - publicly available through url
+        self.publishedFiles = {}
+        # uploaded files directly from the users computer
+        self.uploadedFiles = {}
         # the tree structure of included files and other container types
         self.containerTree = []
         # the DOI is private so it can't be changed without consequences - only setDOI(doi) can be used
@@ -69,15 +71,14 @@ class ResourceManager:
         # populate the metadata properties
         self.DOImetadata = self.getDOImetadata(self.__doi)
         # append the DOI metadata JSON container to the resourceManagers containers
-        self.containerTree.append(ContainerHandlerFactory.createHandler("json", "Resource DOI metadata JSON", self.DOImetadata))
+        self.containerTree.append(ContainerHandlerFactory().createHandler("json", "Resource DOI metadata JSON", self.DOImetadata))
         # populate publisher with Publisher class instance
         self.publisher = self.getPublisher(self.DOImetadata)
         # append the publisher metadata JSON container to the resourceManagers containers
-        self.containerTree.append(ContainerHandlerFactory.createHandler("json", "{} metadata JSON".format(self.publisher.name), self.publisher.getMetadata()))
+        self.containerTree.append(ContainerHandlerFactory().createHandler("json", "{} metadata JSON".format(self.publisher.name), self.publisher.getMetadata()))
         # get downloadable files information from publisher
         self.publishedFiles = self.publisher.getFileInfo()
-        # download the files
-        self.downloadFiles(self.filesOfDOI)
+
 
         # self.getMetadataFromPublisher()
 
@@ -211,7 +212,7 @@ class ResourceManager:
             print("Unsupported registration agency '{}'".format(RA))
             # raise DOIdataRetrievalException("Unsupported registration agency '{}'".format(RA))
 
-    def downloadFiles(self, unzip=True):
+    def downloadPublishedFiles(self, unzip=True):
         """
         Download files that are stored in self.sourceFiles dictionary
 
@@ -256,7 +257,7 @@ class ResourceManager:
                         sourceFile['local_path'] = local_file_path
 
                         # create a container from the file with all related actions
-                        newContainer = ContainerHandlerFactory.createHandler('filesystem', sourceFile['filename'], local_file_path)
+                        newContainer = ContainerHandlerFactory().createHandler('filesystem', sourceFile['filename'], local_file_path)
                         self.containerTree.append(newContainer)
 
                     else:
@@ -276,6 +277,22 @@ class ResourceManager:
         """
         return
 
+    def getContainerByID(self, cid):
+        if isinstance(cid, list):
+            try:
+                return [ContainerHandlerFactory.getContainerByID(c) for c in cid]
+            except:
+                raise
+        else:
+            ContainerHandlerFactory.getContainerByID(cid)
+
+    def newDataset(self, name):
+        """
+        Adds DatasetHandler instance to dataset list
+        """
+        new_dataset = Dataset(name)
+        self.datasets.append(new_dataset)
+        return new_dataset
 
     def addDataset(self, dataset):
         """
@@ -294,9 +311,12 @@ class ResourceManager:
         """
         Induces printing contents of the whole container tree
         """
+        print(80 * "=")
         print("{}\ncontainer tree:".format(self.name))
+        print(80 * "-")
         for container in self.containerTree:
             container.showContents(0)
+        print(80 * "=" + 5 * "\n")
 
 
     def showDatasetsContents(self):
@@ -319,9 +339,23 @@ class Dataset:
         # the instance of the metadata mapping
         self.metadataMap = MetadataStructureMap()
 
-    def showContents(self):
+    def addContainers(self, containers):
+        if isinstance(containers, list):
+            self.containers.extend(containers)
+        else:
+            self.containers.append(containers)
+        return
 
-        pass
+    def showContainerTree(self):
+        """
+        Induces printing contents of the whole container tree
+        """
+        print(80 * "=")
+        print(f"dataset\n'{self.name}'\ncontainer tree: ")
+        print(80 * "-")
+        for container in self.containers:
+            container.showContents(0)
+        print(80 * "=" + 2 * "\n")
 
     def checkMetadataStructure(self):
         self.metadataMap.checkConsistency()
@@ -333,18 +367,28 @@ class ContainerHandlerFactory:
 
     # directory of registered containers types classes
     containerTypes = {}
-    # next container ID
-    nextContainerID = 1
-    # all the containers created so far
-    containers = {}
+
     # the one and only instance
     _instance = None
+
+    containers = {}
+    nextContainerID = 1
+
     def __init__(self):
         def __new__(class_, *args, **kwargs):
             if not isinstance(class_._instance, class_):
                 class_._instance = object.__new__(class_, *args, **kwargs)
             return class_._instance
+    @classmethod
+    def getContainerByID(cls, cid):
+        """
+        Returns container of particular ID from inner dictionary
+        """
 
+        if cls.containers.get(cid):
+            return cls.containers.get(cid)
+        else:
+            raise ContainerStructureError(f"Container id = {cid} was never created by this factory!")
 
     @classmethod
     def registerContainerType(cls, containerTypeClass, key):
@@ -358,15 +402,16 @@ class ContainerHandlerFactory:
         Creates and returns instance of Container of given type
         Keeps track of all the instances created
         """
-        if containerType not in cls.containerTypes.keys():
+        if containerType not in ContainerHandlerFactory.containerTypes.keys():
             raise ValueError("Unsupported container handler type '{}'. Supported are: {}".format(containerType, ",".join(["'"+k+"'" for k in cls.containerTypes.keys()])))
         else:
             # assign id to container - unique in the ResourceManager scope
-            newContainer = cls.containerTypes[containerType](*args)
-            newContainer.id = cls.nextContainerID
-            cls.containers.update({newContainer.id: newContainer})
+            new_container = cls.containerTypes[containerType](*args)
+            new_container.id = cls.nextContainerID
+            cls.containers.update({new_container.id: new_container})
             cls.nextContainerID += 1
-            return newContainer
+            return new_container
+
 
 class ContainerHandler:
     """

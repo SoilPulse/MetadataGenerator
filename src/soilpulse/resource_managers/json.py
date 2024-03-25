@@ -29,8 +29,8 @@ class JSONContainer(ContainerHandler):
         """
         t = ind * depth
 
-        print("{}{} - {} ({}) [{}]".format(t, self.id, self.name, self.containerType, len(self.containers)))
-        self.showKeyValueStructure(self.content, t, 0)
+        print(f"{t}{self.id} - {self.name} ({self.containerType}) [{len(self.containers)}]")
+        # self.showKeyValueStructure(self.content, t, 0)
         if self.containers:
             depth += 1
             for cont in self.containers:
