@@ -35,6 +35,9 @@ class FileSystemContainer(ContainerHandler):
         if self.fileExtension == "zip":
             self.containers = self.extractZipFile(self.path)
 
+        elif os.path.isfile(self.path):
+            self.crawler = FilesystemCrawler(self.path)
+
     def showContents(self, depth = 0, ind = ". "):
         """
         Print basic info about the container and invokes showContents on all of its containers
@@ -107,6 +110,8 @@ class FileSystemContainer(ContainerHandler):
                 print("{} /// weird {}".format(t, os.path.join(folder, f)))
 
         return tree
+
+
 
 ContainerHandlerFactory.registerContainerType(FileSystemContainer, FileSystemContainer.containerType)
 EntityKeywordsDB.registerKeywordsDB(FileSystemContainer.containerType, FileSystemContainer.keywordsDBname)

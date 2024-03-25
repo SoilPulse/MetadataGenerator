@@ -258,12 +258,7 @@ class ResourceManager:
                         # create a container from the file with all related actions
                         newContainer = ContainerHandlerFactory.createHandler('filesystem', sourceFile['filename'], local_file_path)
                         self.containerTree.append(newContainer)
-                        #
-                        # if (local_file_path.endswith(".zip") and unzip):
-                        #     self.extractZipFile(local_file_path)
-                        #     result[url] = "unzipped zip file"
-                        # else:
-                        #     result[url] = "raw file"
+
                     else:
                         # something needs to be done if the response is not OK ...
                         print("\t\tThe response was not OK!")

@@ -53,43 +53,44 @@ class JSONContainer(ContainerHandler):
         """
         if depthLimit == 0 or depth < depthLimit:
             tt = ind * depth
-
+            depth += 1
+            # if the currently passed json is a dictionary
             if isinstance(json, dict):
-                for k, v in json.items():
-                    if isinstance(v, dict):
-                        if not json == {}:
-                            print(f"{t}{sep}{tt}{k}:")
-                            depth += 1
-                            self.showKeyValueStructure(v, t, depth, depthLimit)
-                        else:
-                            print(f"{t}{sep}{tt}{k}: {{}}")
-                    elif isinstance(v, list):
-                        if len(v) == 0:
-                            print(f"{t}{sep}{tt}{k}: []")
-                        elif len(v) == 1:
-                            if not isinstance(v, (dict, list)):
-                                print(f"{t}{sep}{tt}{k}: {v}")
+                if len(json) == 0:
+                    print(f"{t}{sep}{tt}{json}: {{}}")
+                else:
+                    for k, v in json.items():
+                        if isinstance(v, dict):
+                            if len(v) == 0:
+                                print(f"{t}{sep}{tt}{k}: {{}}")
                             else:
                                 print(f"{t}{sep}{tt}{k}:")
-                                depth += 1
+                                self.showKeyValueStructure(v, t, depth, depthLimit)
+                        elif isinstance(v, list):
+                            if len(v) == 0:
+                                #
+                                print(f"{t}{sep}{tt}{k}: []")
+                            else:
+                                print(f"{t}{sep}{tt}{k}:")
                                 self.showKeyValueStructure(v, t, depth, depthLimit)
                         else:
-                            print(f"{t}{sep}{tt}{k}:")
-                            # depth += 1
-                            self.showKeyValueStructure(v, t, depth, depthLimit)
-                    else:
-                        print(f"{t}{sep}{tt}{k}: {v}")
+                            print(f"{t}{sep}{tt}{k}: {v}")
 
             elif isinstance(json, list):
-                i = 0
-                for v in json:
-                    if isinstance(v, (dict, list)):
-                        print(f"{t}{sep}{tt}{i}:")
-                        depth += 1
-                        self.showKeyValueStructure(v, t, depth, depthLimit)
-                    else:
-                        print(f"{t}{sep}{tt}{i}: {v}")
-                    i += 1
+                if len(json) == 0:
+                    print(f"{t}{sep}{tt}: []")
+                else:
+                    i = 0
+                    for v in json:
+                        if len(v) == 0:
+                            print(f"{t}{sep}{tt}{i}: []")
+                        else:
+                            print(f"{t}{sep}{tt}{i}:")
+                            self.showKeyValueStructure(v, t, depth, depthLimit)
+                        i += 1
+            else:
+                print(f"{t}{sep}{tt}: {json}")
+
         return
 
 ContainerHandlerFactory.registerContainerType(JSONContainer, JSONContainer.containerType)

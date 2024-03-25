@@ -10,6 +10,13 @@ class MetadataSchemeException(Exception):
     def __init__(self, message):
         self.message = "Metadata structure error:\n" + message
 
+class ValueNotInDomainError(Exception):
+    """
+    This exception is raised when instance is initialized with value not present in class' allowe values list
+    """
+    def __init__(self, message):
+        self.message = "Value not in domain:\n" + message
+
 class DOIdataRetrievalException(Exception):
     """
     This exception is raised whenever there's something wrong about DOI data retrieval and manipulation
