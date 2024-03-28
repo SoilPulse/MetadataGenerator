@@ -1,6 +1,6 @@
 import requests
-from src.soilpulse.resource_management import Publisher, PublisherFactory
-from src.soilpulse.exceptions import DOIdataRetrievalException
+from .resource_management import Publisher, PublisherFactory
+from .exceptions import DOIdataRetrievalException
 
 class ZenodoPublisher(Publisher):
     key = "Zenodo"
