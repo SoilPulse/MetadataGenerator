@@ -1,13 +1,13 @@
 This is a list of expressions and their meaning in the scope of SoilPulse project
 
-data source - repository, storage, database or any other digital deposit of data suitable (desired) to be processed by SoilPulse metadata generator
+data resource - repository, storage, database or any other digital deposit of data suitable (desired) to be processed by SoilPulse metadata generator
 data provider - institution/person responsible for the data source
-data set - set of data with consistent structure saved in a particular format
+data set - set of data with consistent structure saved in a particular format. A data set represents the view of a researcher on a collection of data, which can also be arranged to another data set through a recombination or restructuring of the data points.
 metadata generator - set of tools for handling (reading, deriving, storing, retrieving) metadata or data with the aim to gain metadata image of a data source described by SoilPulse entity and relationship model
 entity and relationship model - code realization of representation, handling and storing of the metadata elements and their mutual bonds, the model uses entity definition of existing metadata scheme (metadata standard)
-metadata standard (= metadata scheme) - existing metadata elements definition established by a third party (e.g. BonaRes metadata sheme)
-metadata template - definition of metadata elements set with assigned mandatory level (needed, optional) related to a particular use-case (scientific task, modeling task, e.g. Erosion-3D model build)
-metadata mining - 
+metadata standard (= metadata scheme) - existing metadata elements definition established by a third party (e.g. (BonaRes metadata sheme)[https://doi.org/10.20387/BonaRes-5PGG-8YRP])
+requirement template - definition of metadata elements set with assigned mandatory level (needed, optional) related to a particular use-case (scientific task, modeling task, e.g. Erosion-3D model build)
+metadata mining - retriving of existing metadata of third parties and recocknizing of metadata from primary data set files.
 data mining - retrieving data fitting desired conditions in unified structure from various resources
 metadata mapping storage - 
 SoilPulse API - library package providing SoilPulse functionalities as a set of classes and their methods
