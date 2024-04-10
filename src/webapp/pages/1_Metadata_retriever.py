@@ -18,6 +18,9 @@ import sys
 import os
 import pickle
 import shutil
+import streamlit_tree_select
+
+import tree3
 sys.path.insert(0, './src')
 #import soilpulse.resource_management as rm
 from soilpulse.resource_management import ResourceManager as rm
@@ -256,7 +259,26 @@ with c1:
                 res = rm.downloadPublishedFiles(
                     st.session_state.metainf,
                     "catalogue/"+cache_dir+"/data/")
-                st.write("all downloaded, you can proceed to crawl your files.")
+                st.write("You can proceed to explain your files.")
+
+if 'doiorg' in st.session_state.metainf and cached \
+        and len(os.listdir("catalogue/"+cache_dir+"/data/")) > 0:
+    if 'nodes' not in st.session_state.metainf:
+        st.session_state.metainf['nodes'] = tree3._create_tree(
+            "catalogue/"+cache_dir+"/data/")
+        st.session_state.metainf['return_select'] = {'checked': [],
+                                                     'expanded': []}
+    with st.sidebar:
+        # streamlit tree select docs: https://github.com/Schluca/streamlit_tree_select/tree/main
+        st.write("**Please select here all files containing actual data:**")
+        st.session_state.metainf['return_select'] = streamlit_tree_select.tree_select(
+            st.session_state.metainf['nodes'],
+            only_leaf_checkboxes=True,
+            no_cascade=True,
+            checked=st.session_state.metainf['return_select']['checked'],
+            expanded=st.session_state.metainf['return_select']['expanded'])
+    with c1:
+        st.write(st.session_state.metainf['return_select'])
 
 
 with c2:
