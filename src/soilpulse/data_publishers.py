@@ -40,7 +40,7 @@ class ZenodoPublisher(Publisher):
                                              f"{URLroot}/{response['files'][i]['key']}",
                                              response['files'][i]['checksum'])
 
-                    allFilesInfo.append(fileinfo)
+                    allFilesInfo.append(source_file)
                 return allFilesInfo
             else:
                 raise DOIdataRetrievalException(

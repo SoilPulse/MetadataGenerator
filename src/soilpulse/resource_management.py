@@ -77,7 +77,7 @@ class ResourceManager:
         # append the publisher metadata JSON container to the resourceManagers containers
         self.containerTree.append(ContainerHandlerFactory().createHandler("json", "{} metadata JSON".format(self.publisher.name), self.publisher.getMetadata()))
         # get downloadable files information from publisher
-        self.publishedFiles = self.publisher.getPublishedFilesInfo()
+        self.publishedFiles = self.publisher.getFileInfo()
 
 
         # self.getMetadataFromPublisher()
@@ -347,6 +347,12 @@ class Dataset:
             self.containers.extend(containers)
         else:
             self.containers.append(containers)
+        return
+    def removeContainer(self, containers):
+        if isinstance(containers, list):
+            self.containers.remove(containers)
+        else:
+            self.containers.remove(containers)
         return
 
     def showContainerTree(self):

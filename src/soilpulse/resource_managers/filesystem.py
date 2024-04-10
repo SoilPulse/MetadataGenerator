@@ -297,31 +297,47 @@ class FileSystemCrawlerFactory:
             return class_._instance
 
     @classmethod
-    def registerFileType(cls, fileTypeCrawlerClass, key):
-        cls.filetypes[key] = fileTypeCrawlerClass
-        print(f"Crawler for file type '{key}' registered.")
+    def registerFileType(cls, file_type_crawler_class):
+        cls.filetypes[file_type_crawler_class.extension] = file_type_crawler_class
+        print(f"Crawler for file type '{file_type_crawler_class.extension}' registered.")
         return
 
     @classmethod
-    def createCrawler(cls, fileTypeKey, container, *args):
+    def createCrawler(cls, file_extension, container, *args):
         """
-        Creates and returns instance of Publisher of given key
+        Creates and returns instance of ContainerHandler for the file container provided
         """
 
-        if fileTypeKey:
-            if fileTypeKey.lower() not in cls.filetypes.keys():
+        if file_extension:
+            if file_extension.lower() not in cls.filetypes.keys():
                 filetypes = ",".join(["'"+k+"'" for k in cls.filetypes.keys()])
-                print(f"\tUnsupported Crawler subclass type '{fileTypeKey.lower()}' (registered types are: {filetypes}) - plain text crawler will be used instead.")
+                print(f"\tUnsupported Crawler subclass type '{file_extension.lower()}' (registered types are: {filetypes}) - plain text crawler will be used instead.")
+
+
                 return cls.filetypes['txt'](container, *args)
             else:
-                return cls.filetypes[fileTypeKey](container, *args)
+                # special handling of different file types can be added here ...
+                if container.fileExtension == 'txt':
+                    # like trying csv crawler on txt file
+                    print("\t\ttrying csv crawler on txt file")
+                    output_crawler = cls.filetypes['csv'](container, *args)
+                    # if the csv crawl gains any result, use it
+                    if output_crawler.crawl() is not None:
+                        print("\t\t\t==> CSV")
+                        return output_crawler
+                    # otherwise just use native txt crawler
+                    else:
+                        print("\t\t\t==> just text")
+                        return cls.filetypes[file_extension](container, *args)
+                else:
+                    return cls.filetypes[file_extension](container, *args)
         else:
-            print(f"\tFile has no extension ... plain text crawler will be used instead.")
+            print(f"\tFile has no extension - plain text crawler will be used instead.")
             return cls.filetypes['txt'](container, *args)
 
 class CSVcrawler(Crawler):
     """
-    Crawler for CSV tables
+    Crawler for CSV table structures
     """
     extension = "csv"
     def __init__(self, container):
@@ -350,7 +366,10 @@ class CSVcrawler(Crawler):
             text = file.read()
         file_length = len(text)
         # try detecting delimiters from file content
-        cell_sep, line_sep = detect_delimiters(text)
+        try:
+            cell_sep, line_sep = detect_delimiters(text)
+        except:
+            return []
         print(f"\tcell delimiter: '{cell_sep}'")
 
         # Pattern to match CSV-like tables without knowing delimiters
@@ -374,7 +393,7 @@ class CSVcrawler(Crawler):
             num_lines = text[match.start():match.end()].count('\n')
             # print(f"number of lines {num_lines}")
             if num_lines >= min_lines:
-                print(f"\ttable detected starting at {start_char} with length {length} (of total {file_length} characters), spanning over {num_lines} lines")
+                print(f"\ttable detected starting at {start_char} with length {length} (of total {file_length} characters in file), containing {num_lines} lines")
 
                 table_text = text[start_char: start_char + length]
                 lines = table_text.split('\n')
@@ -395,7 +414,7 @@ class CSVcrawler(Crawler):
 
                 # check if the last row is empty
                 if len(rows[-1]) < row_length:
-                    print(f"\tthe last row was removed: {rows[-1]}")
+                    # print(f"\tthe last row was removed: {rows[-1]}")
                     rows.pop()
                 # check if the last row is all Nones
                 num_nones = 0
@@ -404,23 +423,23 @@ class CSVcrawler(Crawler):
                         num_nones += 1
                 if num_nones == len(rows[-1]):
                     rows.pop()
-                    print(f"\tlast row was all Nones and was removed")
+                    # print(f"\tlast row was all Nones and was removed")
 
-                print(f"\tcolumn headers are: {rows[0]}")
+                print(f"\tcolumn headers: {rows[0]}")
+                print(f"\tnumber of data rows: {len(rows)-1}")
 
                 # try converting list of lists to pandas dataframe
                 try:
                     df = pd.DataFrame(rows[1:], columns=rows[0])
                 except :
                     print(f"File '{self.container.path}' has unknown structure.")
-
                 else:
                     table_dataframes.append(df)
             m += 1
 
         return table_dataframes
 
-FileSystemCrawlerFactory.registerFileType(CSVcrawler, CSVcrawler.extension)
+FileSystemCrawlerFactory.registerFileType(CSVcrawler)
 
 class PlainTextCrawler(Crawler):
     """
@@ -440,5 +459,5 @@ class PlainTextCrawler(Crawler):
         print("No crawling procedure defined yet for Plain Text crawler")
         pass
 
-FileSystemCrawlerFactory.registerFileType(PlainTextCrawler, PlainTextCrawler.extension)
+FileSystemCrawlerFactory.registerFileType(PlainTextCrawler)
 
