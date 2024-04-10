@@ -212,61 +212,63 @@ class ResourceManager:
             print("Unsupported registration agency '{}'".format(RA))
             # raise DOIdataRetrievalException("Unsupported registration agency '{}'".format(RA))
 
-    def downloadPublishedFiles(self, unzip=True):
+    def downloadPublishedFiles(publishedFiles, tempDir):
         """
         Download files that are stored in self.sourceFiles dictionary
 
-        :param unzip: if the downloaded file is a .zip archive it will be extracted if unzip=True
         :return: dictionary of file types for input URLs
         """
 
-        if len(self.publishedFiles) == 0:
+        if len(publishedFiles) == 0:
             print("The file list is empty.\n")
         else:
             # create the target directory if not exists
-            print("downloading remote files to local storage ('{}') ...".format(self.tempDir))
+            print("downloading remote files to local storage ('{}') ...".format(tempDir))
 
-            if not os.path.isdir(self.tempDir):
-                os.mkdir(self.tempDir)
+            if not os.path.isdir(tempDir):
+                os.mkdir(tempDir)
             result = {}
-            for sourceFile in self.publishedFiles:
-                url = sourceFile['source_url']
+            for sourceFile in publishedFiles['ZenodoFiles']:
+                if not sourceFile['download']:
+                    continue
+                url = sourceFile['links']['download']
                 filename = sourceFile['filename'].replace("\\", "_")
-                local_file_path = os.path.join(self.tempDir, filename)
-
-                try:
-                    response = requests.get(url+"/content")
-                except requests.exceptions.ConnectionError:
-                    print("\tA connection error occurred. Check your internet connection.")
-                    return False
-                except requests.exceptions.Timeout:
-                    print("\tThe request timed out.")
-                    return False
-                except requests.exceptions.HTTPError as e:
-                    print("\tHTTP Error:", e)
-                    return False
-                except requests.exceptions.RequestException as e:
-                    print("\tAn error occurred:", e)
-                    return False
-                else:
-                    # the parameter download = 1 is specific to Zenodo
-                    if response.ok:
-                        with open(local_file_path, mode="wb") as filesave:
-                            filesave.write(response.content)
-
-                        # write local path of downloaded file to its dictionary
-                        sourceFile['local_path'] = local_file_path
-
-                        # create a container from the file with all related actions
-                        newContainer = ContainerHandlerFactory().createHandler('filesystem', sourceFile['filename'], local_file_path)
-                        self.containerTree.append(newContainer)
-
-                    else:
-                        # something needs to be done if the response is not OK ...
-                        print("\t\tThe response was not OK!")
-                        sourceFile['local_path'] = None
-
+                local_file_path = os.path.join(tempDir, filename)
+                if not sourceFile['loaded']:
+                    try:
+                        response = requests.get(url)
+                    except requests.exceptions.ConnectionError:
+                        print("\tA connection error occurred. Check your internet connection.")
                         return False
+                    except requests.exceptions.Timeout:
+                        print("\tThe request timed out.")
+                        return False
+                    except requests.exceptions.HTTPError as e:
+                        print("\tHTTP Error:", e)
+                        return False
+                    except requests.exceptions.RequestException as e:
+                        print("\tAn error occurred:", e)
+                        return False
+                    else:
+                        # the parameter download = 1 is specific to Zenodo
+                        if response.ok:
+                            with open(local_file_path, mode="wb") as filesave:
+                                filesave.write(response.content)
+                            sourceFile['loaded'] = True
+                        else:
+                            # something needs to be done if the response is not OK ...
+                            print("\t\tThe response was not OK!")
+                            sourceFile['local_path'] = None
+                            return False
+
+                if sourceFile['loaded']:
+                    # write local path of downloaded file to its dictionary
+                    sourceFile['local_path'] = local_file_path
+
+                    # create a container from the file with all related actions
+                    newContainer = ContainerHandlerFactory().createHandler(
+                        'filesystem', sourceFile['filename'], local_file_path)
+                    publishedFiles['containerTree'].append(newContainer)
 
             print(" ... successful\n")
             return result

@@ -74,7 +74,7 @@ class FileSystemContainer(ContainerHandler):
         else:
             return None
 
-    def extractZipFile(self, theZip, targetDir=None, removeZip=True):
+    def extractZipFile(self, theZip, targetDir=None, removeZip=False):
         from zipfile import ZipFile, BadZipfile
 
         extractDirName = ".".join(os.path.basename(theZip).split(".")[:-1])+"_zip"
