@@ -3,10 +3,10 @@
 
 import json
 
-from src.soilpulse.resource_management import ContainerHandler, ContainerHandlerFactory, Pointer, Crawler
-from src.soilpulse.db_access import EntityKeywordsDB
+from ..resource_management import ContainerHandler, ContainerHandlerFactory, Pointer, Crawler
+from ..db_access import EntityKeywordsDB
 # just for the standalone functions - will be changed
-from src.soilpulse.resource_management import *
+# from ..resource_management import *
 
 
 class JSONContainer(ContainerHandler):

@@ -1,8 +1,8 @@
 # coding = utf-8
 # -*- coding: utf-8 -*-
 
-from src.soilpulse.resource_management import ContainerHandler, ContainerHandlerFactory, Pointer, Crawler
-from src.soilpulse.db_access import EntityKeywordsDB
+from ..resource_management import ContainerHandler, ContainerHandlerFactory, Pointer, Crawler
+from ..db_access import EntityKeywordsDB
 
 
 class XMLContainer(ContainerHandler):

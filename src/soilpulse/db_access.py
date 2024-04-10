@@ -79,7 +79,7 @@ class EntitySearchPatternsDB:
     def connect(self):
         try:
             connection = sqlite3.connect(EntitySearchPatternsDB.dbpath)
-        except sqlite3.CantOpenError as e:
+        except sqlite3.OperationalError as e:
             print("The SoilPulse 'entity_search_patterns' database file is not accessible:")
             print(e)
             return None
@@ -133,7 +133,7 @@ class EntityKeywordsDB:
     def connect(cls, dbpath):
         try:
             connection = sqlite3.connect(dbpath)
-        except sqlite3.CantOpenError as e:
+        except sqlite3.OperationalError as e:
             print("The SoilPulse '{}' database file is not accessible:".format(dbpath))
             print(e)
             return None

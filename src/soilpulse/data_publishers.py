@@ -1,6 +1,6 @@
 import requests
-from src.soilpulse.resource_management import Publisher, PublisherFactory, SourceFile
-from src.soilpulse.exceptions import DOIdataRetrievalException
+from .resource_management import Publisher, PublisherFactory, SourceFile
+from .exceptions import DOIdataRetrievalException
 
 class ZenodoPublisher(Publisher):
     key = "Zenodo"
@@ -9,7 +9,7 @@ class ZenodoPublisher(Publisher):
     def __init__(self, zenodo_id):
         self.zenodoID = zenodo_id
 
-    def getPublishedFilesInfo(self):
+    def getFileInfo(self):
         """
         Collect resource files information from Zenodo record
 
@@ -29,6 +29,7 @@ class ZenodoPublisher(Publisher):
         except requests.exceptions.RequestException as e:
             print("An error occurred:", e)
         else:
+
             URLroot = response['links']['files']
             if isinstance(response['files'], list):
                 allFilesInfo = []
@@ -39,13 +40,12 @@ class ZenodoPublisher(Publisher):
                                              f"{URLroot}/{response['files'][i]['key']}",
                                              response['files'][i]['checksum'])
 
-                    allFilesInfo.append(source_file)
+                    allFilesInfo.append(fileinfo)
                 return allFilesInfo
             else:
                 raise DOIdataRetrievalException(
                     "Dataset files can not be retrieved - incorrect response structure.")
                 return None
-
     def getMetadata(self):
         """
         Collect metadata package from Zenodo record

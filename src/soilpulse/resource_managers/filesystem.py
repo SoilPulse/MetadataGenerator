@@ -11,10 +11,10 @@ import chardet
 import pandas as pd
 # import magic
 
-from src.soilpulse.resource_management import ContainerHandler, ContainerHandlerFactory, Pointer, Crawler
-from src.soilpulse.db_access import EntityKeywordsDB
+from ..resource_management import ContainerHandler, ContainerHandlerFactory, Pointer, Crawler
+from ..db_access import EntityKeywordsDB
 # just for the standalone functions - will be changed
-from src.soilpulse.resource_management import *
+# from ..resource_management import *
 
 
 def detect_encoding(input_file):
@@ -83,9 +83,9 @@ class FileSystemContainer(ContainerHandler):
                 except ValueError as e:
                     print(e)
 
-    def showContents(self, depth = 0, ind = ". "):
+    def showContents(self, depth=0, ind=". "):
         """
-        Print basic info about the container and invokes showContents on all of its containers
+        Print basic info about the container and invokes showContents on all of its containers.
 
         :param depth: current depth of showKeyValueStructure recursion
         :param ind: string of a single level indentation
@@ -108,9 +108,7 @@ class FileSystemContainer(ContainerHandler):
         return os.stat(self.path).st_size if os.path.isfile(self.path) else None
 
     def getFileSizeFormated(self):
-        """
-        Returns a string of dynamically formatted file size
-        """
+        """Return a string of dynamically formatted file size."""
         suffix = "B"
         size = self.getFileSize()
         if size:
@@ -122,7 +120,7 @@ class FileSystemContainer(ContainerHandler):
         else:
             return None
 
-    def extractZipFile(self, theZip, targetDir = None, removeZip = True):
+    def extractZipFile(self, theZip, targetDir=None, removeZip=True):
         from zipfile import ZipFile, BadZipfile
 
         extractDirName = ".".join(os.path.basename(theZip).split(".")[:-1])+"_zip"
@@ -170,11 +168,12 @@ class FileSystemContainer(ContainerHandler):
             container.getCrawled()
 
 
+
 ContainerHandlerFactory.registerContainerType(FileSystemContainer, FileSystemContainer.containerType)
 EntityKeywordsDB.registerKeywordsDB(FileSystemContainer.containerType, FileSystemContainer.keywordsDBname)
 
-class FileSystemPointer(Pointer):
 
+class FileSystemPointer(Pointer):
     pointerType = type
 
     def __init__(self, filename, startChar, numChars):

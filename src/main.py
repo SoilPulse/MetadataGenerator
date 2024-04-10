@@ -14,8 +14,10 @@ from soilpulse.db_access import EntityKeywordsDB
 
 
 if __name__ == "__main__":
-    kwdb = EntityKeywordsDB()
+    print(EntityKeywordsDB.DBs)
 
+
+    exampleDOI = "10.5281/zenodo.18726" # more lightweight repo
     exampleDOI = "10.5281/zenodo.6654150"
 
     ###### the resource initiation #####################
