@@ -170,16 +170,19 @@ with c1:
                     if (st.session_state.metainf['doiorg']['RA'] == "DataCite"):
                         st.session_state.metainf['Datacite'] = rm.getDOImetadata(st.session_state.metainf['doi'])
                         dataset_url = str(st.session_state.metainf['Datacite']['data']['attributes']['url'])
-                    if ('metainf' in st.session_state and "zenodo.org" in dataset_url):
+                    if ('metainf' in st.session_state and
+                            "zenodo.org" in dataset_url):
                         st.session_state.metainf['zenodo_id'] =\
-        dataset_url.split("/")[-1].split(".")[-1]
+                            dataset_url.split("/")[-1].split(".")[-1]
                         response = requests.get(
-            "https://zenodo.org/api/deposit/depositions/" +
-            st.session_state.metainf['zenodo_id']+"/files"
-            ).json()
+                            "https://zenodo.org/api/deposit/depositions/" +
+                            st.session_state.metainf['zenodo_id']+"/files"
+                            ).json()
                         if (type(response) is dict):
-                            st.write("We could not identify download links from this ressource (works only for Zenodo by now.)\
-                                 But you can still upload files.")
+                            st.write(
+                                "We could not identify download links from\
+                                    this ressource (works only for Zenodo by\
+                                    now.) But you can still upload files.")
                         else:
                             st.session_state.metainf['ZenodoFiles'] = response
                 _writes_cache(cache_dir)
@@ -190,30 +193,18 @@ with c1:
             'Author' in st.session_state.metainf:
         with st.expander(label="**Dataset loader**", expanded=True):
             if ('ZenodoFiles' in st.session_state.metainf):
-                st.write("We found files assigned to your record. Please select those to\
-                              be loaded:")
+                st.write("We found files assigned to your record.\
+                         Please select those to be loaded:")
             else:
                 st.session_state.metainf['ZenodoFiles'] = []
             st.write("You can add download links here:")
-            newfilename = st.text_input(label = "Filename",value='filename')
-            newURL = st.text_input(label = "URL",value='URL')
+            newfilename = st.text_input(label="Filename", value='filename')
+            newURL = st.text_input(label="URL", value='URL')
             if st.button(label="Add file"):
-                st.session_state.metainf['ZenodoFiles'].append({"filename": newfilename,
-                                                           "links":{"download": newURL}})
+                st.session_state.metainf['ZenodoFiles'].append(
+                    {"filename": newfilename, "links": {"download": newURL}})
 
-            # dfall = pd.DataFrame(st.session_state.metainf['ZenodoFiles'])
-            # df = dfall[["filename"]]
-            # df['URL'] = [file['download'] for file in dfall['links']]
-            # df.loc[:, "Download (again)?"] = [".zip" in file for file in df["filename"]]
-            # df.loc[:, "File loaded"] = [file.replace(".zip", "") in os.listdir(
-            #     "catalogue/"+cache_dir+"/data") for file in df["filename"]]
-
-            # edited_df = st.data_editor(df,
-            #                            hide_index=True,
-            #                            disabled=["File loaded"]
-            #                            )
-
-            fis1, fis2, fis3, fis4 = st.columns((3,3,1,1))
+            fis1, fis2, fis3, fis4 = st.columns((3, 3, 1, 1))
             with fis1:
                 st.write('Filename')
             with fis2:
@@ -262,15 +253,10 @@ with c1:
 #                    edited_df.loc[:, "Download (again)?"],["filename", "URL"]].to_dict(orient="records")
                 st.write("downloading - may take a while:")
 #                st.write(download_files)
-                
                 res = rm.downloadPublishedFiles(
                     st.session_state.metainf,
                     "catalogue/"+cache_dir+"/data/")
-
-
-            #set_downloadfiles(RM.available_files()) # set bool list to filter available files
-            #    RM.download_files()
-
+                st.write("all downloaded, you can proceed to crawl your files.")
 
 
 with c2:
