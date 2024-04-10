@@ -14,11 +14,12 @@ class JSONContainer(ContainerHandler):
     containerFormat = "JSON"
     keywordsDBname = "keywords_json"
 
-    def __init__(self, name, content, path = None):
-        super(JSONContainer, self).__init__(name)
+    def __init__(self, id, name, content, path = None):
+        super(JSONContainer, self).__init__(id, name)
         # the JSON content
         self.content = content
         self.path = path
+        self.crawler = JSONcrawler(self)
 
     def showContents(self, depth = 0, ind = ". "):
         """
@@ -93,6 +94,10 @@ class JSONContainer(ContainerHandler):
 
         return
 
+    def getCrawled(self):
+        self.crawler.crawl()
+        pass
+
 ContainerHandlerFactory.registerContainerType(JSONContainer, JSONContainer.containerType)
 EntityKeywordsDB.registerKeywordsDB(JSONContainer.containerType, JSONContainer.keywordsDBname)
 
@@ -105,16 +110,16 @@ class JSONPointer(Pointer):
         pass
 
 
-class JSONCrawler(Crawler):
+class JSONcrawler(Crawler):
     """
     Crawler for file system repositories
     """
 
-    def __init__(self):
+    def __init__(self, container):
+        self.container = container
+        # print(f"\tJSON crawler created for container #{self.container.id} '{self.container.name}' (file '{self.container.path}')")
         pass
 
     def crawl(self):
-        """
-        Do the crawl - go through the file and detect defined elements
-        """
+        print("No crawling procedure defined yet for JSON crawler")
         pass

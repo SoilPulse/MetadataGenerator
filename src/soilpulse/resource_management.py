@@ -19,10 +19,10 @@ class ResourceManager:
                 class_._instance = object.__new__(class_, *args, **kwargs)
             return class_._instance
 
-        # arbitrary resurce name for easy identification
+        # arbitrary resource name for easy identification
         self.name = name
 
-        # list of Dataset class instances contained within this resource
+        # list of Dataset class instances present within this resource
         self.datasets = []
 
         # registration agency of the DOI
@@ -31,13 +31,13 @@ class ResourceManager:
         self.DOImetadata = None
         # publisher instance
         self.publisher = None
-        # dictionary of files that were published with the resource - publicly available through url
-        self.publishedFiles = {}
+        # list of files that were published with the resource - publicly available through url
+        self.publishedFiles = []
         # uploaded files directly from the users computer
-        self.uploadedFiles = {}
+        self.uploadedFiles = []
         # the tree structure of included files and other container types
         self.containerTree = []
-        # the DOI is private so it can't be changed without consequences - only setDOI(doi) can be used
+        # the DOI is private, so it can't be changed without consequences - only setDOI(doi) can be used
         self.__doi = None
         # dedicated directory where files can be stored
         self.tempDir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "downloaded_files")
@@ -77,7 +77,7 @@ class ResourceManager:
         # append the publisher metadata JSON container to the resourceManagers containers
         self.containerTree.append(ContainerHandlerFactory().createHandler("json", "{} metadata JSON".format(self.publisher.name), self.publisher.getMetadata()))
         # get downloadable files information from publisher
-        self.publishedFiles = self.publisher.getFileInfo()
+        self.publishedFiles = self.publisher.getPublishedFilesInfo()
 
 
         # self.getMetadataFromPublisher()
@@ -221,7 +221,7 @@ class ResourceManager:
         """
 
         if len(self.publishedFiles) == 0:
-            print("The file list is empty.\n")
+            print("The list of published files is empty.\n")
         else:
             # create the target directory if not exists
             print("downloading remote files to local storage ('{}') ...".format(self.tempDir))
@@ -230,9 +230,11 @@ class ResourceManager:
                 os.mkdir(self.tempDir)
             result = {}
             for sourceFile in self.publishedFiles:
-                url = sourceFile['source_url']
-                filename = sourceFile['filename'].replace("\\", "_")
-                local_file_path = os.path.join(self.tempDir, filename)
+                url = sourceFile.source_url
+                # any file name manipulation can be performed here
+                filename = sourceFile.filename.replace("\\/<[^>]*>?", "_")
+
+                local_path = os.path.join(self.tempDir, filename)
 
                 try:
                     response = requests.get(url+"/content")
@@ -251,20 +253,20 @@ class ResourceManager:
                 else:
                     # the parameter download = 1 is specific to Zenodo
                     if response.ok:
-                        with open(local_file_path, mode="wb") as filesave:
+                        with open(local_path, mode="wb") as filesave:
                             filesave.write(response.content)
 
-                        # write local path of downloaded file to its dictionary
-                        sourceFile['local_path'] = local_file_path
+                        # on success save local path of downloaded file to its attribute
+                        sourceFile.local_path = local_path
 
                         # create a container from the file with all related actions
-                        newContainer = ContainerHandlerFactory().createHandler('filesystem', sourceFile['filename'], local_file_path)
+                        newContainer = ContainerHandlerFactory().createHandler('filesystem', filename, local_path)
                         self.containerTree.append(newContainer)
 
                     else:
                         # something needs to be done if the response is not OK ...
                         print("\t\tThe response was not OK!")
-                        sourceFile['local_path'] = None
+                        sourceFile.local_path= None
 
                         return False
 
@@ -361,6 +363,21 @@ class Dataset:
     def checkMetadataStructure(self):
         self.metadataMap.checkConsistency()
 
+    def getCrawled(self):
+        for container in self.containers:
+            container.getCrawled()
+class SourceFile:
+    def __init__(self, id, filename, size = None, source_url = None, checksum = None, checksum_type = None):
+        self.id = id
+        self.filename = filename
+        self.source_url = source_url
+
+        self.size = size
+        self.checksum = checksum
+        self.checksum_type = checksum_type
+
+        self.local_path = None
+
 class ContainerHandlerFactory:
     """
     Container object factory
@@ -406,10 +423,11 @@ class ContainerHandlerFactory:
         if containerType not in ContainerHandlerFactory.containerTypes.keys():
             raise ValueError("Unsupported container handler type '{}'. Supported are: {}".format(containerType, ",".join(["'"+k+"'" for k in cls.containerTypes.keys()])))
         else:
-            # assign id to container - unique in the ResourceManager scope
-            new_container = cls.containerTypes[containerType](*args)
-            new_container.id = cls.nextContainerID
+            # create new container instance with unique id in the ResourceManager scope
+            new_container = cls.containerTypes[containerType](cls.nextContainerID, *args)
+            # put it in the factory list
             cls.containers.update({new_container.id: new_container})
+            # raise the ID for next container
             cls.nextContainerID += 1
             return new_container
 
@@ -424,9 +442,9 @@ class ContainerHandler:
 
     def recognizeType(cls):
         pass
-    def __init__(self, name):
+    def __init__(self, id, name):
         # unique ID in the ResourceManagers scope
-        self.id = None
+        self.id = id
         # container name (filename/database name/table name ...)
         self.name = name
         # data containers that the container contains
@@ -451,13 +469,16 @@ class ContainerHandler:
         # print attributes of this container
         print("{}{} - {} ({}) [{}]".format(t, self.id, self.name, self.containerType, len(self.containers)))
 
-        # invoke showContents of subcontainers
+        # invoke showContents of sub-containers
         if self.containers:
             depth += 1
             for cont in self.containers:
                 cont.showContents(depth)
 
     def createTree(self):
+        pass
+
+    def getCrawled(self):
         pass
 
 class PublisherFactory:
@@ -547,8 +568,8 @@ class Crawler:
     Top level abstract class of the metadata/data crawler
     """
 
-    def __init__(self, resurceURI):
-        self.resourceURI = resurceURI
+    def __init__(self, container):
+        self.container = container
         pass
 
     def crawl(self):

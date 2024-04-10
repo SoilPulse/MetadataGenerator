@@ -10,10 +10,14 @@ class XMLContainer(ContainerHandler):
     containerFormat = "XML"
     keywordsDBname = "keywords_xml"
 
-    def __init__(self, name, doi = None):
-        super(XMLContainer, self).__init__(name, doi)
+    def __init__(self, id, name):
+        super(XMLContainer, self).__init__(id, name)
+        self.crawler = XMLcrawler(self)
 
     def showContents(self):
+        pass
+
+    def getCrawled(self):
         pass
 
 ContainerHandlerFactory.registerContainerType(XMLContainer, XMLContainer.containerType)
@@ -23,4 +27,11 @@ class XMLPointer(Pointer):
     pass
 
 class XMLcrawler(Crawler):
-    pass
+    def __init__(self, container):
+        self.container = container
+        # print(f"\tXML crawler created for container #{self.container.id} '{self.container.name}' (file '{self.container.path}')")
+        pass
+
+    def crawl(self):
+        print("No crawling procedure defined yet for XML crawler")
+        pass

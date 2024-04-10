@@ -1,5 +1,5 @@
 import requests
-from src.soilpulse.resource_management import Publisher, PublisherFactory
+from src.soilpulse.resource_management import Publisher, PublisherFactory, SourceFile
 from src.soilpulse.exceptions import DOIdataRetrievalException
 
 class ZenodoPublisher(Publisher):
@@ -9,7 +9,7 @@ class ZenodoPublisher(Publisher):
     def __init__(self, zenodo_id):
         self.zenodoID = zenodo_id
 
-    def getFileInfo(self):
+    def getPublishedFilesInfo(self):
         """
         Collect resource files information from Zenodo record
 
@@ -29,26 +29,23 @@ class ZenodoPublisher(Publisher):
         except requests.exceptions.RequestException as e:
             print("An error occurred:", e)
         else:
-
             URLroot = response['links']['files']
             if isinstance(response['files'], list):
                 allFilesInfo = []
                 for i in range(0, len(response['files'])):
-                    fileinfo = {}
-                    filename = response['files'][i]['key']
-                    id = response['files'][i]['id']
-                    size = response['files'][i]['size']
-                    checksum = response['files'][i]['checksum']
-                    source_url = URLroot +"/" +filename
-                    fileinfo.update \
-                        ({'filename': filename, 'id': id, 'size': size, 'checksum': checksum, 'source_url': source_url, 'local_path': None})
+                    source_file = SourceFile(response['files'][i]['id'],
+                                             response['files'][i]['key'],
+                                             response['files'][i]['size'],
+                                             f"{URLroot}/{response['files'][i]['key']}",
+                                             response['files'][i]['checksum'])
 
-                    allFilesInfo.append(fileinfo)
+                    allFilesInfo.append(source_file)
                 return allFilesInfo
             else:
                 raise DOIdataRetrievalException(
                     "Dataset files can not be retrieved - incorrect response structure.")
                 return None
+
     def getMetadata(self):
         """
         Collect metadata package from Zenodo record

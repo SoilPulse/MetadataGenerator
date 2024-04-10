@@ -7,6 +7,8 @@ import csv
 import io
 import datetime
 from collections import Counter
+import chardet
+import pandas as pd
 # import magic
 
 from src.soilpulse.resource_management import ContainerHandler, ContainerHandlerFactory, Pointer, Crawler
@@ -14,14 +16,48 @@ from src.soilpulse.db_access import EntityKeywordsDB
 # just for the standalone functions - will be changed
 from src.soilpulse.resource_management import *
 
+
+def detect_encoding(input_file):
+    # If it's not a string, assume it's a file path and read the contents
+    with open(input_file, 'rb') as file:
+        rawdata = file.read()
+
+    result = chardet.detect(rawdata)
+    encoding = result['encoding']
+    confidence = result['confidence']
+    return encoding, confidence
+
+def convert_tables_to_dataframes(text, table_structures):
+    dfs = []
+    for start, length in table_structures:
+        table_text = text[start:start+length]
+        lines = table_text.split('\n')
+        rows = [line.split(',') for line in lines]
+        df = pd.DataFrame(rows[1:], columns=rows[0])
+        dfs.append(df)
+    return dfs
+
+def detect_delimiters(text):
+    """
+    Detect line, cell and decimal delimiters used in input file based on first table found in file
+    """
+
+    # Use Sniffer to infer the dialect
+    csv_file = io.StringIO(text)
+    dialect = csv.Sniffer().sniff(csv_file.read(2048))  # Read a portion of the text for analysis
+
+    return dialect.delimiter, dialect.lineterminator
+
+
 class FileSystemContainer(ContainerHandler):
     containerType = 'filesystem'
     containerFormat = "File system"
     keywordsDBname = "keywords_filesystem"
 
-    def __init__(self, name, path):
-        super(FileSystemContainer, self).__init__(name)
-        # the file type
+
+    def __init__(self, id, name, path):
+        super(FileSystemContainer, self).__init__(id, name)
+        # the file path
         self.path = path
         # get mime type of the file
         self.mimeType = self.getMimeType()
@@ -29,14 +65,23 @@ class FileSystemContainer(ContainerHandler):
         self.size = None
         self.dateCreated = datetime.datetime.fromtimestamp(os.path.getctime(path))
         self.dateLastModified = datetime.datetime.fromtimestamp(os.path.getmtime(path))
-        # extension
-        self.fileExtension = path.split(".")[-1]
-        # if the file is zip - unpack and create the containers from content
-        if self.fileExtension == "zip":
-            self.containers = self.extractZipFile(self.path)
+        self.encoding = None
+        self.fileExtension = None
+        self.crawler = None
 
-        elif os.path.isfile(self.path):
-            self.crawler = FilesystemCrawler(self.path)
+        if os.path.isfile(path):
+            # extension
+            self.fileExtension = path.split(".")[-1]
+            # if the file is zip - unpack and create the containers from content
+            if self.fileExtension == "zip":
+                self.containers = self.extractZipFile(self.path)
+            else:
+                self.encoding = detect_encoding(path)[0]
+
+                try:
+                    self.crawler = FileSystemCrawlerFactory.createCrawler(self.fileExtension, self)
+                except ValueError as e:
+                    print(e)
 
     def showContents(self, depth = 0, ind = ". "):
         """
@@ -57,6 +102,7 @@ class FileSystemContainer(ContainerHandler):
     def getMimeType(self):
         # self.mimeType = magic.from_file(self.path)
         return
+
 
     def getFileSize(self):
         return os.stat(self.path).st_size if os.path.isfile(self.path) else None
@@ -115,7 +161,14 @@ class FileSystemContainer(ContainerHandler):
         return tree
 
     def getCrawled(self):
-        self.crawler.crawl()
+        if self.crawler:
+            tables = self.crawler.crawl()
+            if tables:
+                print(f"tables:\n{tables}")
+                print("\n\n")
+        for container in self.containers:
+            container.getCrawled()
+
 
 ContainerHandlerFactory.registerContainerType(FileSystemContainer, FileSystemContainer.containerType)
 EntityKeywordsDB.registerKeywordsDB(FileSystemContainer.containerType, FileSystemContainer.keywordsDBname)
@@ -136,80 +189,257 @@ class FileSystemPointer(Pointer):
     pass
 
 
-class FilesystemCrawler(Crawler):
+# class FilesystemCrawler(Crawler):
+#     """
+#     Crawler for file system repositories
+#     """
+#
+#     def __init__(self, filesystemContainer):
+#         self.path = filesystemContainer.path
+#         # print("new file system crawled created")
+#         pass
+#
+#     def crawl(self):
+#         """
+#         Do the crawl - go through the file and detect defined elements
+#         """
+#         print(f"crawling {self.path}")
+#         dataframes = self.get_tables_from_csv(2)
+#         if len(dataframes) > 0:
+#             print(f"\tfound {len(dataframes)} understandable table structures")
+#             return dataframes
+#         else:
+#             print(f"\tfound no understandable tables")
+#             return None
+#
+#     def get_tables_from_csv(self, cell_delimiter, min_lines=3):
+#         # encoding = detect_encoding(self.file)
+#         # read the file into a text
+#         with open(self.file, 'r', encoding='ANSI') as file:
+#             text = file.read()
+#         file_length = len(text)
+#         # try detecting delimiters from file content
+#         cell_sep, line_sep = detect_delimiters(text)
+#         print(f"\tcell delimiter: '{cell_sep}'")
+#
+#         # Pattern to match CSV-like tables without knowing delimiters
+#         # pattern = r'\b[\w\s]+(?:[^\w\s]+[\w\s]+)*\b'
+#         pattern = r'(?:(?<!\w)[^\w\s]*(?:\w+\W*(?:\w+\W*)+\w+|\w+(?:\W+\w+)+\w+)\b(?:\W|\Z))'
+#
+#         # Find all matches and their start character and length
+#         matches = re.finditer(pattern, text)
+#         # Filter matches based on structure (e.g., number of lines) and store start character and length
+#         table_dataframes = []
+#         m = 0
+#         for match in matches:
+#             start_char = match.start()
+#             length = match.end() - match.start()
+#
+#             # print(f"\nmatch {m}")
+#             # match_string = text[match.start():match.end()]
+#             # print(f"match string:\n{match_string}\nlength {len(match_string)}")
+#
+#             num_lines = text[match.start():match.end()].count('\n')
+#             # print(f"number of lines {num_lines}")
+#             if num_lines >= min_lines:
+#                 print(f"\ttable detected starting at {start_char} with length {length} (of total {file_length} characters), spanning over {num_lines} lines")
+#
+#                 table_text = text[start_char: start_char + length]
+#                 lines = table_text.split('\n')
+#                 rows = [line.split(cell_sep) for line in lines]
+#                 # replace possible empty cells in header
+#                 unknown_i = 1
+#                 i = 0
+#                 for cell in rows[0]:
+#                     # print(f"'{cell}'")
+#                     if len(cell) == 0:
+#                         print(f"\tempty value in header ('{cell}') replaced with generated name 'column_{unknown_i}")
+#                         rows[0][i] = f"column_{unknown_i}"
+#                         unknown_i += 1
+#                     i += 1
+#
+#                 # check if the last row is all Nones
+#                 num_nones = 0
+#                 for cell in rows[-1]:
+#                     if cell is None:
+#                         num_nones += 1
+#                 if num_nones == len(rows[-1]):
+#                     rows.pop()
+#                     print(f"\tlast row was all Nones and was removed")
+#                 print(f"\tcolumn headers are: {rows[0]}")
+#
+#                 # try converting list of lists to pandas dataframe
+#                 try:
+#                     df = pd.DataFrame(rows[1:], columns=rows[0])
+#                 except :
+#                     print(f"File '{self.file}' has unknown structure.")
+#
+#                 else:
+#                     table_dataframes.append(df)
+#             m += 1
+#
+#         return table_dataframes
+
+class FileSystemCrawlerFactory:
     """
-    Crawler for file system repositories
+    File system type crawler factory
     """
 
-    def __init__(self, filepath):
-        self.file = filepath
+    # directory of registered publisher types classes
+    filetypes = {}
+
+    # the one and only instance
+    _instance = None
+    def __init__(self):
+
+        def __new__(class_, *args, **kwargs):
+            if not isinstance(class_._instance, class_):
+                class_._instance = object.__new__(class_, *args, **kwargs)
+            return class_._instance
+
+    @classmethod
+    def registerFileType(cls, fileTypeCrawlerClass, key):
+        cls.filetypes[key] = fileTypeCrawlerClass
+        print(f"Crawler for file type '{key}' registered.")
+        return
+
+    @classmethod
+    def createCrawler(cls, fileTypeKey, container, *args):
+        """
+        Creates and returns instance of Publisher of given key
+        """
+
+        if fileTypeKey:
+            if fileTypeKey.lower() not in cls.filetypes.keys():
+                filetypes = ",".join(["'"+k+"'" for k in cls.filetypes.keys()])
+                print(f"\tUnsupported Crawler subclass type '{fileTypeKey.lower()}' (registered types are: {filetypes}) - plain text crawler will be used instead.")
+                return cls.filetypes['txt'](container, *args)
+            else:
+                return cls.filetypes[fileTypeKey](container, *args)
+        else:
+            print(f"\tFile has no extension ... plain text crawler will be used instead.")
+            return cls.filetypes['txt'](container, *args)
+
+class CSVcrawler(Crawler):
+    """
+    Crawler for CSV tables
+    """
+    extension = "csv"
+    def __init__(self, container):
+        self.container = container
+
+        # print(f"\tCSV crawler created for container #{self.container.id} '{self.container.name}' (file '{self.container.path}')")
+        pass
 
     def crawl(self):
         """
         Do the crawl - go through the file and detect defined elements
         """
+        print(f"crawling CSV '{self.container.path}' of container #{self.container.id}, encoding '{self.container.encoding}'")
+        dataframes = self.get_tables_from_csv(2)
+        if len(dataframes) > 0:
+            print(f"\tfound {len(dataframes)} understandable table structures")
+            return dataframes
+        else:
+            print(f"\tfound no understandable tables")
+            return None
 
-        tables = self.findCSVtables(2)
-        print(tables)
-
-    def findCSVtables(self, min_lines=3):
-        # Pattern to match CSV-like tables without knowing delimiters
-        pattern = r'\b[\w\s]+(?:[^\w\s]+[\w\s]+)*\b'
-
+    def get_tables_from_csv(self, cell_delimiter, min_lines=3):
+        # encoding = detect_encoding(self.file)
         # read the file into a text
-        with open(self.file, 'r') as file:
+        with open(self.container.path, 'r', encoding='ANSI') as file:
             text = file.read()
+        file_length = len(text)
+        # try detecting delimiters from file content
+        cell_sep, line_sep = detect_delimiters(text)
+        print(f"\tcell delimiter: '{cell_sep}'")
 
-        # Find all matches
-        matches = re.findall(pattern, text)
+        # Pattern to match CSV-like tables without knowing delimiters
+        pattern = r'(?:(?<!\w)[^\w\s]*(?:\w+\W*(?:\w+\W*)+\w+|\w+(?:\W+\w+)+\w+)\b(?:\W|\Z))'
+        # pattern = r'(?:(?<!\w)[^\w\s]*(?:\w+\W*(?:\w+\W*)+\w+|\w+(?:\W+\w+)+\w+)\b(?:\W|$))(?!\n\s*$)'
+        # pattern = r'(?:(?<!\w)[^\w\s]*(?:\w+\W*(?:\w+\W*)+\w+|\w+(?:\W+\w+)+\w+)\b(?:\W|$))(?=\n|\Z)'
 
-        # Filter matches based on structure (e.g., number of lines)
-        table_like_matches = [match for match in matches if match.count('\n') >= min_lines]
+        # Find all matches and their start character and length
+        matches = re.finditer(pattern, text)
+        # Filter matches based on structure (e.g., number of lines) and store start character and length
+        table_dataframes = []
+        m = 0
+        for match in matches:
+            start_char = match.start()
+            length = match.end() - match.start()
 
-        return table_like_matches
+            # print(f"\nmatch {m}")
+            # match_string = text[match.start():match.end()]
+            # print(f"match string:\n{match_string}\nlength {len(match_string)}")
 
+            num_lines = text[match.start():match.end()].count('\n')
+            # print(f"number of lines {num_lines}")
+            if num_lines >= min_lines:
+                print(f"\ttable detected starting at {start_char} with length {length} (of total {file_length} characters), spanning over {num_lines} lines")
 
-def detect_delimiters(text):
+                table_text = text[start_char: start_char + length]
+                lines = table_text.split('\n')
+                rows = [line.split(cell_sep) for line in lines]
+                row_length = len(rows[0])
+                # replace possible empty cells in header
+                unknown_i = 1
+                i = 0
+                for cell in rows[0]:
+                    # print(f"'{cell}'")
+                    if len(cell) == 0:
+                        print(f"\tempty value in header ('{cell}') replaced with generated name 'column_{unknown_i}")
+                        rows[0][i] = f"column_{unknown_i}"
+                        unknown_i += 1
+                    else:
+                        rows[0][i] = cell.strip('\"\'')
+                    i += 1
+
+                # check if the last row is empty
+                if len(rows[-1]) < row_length:
+                    print(f"\tthe last row was removed: {rows[-1]}")
+                    rows.pop()
+                # check if the last row is all Nones
+                num_nones = 0
+                for cell in rows[-1]:
+                    if cell is None:
+                        num_nones += 1
+                if num_nones == len(rows[-1]):
+                    rows.pop()
+                    print(f"\tlast row was all Nones and was removed")
+
+                print(f"\tcolumn headers are: {rows[0]}")
+
+                # try converting list of lists to pandas dataframe
+                try:
+                    df = pd.DataFrame(rows[1:], columns=rows[0])
+                except :
+                    print(f"File '{self.container.path}' has unknown structure.")
+
+                else:
+                    table_dataframes.append(df)
+            m += 1
+
+        return table_dataframes
+
+FileSystemCrawlerFactory.registerFileType(CSVcrawler, CSVcrawler.extension)
+
+class PlainTextCrawler(Crawler):
     """
-    Detect line, cell and decimal delimiters used in input file based on first table found in file
+    Crawler for plain text files
+    Also used as default general crawler if filetype-specific crawler is not registered
     """
+    extension = "txt"
+    def __init__(self, container):
+        self.container = container
+        # print(f"\tTXT crawler created for container #{self.container.id} '{self.container.name}' (file '{self.container.path}')")
+        pass
 
-    # Use Sniffer to infer the dialect
-    csv_file = io.StringIO(text)
-    dialect = csv.Sniffer().sniff(csv_file.read(1024))  # Read a portion of the text for analysis
+    def crawl(self):
+        """
+        Do the crawl - go through the file and detect defined elements
+        """
+        print("No crawling procedure defined yet for Plain Text crawler")
+        pass
 
-    # Analyze numeric values to detect the decimal separator
-    decimal_separator = detect_decimal_separator(text, dialect.delimiter)
+FileSystemCrawlerFactory.registerFileType(PlainTextCrawler, PlainTextCrawler.extension)
 
-    return dialect.delimiter, dialect.lineterminator, decimal_separator
-
-
-def detect_decimal_separator(text, delimiter):
-    # Split the text into rows and columns
-    rows = [line.split(delimiter) for line in text.splitlines() if line.strip()]
-
-    # Flatten the list of values
-    values = [value for row in rows for value in row]
-
-    # Extract numeric values
-    numeric_values = [value for value in values if is_numeric(value)]
-
-    # Count occurrences of decimal separators
-    decimal_separator_counts = Counter(
-        value.replace(',', '') for value in numeric_values if ',' in value or '.' in value)
-
-    # Determine the most common decimal separator
-    most_common_decimal_separator = decimal_separator_counts.most_common(1)
-
-    if most_common_decimal_separator:
-        return most_common_decimal_separator[0][0]
-    else:
-        return None
-
-
-def is_numeric(value):
-    try:
-        float(value.replace(',', ''))
-        return True
-    except ValueError:
-        return False

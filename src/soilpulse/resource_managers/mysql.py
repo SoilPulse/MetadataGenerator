@@ -10,11 +10,12 @@ class MySQLContainer(ContainerHandler):
     containerFormat = "MySQL"
     keywordsDBname = "keywords_mysql"
 
-    def __init__(self, name):
-        super(MySQLContainer, self).__init__(name)
+    def __init__(self, id, name):
+        super(MySQLContainer, self).__init__(id, name)
         self.databaseName = None
         self.tables = []
         self.foreignKeys = []
+        self.crawler = MySQLcrawler(self)
 
 
     def showContents(self):
@@ -40,4 +41,12 @@ class MySQLPointer(Pointer):
     pass
 
 class MySQLcrawler(Crawler):
-    pass
+
+    def __init__(self, container):
+        self.container = container
+        # print(f"\tMySQL crawler created for container #{self.container.id} '{self.container.name}' (file '{self.container.path}')")
+        pass
+
+    def crawl(self):
+        print("No crawling procedure defined yet for MySQL crawler")
+        pass

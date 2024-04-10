@@ -14,9 +14,7 @@ from soilpulse.db_access import EntityKeywordsDB
 
 
 if __name__ == "__main__":
-    print(EntityKeywordsDB.DBs)
-
-
+    kwdb = EntityKeywordsDB()
 
     exampleDOI = "10.5281/zenodo.6654150"
 
@@ -42,8 +40,10 @@ if __name__ == "__main__":
     newDataset = RM.newDataset("Dataset test 1")
     # add some containers from the ResourceManager - will be done through the GUI
     newDataset.addContainers(RM.getContainerByID([1, 2, 6]))
+
     # show the dataset's container tree
     newDataset.showContainerTree()
+    newDataset.getCrawled()
 
 
     ###### dataset crawling and metadata structure mapping ################

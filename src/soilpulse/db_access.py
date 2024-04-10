@@ -124,6 +124,9 @@ class EntityKeywordsDB:
     DBs = {}
 
     def __init__(self):
+        print("\nEntityKeywords instance created.")
+        print(f"DB directory: {EntityKeywordsDB.dbDir}")
+        print(f"currently registered DBs: {EntityKeywordsDB.DBs}\n")
         pass
 
     @classmethod
@@ -139,9 +142,10 @@ class EntityKeywordsDB:
             return connection
 
     @classmethod
-    def registerKeywordsDB(cls, type, dbFilename):
-        cls.DBs.update({type:os.path.join(cls.dbDir, dbFilename)})
-        print("Keywords database {} as '{}'".format(os.path.join(cls.dbDir, dbFilename), type))
+    def registerKeywordsDB(cls, dbType, dbFilename):
+        cls.DBs.update({dbType: os.path.join(cls.dbDir, dbFilename)})
+        print("Keywords database {} registered as '{}'".format(os.path.join(cls.dbDir, dbFilename), dbType))
+        print(EntityKeywordsDB.DBs)
         return
 
     @classmethod
