@@ -150,8 +150,7 @@ with c1:
             st.stop()
 
         cache_dir = re.sub('[^A-Za-z0-9]+', '',
-                           st.session_state.metainf['doi'] +
-                           st.session_state.metainf['working_title'])
+                           st.session_state.metainf['doi'])
         if os.path.isdir("catalogue/"+cache_dir+"/") and\
                 "meta" in os.listdir("catalogue/"+cache_dir+"/"):
             cached = True
@@ -321,6 +320,8 @@ if 'nodes' in st.session_state.metainf and len(
                 st.session_state.metainf['file_mapping'][file] = {}
             file_meta = st.session_state.metainf['file_mapping'][file]
             with st.expander(label="**"+str.split(file, sep="/data/")[-1]+"**"):
+                if st.button(":red[Clear file metadata]", key="cf"+file):
+                    file_meta = {}
                 encodings = ["ANSI", "UTF-8"]
                 if not os.path.isfile(file):
                     st.write("Something went wrong, is it a file?")
@@ -340,6 +341,9 @@ if 'nodes' in st.session_state.metainf and len(
                         showcols = st.checkbox("Column settings", key = "cs"+file)
                     with fmm4:
                         showjson = st.checkbox("Show file metadata", key = "fm"+file)
+
+                    if showjson:
+                        st.json(file_meta)
 
                     if showprev:
                         st.header("File Preview")
@@ -385,11 +389,6 @@ if 'nodes' in st.session_state.metainf and len(
                             header=file_meta['headerlines'],
                             engine="python")
                         filedatab = True
-                        if 'cols' not in file_meta:
-                            file_meta['cols'] = {}
-                        for col in filedata.columns:
-                            if col not in file_meta['cols']:
-                                file_meta['cols'][col] = {}
                     except:
                         filedatab = False
 
@@ -400,17 +399,24 @@ if 'nodes' in st.session_state.metainf and len(
                         st.write("Could not read file. Please change settings.")
 
                     if showcols and filedatab:
+                        if st.button("(re-)get columns", key = "reg"+file) or\
+                                'cols' not in file_meta:
+                            file_meta['cols'] = {}
+                            for col in filedata.columns:
+                                if col not in file_meta['cols']:
+                                    file_meta['cols'][col] = {}
                         st.header("Columns settings")
-                        action = st.radio("Action",
+                        col = st.selectbox(
+                            "Which Column",
+                            options=[x for x in file_meta['cols']])
+                        colmod = copy.deepcopy(file_meta['cols'][col])
+                        action = st.radio("What to do on column "+col,
                                           options=["attribute column",
                                                    "split column",],
                                           horizontal=True,
                                           key="act"+file
                                           )
-                        col = st.selectbox(
-                            "Which Column",
-                            options=[x for x in file_meta['cols']])
-                        colmod = copy.copy(file_meta['cols'][col])
+
                         #colmod = file_meta['cols'][col]
                         if 'sep' not in colmod:
                             colmod['sep'] = None
@@ -449,21 +455,21 @@ if 'nodes' in st.session_state.metainf and len(
                                 value=colmod['unit'],
                                 key="unit"+file)
                         if st.button("Update column", key="upd"+file):
-                            file_meta['cols'][col] = copy.copy(colmod)
+                            file_meta['cols'][col] = copy.deepcopy(colmod)
                             del colmod
+
 # do the column operartions
                         for x in file_meta['cols']:
                             if 'sep' in file_meta['cols'][x] and bool(file_meta['cols'][x]['sep']):
-                                file_meta['cols'][x]['left']['col']
+                                st.write("Splitting "+x+" by "+file_meta['cols'][x]['sep'])
                                 filedata[[file_meta['cols'][x]['left']['col'],
                                           file_meta['cols'][x]['right']['col']]] = filedata[
                                               x].str.split(
                                                   file_meta['cols'][x]['sep'], expand=True)
+
                                 filedata.loc[:, file_meta['cols'][x]['left']['col']] = pd.to_numeric(filedata.loc[:, file_meta['cols'][x]['left']['col']].str.replace("N ",""))
                                 filedata.loc[:, file_meta['cols'][x]['right']['col']] = pd.to_numeric(filedata.loc[:, file_meta['cols'][x]['right']['col']])
-                    filedata
 
-                    st.map(filedata, latitude="Lat4326", longitude="Lon4326")
-
-                    if showjson:
-                        st.json(file_meta)
+                        filedata
+                        st.write("Hooray now I can produce a map:")
+                        st.map(filedata, latitude="Lat4326", longitude="Lon4326")
