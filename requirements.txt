@@ -1,4 +1,12 @@
 requests
 streamlit
+pandas
+json
+re
+sys
+os
+pickle
+shutil
+copy
 streamlit-tree-select
 mysql.connector
