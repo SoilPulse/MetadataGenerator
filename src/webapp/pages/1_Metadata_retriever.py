@@ -193,7 +193,6 @@ with c1:
                                     now.) But you can still upload files.")
                         else:
                             st.session_state.metainf['ZenodoFiles'] = response
-                _writes_cache(cache_dir)
 
 with c1:
     if 'metainf' in st.session_state and\
