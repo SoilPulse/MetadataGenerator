@@ -18,6 +18,8 @@ import sys
 import os
 import pickle
 import shutil
+import copy
+
 import streamlit_tree_select
 
 import tree3
@@ -42,7 +44,11 @@ def _writes_cache(cache_dir):
         pickle.dump(st.session_state.metainf,
                     handle, protocol=pickle.HIGHEST_PROTOCOL)
     with open("catalogue/"+cache_dir+"/meta.json", 'w') as file:
-        file.write(json.dumps(st.session_state.metainf))
+#        file.write(json.dumps(st.session_state.metainf))
+# this is a quick fix - shall be really fixed with merging to Backend
+        file.write(json.dumps(
+            {k:v for k,v in st.session_state.metainf.items() if k != 'containerTree'}
+            ))
     st.rerun()
 #    st.write("wrote cache")
 
@@ -95,7 +101,7 @@ with c1:
             label=st.session_state.metainf['working_title'] + " has:",
             options=["a DOI",
                      "an URL without DOI",
-                     "local dataset"],
+                     "a local dataset"],
             horizontal=True,
             on_change=_clear_session_state
             )
@@ -128,7 +134,7 @@ with c1:
              to a (dedicated) repository, like \
              [Bonares](https://www.bonares.de) or \
              [Zenodo](https://www.zenodo.org).", unsafe_allow_html=True)
-        elif (type_of_dataset == "local dataset"):
+        elif (type_of_dataset == "a local dataset"):
             st.warning("local dataset will be implemented later")
 #    uploaded_files = st.file_uploader("Choose a file",
 #                                      accept_multiple_files=True)
@@ -272,14 +278,15 @@ if 'doiorg' in st.session_state.metainf and cached and \
         with st.sidebar:
             # streamlit tree select docs: https://github.com/Schluca/streamlit_tree_select/tree/main
             st.write("**Please select here all files containing actual data:**")
+            st.warning("Unchecking deletes progressed metadata on this file.")
             st.session_state.metainf['return_select'] = streamlit_tree_select.tree_select(
                 st.session_state.metainf['nodes'],
-                only_leaf_checkboxes=True,
-                no_cascade=True,
+#                only_leaf_checkboxes=True,
+#                no_cascade=True,
                 checked=st.session_state.metainf['return_select']['checked'],
                 expanded=st.session_state.metainf['return_select']['expanded'])
-        with c1:
-            st.write(st.session_state.metainf['return_select'])
+#        with c1:
+#            st.write(st.session_state.metainf['return_select'])
 
 
 with c2:
@@ -303,3 +310,160 @@ with c2:
                               value=False)
         if show_meta:
             st.json(st.session_state.metainf)
+
+if 'nodes' in st.session_state.metainf and len(
+        st.session_state.metainf['return_select']['checked']) > 0:
+    if 'file_mapping' not in st.session_state.metainf:
+        st.session_state.metainf['file_mapping'] = {}
+    with c1:
+        for file in st.session_state.metainf['return_select']['checked']:
+            if file not in st.session_state.metainf['file_mapping']:
+                st.session_state.metainf['file_mapping'][file] = {}
+            file_meta = st.session_state.metainf['file_mapping'][file]
+            with st.expander(label="**"+str.split(file, sep="/data/")[-1]+"**"):
+                encodings = ["ANSI", "UTF-8"]
+                if not os.path.isfile(file):
+                    st.write("Something went wrong, is it a file?")
+                else:
+                    try:
+                        file1 = open(file, 'r')
+                        Lines = file1.readlines()
+                    except:
+                        st.warning("By now only textfiles are supported.")
+                        continue
+                    fmm1, fmm2, fmm3, fmm4 = st.columns(4)
+                    with fmm1:
+                        showprev = st.checkbox("File preview", key = "fp"+file)
+                    with fmm2:
+                        showsett = st.checkbox("File settings", key = "fs"+file)
+                    with fmm3:
+                        showcols = st.checkbox("Column settings", key = "cs"+file)
+                    with fmm4:
+                        showjson = st.checkbox("Show file metadata", key = "fm"+file)
+
+                    if showprev:
+                        st.header("File Preview")
+                        ii=0
+                        for line in Lines[0:st.number_input("Number of lines for preview",
+                                                            key="pre"+file,
+                                                            value=3)]:
+                            ii+=1
+                            st.text("*Line "+str(ii)+"*: "+line)
+
+                    if showsett:
+                        st.header("File settings")
+                        fm1, fm2, fm3 = st.columns(3)
+                        if 'encoding' not in file_meta:
+                            file_meta['encoding'] = file1.encoding
+                        with fm1:
+                            file_meta['encoding'] = st.radio(
+                                label="choose encoding",
+                                key="enc"+file,
+                                options=[file_meta['encoding']]+encodings,
+                                horizontal=True)
+
+                        if 'separator' not in file_meta:
+                            file_meta['separator'] = ','
+                        with fm2:
+                            file_meta['separator'] = st.text_input(
+                                "choose separator",
+                                value=file_meta['separator'],
+                                key="sep"+file)
+
+                        if 'headerlines' not in file_meta:
+                            file_meta['headerlines'] = 0
+                        with fm3:
+                            file_meta['headerlines'] = st.number_input(
+                                "number of header lines",
+                                key="header"+file,
+                                value=file_meta['headerlines'])
+                    try:
+                        filedata = pd.read_csv(
+                            file,
+                            encoding=file_meta['encoding'],
+                            sep=file_meta['separator'],
+                            header=file_meta['headerlines'],
+                            engine="python")
+                        filedatab = True
+                        if 'cols' not in file_meta:
+                            file_meta['cols'] = {}
+                        for col in filedata.columns:
+                            if col not in file_meta['cols']:
+                                file_meta['cols'][col] = {}
+                    except:
+                        filedatab = False
+
+                    if showsett and filedatab:
+                        st.write("Your data looks to me like:")
+                        filedata
+                    if showsett and not filedatab:
+                        st.write("Could not read file. Please change settings.")
+
+                    if showcols and filedatab:
+                        st.header("Columns settings")
+                        action = st.radio("Action",
+                                          options=["attribute column",
+                                                   "split column",],
+                                          horizontal=True,
+                                          key="act"+file
+                                          )
+                        col = st.selectbox(
+                            "Which Column",
+                            options=[x for x in file_meta['cols']])
+                        colmod = copy.copy(file_meta['cols'][col])
+                        #colmod = file_meta['cols'][col]
+                        if 'sep' not in colmod:
+                            colmod['sep'] = None
+                            for side in ['left', 'right']:
+                                colmod[side] = {}
+                                colmod[side]['col'] = None
+                                colmod[side]['agrovoc'] = None
+                                colmod[side]['unit'] = None
+                            colmod['agrovoc'] = None
+                            colmod['unit'] = None
+                            colmod['data type'] = None #### @Jonas/Honza - put in here integer/str/date/coordinates...
+                            colmod['numeric separator'] = None #### @Jonas/Honza - put in here integer/str/date/...
+                            colmod['relations'] = None #### @Jonas/Honza - here we would need the relations to timestamps / IDs
+                        if action == "split column":
+                            colmod['sep'] = st.text_input("Split by",
+                                                          value=colmod['sep'])
+                            for side in ['left', 'right']:
+                                colmod[side]['col'] = st.text_input(
+                                    "New "+side+" column name",
+                                    value=colmod[side]['col'])
+                                colmod[side]['agrovoc'] = st.text_input(
+                                    "Choose agrovoc concept",
+                                    key="agro"+side,
+                                    value=colmod[side]['agrovoc'])
+                                colmod[side]['unit'] = st.text_input(
+                                    "Select unit of measurement",
+                                    key="unit"+side,
+                                    value=colmod[side]['unit'])
+                        if action == "attribute column":
+                            colmod['agrovoc'] = st.text_input(
+                                "Choose agrovoc concept",
+                                colmod['agrovoc'],
+                                key="agro"+file)
+                            colmod['unit'] = st.text_input(
+                                "Select unit of measurement",
+                                value=colmod['unit'],
+                                key="unit"+file)
+                        if st.button("Update column", key="upd"+file):
+                            file_meta['cols'][col] = copy.copy(colmod)
+                            del colmod
+# do the column operartions
+                        for x in file_meta['cols']:
+                            if 'sep' in file_meta['cols'][x] and bool(file_meta['cols'][x]['sep']):
+                                file_meta['cols'][x]['left']['col']
+                                filedata[[file_meta['cols'][x]['left']['col'],
+                                          file_meta['cols'][x]['right']['col']]] = filedata[
+                                              x].str.split(
+                                                  file_meta['cols'][x]['sep'], expand=True)
+                                filedata.loc[:, file_meta['cols'][x]['left']['col']] = pd.to_numeric(filedata.loc[:, file_meta['cols'][x]['left']['col']].str.replace("N ",""))
+                                filedata.loc[:, file_meta['cols'][x]['right']['col']] = pd.to_numeric(filedata.loc[:, file_meta['cols'][x]['right']['col']])
+                    filedata
+
+                    st.map(filedata, latitude="Lat4326", longitude="Lon4326")
+
+                    if showjson:
+                        st.json(file_meta)
