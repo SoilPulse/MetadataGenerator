@@ -63,17 +63,18 @@ def _load_cache(cache_dir):
         st.session_state.metainf = pickle.load(handle)
     st.rerun()
 
+
 # define initial session state
-if 'metainf' not in st.session_state:# and\
-#    'doi' not in st.session_state.metainf and\
-#    'working_title' not in st.session_state.metainf:
+if 'metainf' not in st.session_state:  # and\
+    # 'doi' not in st.session_state.metainf and\
+    # 'working_title' not in st.session_state.metainf:
     cache_dir = "nocache"
     st.session_state.metainf = {}
 
 
 # Frontend imlementation
 
-c1, c2 = st.columns((8, 2), gap="large")
+c1, c2 = st.columns((8, 3), gap="large")
 
 
 with c1:
@@ -86,19 +87,18 @@ with c1:
                               for machine readability. Do you want to give\
                               it a working title? (This title will not be\
                               recorded in the final metadata.)",
-                              value="My data",
-                              on_change=_clear_session_state)
+            value="My data",
+            on_change=_clear_session_state)
 
     # value/label diff: https://discuss.streamlit.io/t/label-and-values-in-in-selectbox/1436/6
         type_of_dataset = st.radio(
             label=st.session_state.metainf['working_title'] + " has:",
-                           options=["a DOI",
-                                    "an URL without DOI",
-                                    "local dataset"],
-                           horizontal=True,
-                           on_change=_clear_session_state
-                           )
-
+            options=["a DOI",
+                     "an URL without DOI",
+                     "local dataset"],
+            horizontal=True,
+            on_change=_clear_session_state
+            )
 
         if (type_of_dataset == "a DOI"):
             st.session_state.metainf['doi'] = st.selectbox(
@@ -122,7 +122,7 @@ with c1:
             st.session_state.metainf['doi'] = "NoDOI"
             for inf in ['Title', 'Author', 'Abstract']:
                 st.session_state.metainf[inf] = st.text_input(
-                label=inf)
+                    label=inf)
             st.write("Data you refer to by url can be treated, but usually miss a\
              clear license, so SoilPulse will offer you to publish your data\
              to a (dedicated) repository, like \
@@ -248,7 +248,6 @@ with c1:
                     st.write("")
                     st.write("")
 
-
             getFiles = st.button("Download selected files")
             if getFiles:
                 st.session_state.metainf['containerTree'] = []
@@ -261,24 +260,26 @@ with c1:
                     "catalogue/"+cache_dir+"/data/")
                 st.write("You can proceed to explain your files.")
 
-if 'doiorg' in st.session_state.metainf and cached \
-        and len(os.listdir("catalogue/"+cache_dir+"/data/")) > 0:
-    if 'nodes' not in st.session_state.metainf:
-        st.session_state.metainf['nodes'] = tree3._create_tree(
-            "catalogue/"+cache_dir+"/data/")
-        st.session_state.metainf['return_select'] = {'checked': [],
-                                                     'expanded': []}
-    with st.sidebar:
-        # streamlit tree select docs: https://github.com/Schluca/streamlit_tree_select/tree/main
-        st.write("**Please select here all files containing actual data:**")
-        st.session_state.metainf['return_select'] = streamlit_tree_select.tree_select(
-            st.session_state.metainf['nodes'],
-            only_leaf_checkboxes=True,
-            no_cascade=True,
-            checked=st.session_state.metainf['return_select']['checked'],
-            expanded=st.session_state.metainf['return_select']['expanded'])
-    with c1:
-        st.write(st.session_state.metainf['return_select'])
+
+if 'doiorg' in st.session_state.metainf and cached and \
+        os.path.isdir("catalogue/"+cache_dir+"/data/"):
+    if len(os.listdir("catalogue/"+cache_dir+"/data/")) > 0:
+        if 'nodes' not in st.session_state.metainf:
+            st.session_state.metainf['nodes'] = tree3._create_tree(
+                "catalogue/"+cache_dir+"/data/")
+            st.session_state.metainf['return_select'] = {'checked': [],
+                                                         'expanded': []}
+        with st.sidebar:
+            # streamlit tree select docs: https://github.com/Schluca/streamlit_tree_select/tree/main
+            st.write("**Please select here all files containing actual data:**")
+            st.session_state.metainf['return_select'] = streamlit_tree_select.tree_select(
+                st.session_state.metainf['nodes'],
+                only_leaf_checkboxes=True,
+                no_cascade=True,
+                checked=st.session_state.metainf['return_select']['checked'],
+                expanded=st.session_state.metainf['return_select']['expanded'])
+        with c1:
+            st.write(st.session_state.metainf['return_select'])
 
 
 with c2:
@@ -302,4 +303,3 @@ with c2:
                               value=False)
         if show_meta:
             st.json(st.session_state.metainf)
-
