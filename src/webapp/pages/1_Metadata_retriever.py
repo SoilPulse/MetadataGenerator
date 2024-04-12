@@ -67,6 +67,8 @@ def _clear_cache(cache_dir):
 def _load_cache(cache_dir):
     with open("catalogue/"+cache_dir+"/meta", 'rb') as handle:
         st.session_state.metainf = pickle.load(handle)
+    if not os.path.isdir("catalogue/"+cache_dir+"/data"):
+        os.mkdir("catalogue/"+cache_dir+"/data")
     st.rerun()
 
 

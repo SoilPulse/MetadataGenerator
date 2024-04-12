@@ -26,7 +26,7 @@ from soilpulse.db_access import EntityKeywordsDB
 
 st.title("Here you can explore the datasets captured by SoilPulse.")
 
-folder = ".\\catalogue"
+folder = "catalogue"
 datasets = [f.path for f in os.scandir(folder) if f.is_dir()]
 datasetdict = {}
 
