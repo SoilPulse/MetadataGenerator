@@ -270,7 +270,13 @@ with c1:
 if 'doiorg' in st.session_state.metainf and cached and \
         os.path.isdir("catalogue/"+cache_dir+"/data/"):
     if len(os.listdir("catalogue/"+cache_dir+"/data/")) > 0:
-        if 'nodes' not in st.session_state.metainf:
+        with st.sidebar:
+            rufl1, rufl2 = st.columns(2)
+            with rufl1:
+                rfl = st.button("refresh file list")
+            with rufl2:
+                ufl = st.button("update selected files")
+        if 'nodes' not in st.session_state.metainf or rfl:
             st.session_state.metainf['nodes'] = tree3._create_tree(
                 "catalogue/"+cache_dir+"/data/")
             st.session_state.metainf['return_select'] = {'checked': [],
@@ -278,13 +284,17 @@ if 'doiorg' in st.session_state.metainf and cached and \
         with st.sidebar:
             # streamlit tree select docs: https://github.com/Schluca/streamlit_tree_select/tree/main
             st.write("**Please select here all files containing actual data:**")
-            st.warning("Unchecking deletes progressed metadata on this file.")
-            st.session_state.metainf['return_select'] = streamlit_tree_select.tree_select(
+            newchecks = copy.deepcopy(st.session_state.metainf['return_select'])
+            newchecks = streamlit_tree_select.tree_select(
                 st.session_state.metainf['nodes'],
 #                only_leaf_checkboxes=True,
 #                no_cascade=True,
-                checked=st.session_state.metainf['return_select']['checked'],
-                expanded=st.session_state.metainf['return_select']['expanded'])
+                checked=newchecks['checked'],
+                expanded=newchecks['expanded'])
+            if ufl:
+                st.session_state.metainf['return_select'] = copy.deepcopy(
+                    newchecks)
+                st.rerun()
 #        with c1:
 #            st.write(st.session_state.metainf['return_select'])
 
