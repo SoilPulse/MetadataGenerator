@@ -32,15 +32,19 @@ datasetdict = {}
 
 for x in datasets:
     with open(x+"/meta", 'rb') as handle:
-        datasetdict[x.split("/")[-1].split("\\")[-1]] = pickle.load(handle)
+        xname = x.split("/")[-1].split("\\")[-1]
+        meta = pickle.load(handle)
+        if "file_mapping" in meta:
+            datasetdict[xname] = meta
 
-#st.json(datasetdict)
+st.write("I found those queryable datasets:")
+st.write(x for x in datasetdict)
 
 columns = st.multiselect("Query for which colunns", options=["Lat4326","Lon4326"])
 #columns = ["Lat4326","Lon4326"]
 columns
 
-def get_values(columns2):
+def get_values(columns2, datasetdict):
     returndict = {}
     columns = columns2
     columns2.append("dataset")
@@ -51,7 +55,7 @@ def get_values(columns2):
             if columns[0] in json.dumps(file_meta):
     #            st.write("found "+column+" in "+file)
                 filedata = pd.read_csv(
-                    file,
+                    os.path.normpath(file),
                     encoding=file_meta['encoding'],
                     sep=file_meta['separator'],
                     header=file_meta['headerlines'],
@@ -70,7 +74,7 @@ def get_values(columns2):
     return returndict
 
 if st.button("query these columns"):
-    data = pd.concat(get_values(columns), ignore_index=True)
+    data = pd.concat(get_values(columns, datasetdict), ignore_index=True)
     #categories = np.unique(data['dataset'])
     #colors = np.linspace(0, 1, len(categories))
     #colordict = dict(zip(categories, colors))

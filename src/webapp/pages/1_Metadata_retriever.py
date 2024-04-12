@@ -327,10 +327,12 @@ if 'nodes' in st.session_state.metainf and len(
         st.session_state.metainf['file_mapping'] = {}
     with c1:
         for file in st.session_state.metainf['return_select']['checked']:
+            file = os.path.normpath(file).replace("\\", "/")
             if file not in st.session_state.metainf['file_mapping']:
                 st.session_state.metainf['file_mapping'][file] = {}
             file_meta = st.session_state.metainf['file_mapping'][file]
-            with st.expander(label="**"+str.split(file, sep="/data/")[-1]+"**"):
+            with st.expander(label="**"+str.split(
+                    file, sep=cache_dir+"/data/")[-1]+"**"):
                 if st.button(":red[Clear file metadata]", key="cf"+file):
                     file_meta = {}
                 encodings = ["ANSI", "UTF-8"]
@@ -338,7 +340,7 @@ if 'nodes' in st.session_state.metainf and len(
                     st.write("Something went wrong, is it a file?")
                 else:
                     try:
-                        file1 = open(file, 'r')
+                        file1 = open(os.path.normpath(file), 'r')
                         Lines = file1.readlines()
                     except:
                         st.warning("By now only textfiles are supported.")
@@ -394,7 +396,7 @@ if 'nodes' in st.session_state.metainf and len(
                                 value=file_meta['headerlines'])
                     try:
                         filedata = pd.read_csv(
-                            file,
+                            os.path.normpath(file),
                             encoding=file_meta['encoding'],
                             sep=file_meta['separator'],
                             header=file_meta['headerlines'],
