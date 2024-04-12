@@ -69,13 +69,18 @@ def get_values(columns2):
         returndict[z] = filedata.loc[:,columns2]
     return returndict
 
-data = pd.concat(get_values(columns), ignore_index=True)
-#categories = np.unique(data['dataset'])
-#colors = np.linspace(0, 1, len(categories))
-#colordict = dict(zip(categories, colors))
-#data["Color"] = data['dataset'].apply(lambda x: colordict[x])
+if st.button("query these columns"):
+    data = pd.concat(get_values(columns), ignore_index=True)
+    #categories = np.unique(data['dataset'])
+    #colors = np.linspace(0, 1, len(categories))
+    #colordict = dict(zip(categories, colors))
+    #data["Color"] = data['dataset'].apply(lambda x: colordict[x])
 
-data.loc[:, "Color"] = "#0033FF"
-data.loc[data.loc[:, "dataset"] == "105281zenodo6654150", "Color"] = "#FF0033"
-data
-st.map(data, latitude="Lat4326", longitude="Lon4326", color="Color")
+    data.loc[:, "Color"] = "#0033FF"
+    data.loc[data.loc[:, "dataset"] == "105281zenodo6654150", "Color"] = "#FF0033"
+    c1, c2 = st.columns(2)
+    with c1:
+        data
+    with c2:
+        if ("Lat4326" in columns and "Lon4326" in columns):
+            st.map(data, latitude="Lat4326", longitude="Lon4326", color="Color")
