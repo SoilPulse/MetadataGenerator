@@ -24,25 +24,28 @@ from soilpulse.data_publishers import *
 from soilpulse.metadata_scheme import *
 from soilpulse.db_access import EntityKeywordsDB
 
-st.title("Here you can explore the datasets captured by SoilPulse.")
 
-folder = "catalogue"
-datasets = [f.path for f in os.scandir(folder) if f.is_dir()]
-datasetdict = {}
+# find values by key from dict/list https://stackoverflow.com/a/29652561
+def _gen_dict_extract(key, var):
+    if hasattr(var, 'items'):
+        for k, v in var.items():
+            if k == key:
+                yield v
+            if isinstance(v, dict):
+                for result in _gen_dict_extract(key, v):
+                    yield result
+            elif isinstance(v, list):
+                for d in v:
+                    for result in _gen_dict_extract(key, d):
+                        yield result
 
-for x in datasets:
-    with open(x+"/meta", 'rb') as handle:
-        xname = x.split("/")[-1].split("\\")[-1]
-        meta = pickle.load(handle)
-        if "file_mapping" in meta:
-            datasetdict[xname] = meta
 
-st.write("I found those queryable datasets:")
-st.write(x for x in datasetdict)
+def get_keys_of_dictlist(key, var):
+    keys = _gen_dict_extract(key, var)
+    keys = list(set([x for x in keys]))  # unique values
+    keys = [i for i in keys if i is not None]  # avoid None
+    return keys
 
-columns = st.multiselect("Query for which colunns", options=["Lat4326","Lon4326"])
-#columns = ["Lat4326","Lon4326"]
-columns
 
 def get_values(columns2, datasetdict):
     returndict = {}
@@ -73,6 +76,46 @@ def get_values(columns2, datasetdict):
         returndict[z] = filedata.loc[:,columns2]
     return returndict
 
+
+############# start app
+st.title("Here you can explore the datasets captured by SoilPulse.")
+
+folder = "catalogue"
+datasets = [f.path for f in os.scandir(folder) if f.is_dir()]
+datasetdict = {}
+
+for x in datasets:
+    with open(x+"/meta", 'rb') as handle:
+        xname = x.split("/")[-1].split("\\")[-1]
+        meta = pickle.load(handle)
+        if "file_mapping" in meta:
+            datasetdict[xname] = meta
+
+keys = get_keys_of_dictlist('agrovoc', datasetdict)  # get all agrovoc values
+with st.expander('Show all keywords of queryable datasets:'):
+    keys
+
+
+with st.expander("All queryable datasets:"):
+    for x in datasetdict:
+        st.write("Looking at dataset **"+x+"** with those keys:")
+        st.write(get_keys_of_dictlist('agrovoc', datasetdict[x]))
+    #    st.json(datasetdict[x]['ZenodoFiles'])
+        if len(os.listdir(os.path.normpath("catalogue/"+x+"/data/"))) > 0:
+            st.success('data allready loaded')
+        if st.button("(Re-)download relevant files", key="dw"+x):
+            for z in datasetdict[x]['ZenodoFiles']:
+                z['loaded'] = False
+    #            st.json(z)
+            st.write("downloading")
+            res = rm.downloadPublishedFiles(
+                datasetdict[x], os.path.normpath(
+                        "catalogue/"+x+"/data/"))
+            st.success("download complete.")
+
+columns = st.multiselect("Query for which colunns", options=keys)
+# columns = ["Lat4326","Lon4326"]
+
 if st.button("query these columns"):
     data = pd.concat(get_values(columns, datasetdict), ignore_index=True)
     #categories = np.unique(data['dataset'])
@@ -80,11 +123,11 @@ if st.button("query these columns"):
     #colordict = dict(zip(categories, colors))
     #data["Color"] = data['dataset'].apply(lambda x: colordict[x])
 
-    data.loc[:, "Color"] = "#0033FF"
-    data.loc[data.loc[:, "dataset"] == "105281zenodo6654150", "Color"] = "#FF0033"
     c1, c2 = st.columns(2)
     with c1:
         data
     with c2:
+        data.loc[:, "Color"] = "#0033FF"
+        data.loc[data.loc[:, "dataset"] == "105281zenodo6654150", "Color"] = "#FF0033"
         if ("Lat4326" in columns and "Lon4326" in columns):
             st.map(data, latitude="Lat4326", longitude="Lon4326", color="Color")
