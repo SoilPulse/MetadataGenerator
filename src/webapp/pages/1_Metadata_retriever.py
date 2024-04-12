@@ -335,16 +335,19 @@ if 'nodes' in st.session_state.metainf and len(
                     file, sep=cache_dir+"/data/")[-1]+"**"):
                 if st.button(":red[Clear file metadata]", key="cf"+file):
                     file_meta = {}
-                encodings = ["ANSI", "UTF-8"]
+                encodings = ["cp1252", "UTF-8", "ISO 8859-1"]
                 if not os.path.isfile(file):
                     st.write("Something went wrong, is it a file?")
                 else:
                     try:
                         file1 = open(os.path.normpath(file), 'r')
                         Lines = file1.readlines()
+                        enco = file1.encoding
+                        prevb = True
                     except:
-                        st.warning("By now only textfiles are supported.")
-                        continue
+                        enco = None
+                        prevb = False
+                        st.warning("Could not read your file by open().")
                     fmm1, fmm2, fmm3, fmm4 = st.columns(4)
                     with fmm1:
                         showprev = st.checkbox("File preview", key = "fp"+file)
@@ -359,25 +362,27 @@ if 'nodes' in st.session_state.metainf and len(
                         st.json(file_meta)
 
                     if showprev:
-                        st.header("File Preview")
-                        ii=0
-                        for line in Lines[0:st.number_input("Number of lines for preview",
-                                                            key="pre"+file,
-                                                            value=3)]:
-                            ii+=1
-                            st.text("*Line "+str(ii)+"*: "+line)
+                        if prevb:
+                            st.header("File Preview")
+                            ii=0
+                            for line in Lines[0:st.number_input("Number of lines for preview",
+                                                                key="pre"+file,
+                                                                value=3)]:
+                                ii+=1
+                                st.text("*Line "+str(ii)+"*: "+line)
+                        else:
+                            st.write('File preview not possible.')
 
                     if showsett:
                         st.header("File settings")
                         fm1, fm2, fm3 = st.columns(3)
                         if 'encoding' not in file_meta:
-                            file_meta['encoding'] = file1.encoding
+                            file_meta['encoding'] = enco
                         with fm1:
-                            file_meta['encoding'] = st.radio(
+                            file_meta['encoding'] = st.selectbox(
                                 label="choose encoding",
                                 key="enc"+file,
-                                options=[file_meta['encoding']]+encodings,
-                                horizontal=True)
+                                options=[file_meta['encoding']]+encodings)
 
                         if 'separator' not in file_meta:
                             file_meta['separator'] = ','
