@@ -485,8 +485,14 @@ if 'nodes' in st.session_state.metainf and len(
                                               x].str.split(
                                                   file_meta['cols'][x]['sep'], expand=True)
 
-                                filedata.loc[:, file_meta['cols'][x]['left']['col']] = pd.to_numeric(filedata.loc[:, file_meta['cols'][x]['left']['col']].str.replace("N ",""))
-                                filedata.loc[:, file_meta['cols'][x]['right']['col']] = pd.to_numeric(filedata.loc[:, file_meta['cols'][x]['right']['col']])
+                                for side in ['left', 'right']:
+                                    filedata.loc[:, file_meta['cols'][x][side]['col']] = pd.to_numeric(filedata.loc[:, file_meta['cols'][x][side]['col']].str.replace("N ",""))
+                                    if 'agrovoc'in file_meta['cols'][x][side] and bool(file_meta['cols'][x][side]['agrovoc']):
+                                        filedata = filedata.rename(columns={file_meta['cols'][x][side]['col']: file_meta['cols'][x][side]['agrovoc']})
+                            if 'agrovoc'in file_meta['cols'][x] and bool(file_meta['cols'][x]['agrovoc']):
+#                                st.write("changeagro on")
+#                                st.write({x: file_meta['cols'][x]['agrovoc']})
+                                filedata = filedata.rename(columns={x: file_meta['cols'][x]['agrovoc']}, errors="raise")
 
                         filedata
                         st.write("Hooray now I can produce a map:")

@@ -63,6 +63,7 @@ def get_values(columns2, datasetdict):
                     sep=file_meta['separator'],
                     header=file_meta['headerlines'],
                     engine="python")
+                filedata.loc[:, "dataset"] = z
                 for x in file_meta['cols']:
                     if 'sep' in file_meta['cols'][x] and bool(file_meta['cols'][x]['sep']):
                         filedata[[file_meta['cols'][x]['left']['col'],
@@ -70,9 +71,15 @@ def get_values(columns2, datasetdict):
                                       x].str.split(
                                           file_meta['cols'][x]['sep'], expand=True)
 
-                        filedata.loc[:, file_meta['cols'][x]['left']['col']] = pd.to_numeric(filedata.loc[:, file_meta['cols'][x]['left']['col']].str.replace("N ",""))
-                        filedata.loc[:, file_meta['cols'][x]['right']['col']] = pd.to_numeric(filedata.loc[:, file_meta['cols'][x]['right']['col']])
-                        filedata.loc[:, "dataset"] = z
+                        for side in ['left', 'right']:
+                            filedata.loc[:, file_meta['cols'][x][side]['col']] = pd.to_numeric(filedata.loc[:, file_meta['cols'][x][side]['col']].str.replace("N ",""))
+                            if 'agrovoc'in file_meta['cols'][x][side] and bool(file_meta['cols'][x][side]['agrovoc']):
+                                filedata = filedata.rename(columns={file_meta['cols'][x][side]['col']: file_meta['cols'][x][side]['agrovoc']})
+                    if 'agrovoc'in file_meta['cols'][x] and bool(file_meta['cols'][x]['agrovoc']):
+#                       st.write("changeagro on")
+#                       st.write({x: file_meta['cols'][x]['agrovoc']})
+                        filedata = filedata.rename(columns={x: file_meta['cols'][x]['agrovoc']}, errors="raise")
+
         returndict[z] = filedata.loc[:,columns2]
     return returndict
 
