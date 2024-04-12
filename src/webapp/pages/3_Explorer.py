@@ -101,6 +101,8 @@ with st.expander("All queryable datasets:"):
         st.write("Looking at dataset **"+x+"** with those keys:")
         st.write(get_keys_of_dictlist('agrovoc', datasetdict[x]))
     #    st.json(datasetdict[x]['ZenodoFiles'])
+        if not os.path.isdir("catalogue/"+x+"/data"):
+            os.mkdir("catalogue/"+x+"/data")
         if len(os.listdir(os.path.normpath("catalogue/"+x+"/data/"))) > 0:
             st.success('data allready loaded')
         if st.button("(Re-)download relevant files", key="dw"+x):
