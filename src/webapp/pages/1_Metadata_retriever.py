@@ -87,42 +87,41 @@ c1, c2 = st.columns((8, 3), gap="large")
 
 with c1:
     st.title("SoilPulse Metadata generator")
-    with st.expander(label="**General Metadata**", expanded='doiorg' not in
-                     st.session_state.metainf or 'Author' not in
-                     st.session_state.metainf):
+    with st.expander(label="**General Metadata**", expanded=True):
+
+        dses = {"Ries": "10.6094/UNIFR/151460",
+                "Lenz": "10.5281/zenodo.6654150",
+                "Your own dataset" : "Please provide a DOI."}
+        dsid = st.radio("Select Dataset to work on, we predefined some:",
+                        options = [x for x in dses],
+                        horizontal=True,
+                        on_change=_clear_session_state)
+
         st.session_state.metainf['working_title'] = st.text_input(
             label="Here you can prepare your dataset\
-                              for machine readability. Do you want to give\
-                              it a working title? (This title will not be\
-                              recorded in the final metadata.)",
-            value="My data",
+                    for machine readability. Do you want to give\
+                    it a working title? (This title will not be\
+                    recorded in the final metadata.)",
+            value=dsid,
             on_change=_clear_session_state)
 
     # value/label diff: https://discuss.streamlit.io/t/label-and-values-in-in-selectbox/1436/6
-        type_of_dataset = st.radio(
-            label=st.session_state.metainf['working_title'] + " has:",
-            options=["a DOI",
-                     "an URL without DOI",
-                     "a local dataset"],
-            horizontal=True,
-            on_change=_clear_session_state
-            )
+        if dsid == "Your own dataset":
+            type_of_dataset = st.radio(
+                label=st.session_state.metainf['working_title'] + " has:",
+                options=["a DOI",
+                         "an URL without DOI",
+                         "a local dataset"],
+                horizontal=True,
+                on_change=_clear_session_state
+                )
+        else:
+            type_of_dataset = "a DOI"
 
         if (type_of_dataset == "a DOI"):
-            st.session_state.metainf['doi'] = st.selectbox(
-                label="Enter DOI (will be a text input later on)",
-                options=[
-                    "10.6094/UNIFR/151460",
-                    "10.5281/zenodo.18726",
-                    "10.5281/zenodo.6654150",
-                    "10.5281/zenodo.10210062",
-                    "10.5281/zenodo.10209718",
-                    "10.5281/zenodo.10210061",
-                    "10.1594/PANGAEA.885492",
-                    "10.13140/RG.2.2.14231.83365",
-                    "10.1594/GFZ.TR32.2",
-                    "10.3390/su152316295"
-                    ],
+            st.session_state.metainf['doi'] = st.text_input(
+                label="Enter DOI",
+                value = dses[dsid],
                 on_change=_clear_session_state
                 )
         elif (type_of_dataset == "an URL without DOI"):
@@ -213,7 +212,7 @@ with c1:
                 st.session_state.metainf['ZenodoFiles'].append(
                     {"filename": newfilename, "links": {"download": newURL}})
 
-            fis1, fis2, fis3, fis4 = st.columns((3, 3, 1, 1))
+            fis1, fis2, fis3, fis4 = st.columns((3, 3, 1, 1.1))
             with fis1:
                 st.write('Filename')
             with fis2:
@@ -479,7 +478,10 @@ if 'nodes' in st.session_state.metainf and len(
 # do the column operartions
                         for x in file_meta['cols']:
                             if 'sep' in file_meta['cols'][x] and bool(file_meta['cols'][x]['sep']):
-                                st.write("Splitting "+x+" by "+file_meta['cols'][x]['sep'])
+                                st.write("Splitting colmun "+x+" by "+file_meta['cols'][x]['sep']+" results in:")
+                                st.write(filedata[
+                                    x].str.split(
+                                        file_meta['cols'][x]['sep'], expand=True))
                                 filedata[[file_meta['cols'][x]['left']['col'],
                                           file_meta['cols'][x]['right']['col']]] = filedata[
                                               x].str.split(
