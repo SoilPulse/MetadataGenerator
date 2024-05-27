@@ -14,17 +14,17 @@ from soilpulse.db_access import EntityKeywordsDB
 
 
 if __name__ == "__main__":
-    print(EntityKeywordsDB.DBs)
-
-
-    exampleDOI = "10.5281/zenodo.18726" # more lightweight repo
-    exampleDOI = "10.5281/zenodo.6654150"
+    print("\n"+40*"|/|\\"+"\n\n")
+    # example DOI records that can be published
+    example_1 = {"name": "Jonas Lenz's dissertation package", "doi": "10.5281/zenodo.6654150"}
+    example_2 = {"name": "Michael Schmuker's neuromorphic_classifiers", "doi": "10.5281/zenodo.18726"} # more lightweight repo
+    example_3 = {"name": "Ries et al.", "doi": "10.6094/unifr/151460"}
 
     ###### the resource initiation #####################
-    # ResourceManager instance
-    RM = ResourceManager("Jonas Lenz's dissertation files", exampleDOI)
+    # create ResourceManager instance for newly established resource:
+    RM = ResourceManager(**example_1)
     # on initiation (or change of DOI) the RM:
-        # loads files that are part of the DOI provided
+        # loads information about files that are part of the DOI provided
         # unpacks archives
         # goes through the files, recognizes their type
         # creates ContainerHandler instances for all of them
@@ -33,10 +33,16 @@ if __name__ == "__main__":
 
         # loads metadata information that are part of data obtained from DOI record or data host record
 
+    print(f"Newly established resource's ID is {RM.id}")
     # download files associated with the publisher record
     RM.downloadPublishedFiles()
     # # show the whole container tree
     # RM.showContainerTree()
+
+
+
+    # create ResourceManager instance for resource already existing in DB - loading resource:
+    # RM = ResourceManager(id=1)
 
     # new empty dataset is created and added to the ResourceManager
     newDataset = RM.newDataset("Dataset test 1")
@@ -48,10 +54,7 @@ if __name__ == "__main__":
     newDataset.getCrawled()
 
 
-    ###### dataset crawling and metadata structure mapping ################
-
-    # something like this will happen
-    # RM.dataset.MetadataStructureMap = newDataset.crawler.crawl()
+    ###### dataset metadata structure mapping ################
 
     # but for now let's do it manually
     # dataset = RM.datasets[0]

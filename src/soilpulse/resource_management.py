@@ -3,21 +3,35 @@
 
 import requests
 import os
+import shutil
 
 from .metadata_scheme import MetadataStructureMap
+from .db_access import DBconnector
 from .exceptions import DOIdataRetrievalException, LocalFileManipulationError, ContainerStructureError
 
+# general variables
+downloadedFilesDir = "downloaded_files"
 class ResourceManager:
     """
     Singleton for a running session (only one Resource can be edited and managed at a time)
     """
 
     _instance = None
-    def __init__(self, name = None, doi = None):
+
+    def __init__(self, name = None, doi = None, id = None):
         def __new__(class_, *args, **kwargs):
             if not isinstance(class_._instance, class_):
                 class_._instance = object.__new__(class_, *args, **kwargs)
             return class_._instance
+
+        # database connection instance
+        self.dbconnection = DBconnector()
+        # unique ID of the resource (in the scope of SoilPulse)
+        if id is None:
+            # new resource record in DB is established if no ID was provided
+            self.id = self.dbconnection.createResourceRecord(name, doi)
+        else:
+            self.id = id
 
         # arbitrary resource name for easy identification
         self.name = name
@@ -40,7 +54,7 @@ class ResourceManager:
         # the DOI is private, so it can't be changed without consequences - only setDOI(doi) can be used
         self.__doi = None
         # dedicated directory where files can be stored
-        self.tempDir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "downloaded_files")
+        self.tempDir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), downloadedFilesDir, str(self.id))
         # language of the resource
         self.language = None
 
@@ -73,7 +87,11 @@ class ResourceManager:
         # append the DOI metadata JSON container to the resourceManagers containers
         self.containerTree.append(ContainerHandlerFactory().createHandler("json", "Resource DOI metadata JSON", self.DOImetadata))
         # populate publisher with Publisher class instance
+        # try:
         self.publisher = self.getPublisher(self.DOImetadata)
+        # except DOIdataRetrievalException:
+        #     print(self.DOImetadata['publisher'])
+        # else:
         # append the publisher metadata JSON container to the resourceManagers containers
         self.containerTree.append(ContainerHandlerFactory().createHandler("json", "{} metadata JSON".format(self.publisher.name), self.publisher.getMetadata()))
         # get downloadable files information from publisher
@@ -124,7 +142,7 @@ class ResourceManager:
             try:
                 publisherKey = DOI_metadata['data']['attributes']['publisher']
             except AttributeError as e:
-                print("Couldn't find publisher value in the DOI registration agency metadata respnse.")
+                print("Couldn't find publisher value in the DOI registration agency metadata response.")
                 print(e.message)
             else:
                 if publisherKey == "Zenodo":
@@ -132,7 +150,7 @@ class ResourceManager:
                     publisher = PublisherFactory.createHandler(publisherKey, zenodo_id)
                     return publisher
                 else:
-                    raise DOIdataRetrievalException("Unsupported data repository - currently only implemented for Zenodo")
+                    raise DOIdataRetrievalException(f"Unsupported data repository '{publisherKey}' - currently only implemented for Zenodo")
                 return None
 
 
@@ -161,13 +179,9 @@ class ResourceManager:
         else:
             if 'status' in RAjson[0].keys():
                 if RAjson['status'] == "Invalid DOI":
-                    # raise DOIdataRetrievalException("Invalid DOI provided, or DOI not registered '{}'".format(doi))
-                    raise DOIdataRetrievalException("Provided DOI '{}' is invalid.".format(doi))
-                    return None
+                    raise DOIdataRetrievalException(f"Provided DOI '{doi}' is invalid.")
                 if RAjson['status'] == "DOI does not exist":
-                    # raise DOIdataRetrievalException("Invalid DOI provided, or DOI not registered '{}'".format(doi))
-                    raise DOIdataRetrievalException("Provided DOI '{}' is not registered.".format(doi))
-                    return None
+                    raise DOIdataRetrievalException(f"Provided DOI '{doi}' is not registered.")
             else:
                 if (meta):
                     return RAjson
@@ -204,18 +218,19 @@ class ResourceManager:
                 print("An error occurred:", e)
             else:
                 if 'error' in output.keys():
-                    raise DOIdataRetrievalException("Registration agency '{}' doesn't respond. Error {}: {}".format(ResourceManager.getRegistrationAgencyOfDOI(doi), output['status'], output['error']))
-                    return None
+                    raise DOIdataRetrievalException("Registration agency '{}' didn't respond. Error {}: {}".format(ResourceManager.getRegistrationAgencyOfDOI(doi), output['status'], output['error']))
                 print(" ... successful\n")
                 return output
         else:
             print("Unsupported registration agency '{}'".format(RA))
-            # raise DOIdataRetrievalException("Unsupported registration agency '{}'".format(RA))
+            raise DOIdataRetrievalException("Unsupported registration agency '{}'".format(RA))
+            return None
 
-    def downloadPublishedFiles(self, unzip=True):
+    def downloadPublishedFiles(self, list = None, unzip=True):
         """
         Download files that are stored in self.sourceFiles dictionary
 
+        :param list: list of SourceFile indexes to be downloaded, or None if files are to be downloaded
         :param unzip: if the downloaded file is a .zip archive it will be extracted if unzip=True
         :return: dictionary of file types for input URLs
         """
@@ -229,46 +244,54 @@ class ResourceManager:
             if not os.path.isdir(self.tempDir):
                 os.mkdir(self.tempDir)
             result = {}
-            for sourceFile in self.publishedFiles:
-                url = sourceFile.source_url
-                # any file name manipulation can be performed here
-                filename = sourceFile.filename.replace("\\/<[^>]*>?", "_")
+            if not list:
+                for sourceFile in self.publishedFiles:
+                    url = sourceFile.source_url
+                    # any file name manipulation can be performed here
+                    filename = sourceFile.filename.replace("\\/<[^>]*>?", "_")
 
-                local_path = os.path.join(self.tempDir, filename)
+                    local_path = os.path.join(self.tempDir, filename)
 
-                try:
-                    response = requests.get(url+"/content")
-                except requests.exceptions.ConnectionError:
-                    print("\tA connection error occurred. Check your internet connection.")
-                    return False
-                except requests.exceptions.Timeout:
-                    print("\tThe request timed out.")
-                    return False
-                except requests.exceptions.HTTPError as e:
-                    print("\tHTTP Error:", e)
-                    return False
-                except requests.exceptions.RequestException as e:
-                    print("\tAn error occurred:", e)
-                    return False
-                else:
-                    # the parameter download = 1 is specific to Zenodo
-                    if response.ok:
-                        with open(local_path, mode="wb") as filesave:
-                            filesave.write(response.content)
-
-                        # on success save local path of downloaded file to its attribute
-                        sourceFile.local_path = local_path
-
-                        # create a container from the file with all related actions
-                        newContainer = ContainerHandlerFactory().createHandler('filesystem', filename, local_path)
-                        self.containerTree.append(newContainer)
-
-                    else:
-                        # something needs to be done if the response is not OK ...
-                        print("\t\tThe response was not OK!")
-                        sourceFile.local_path= None
-
+                    try:
+                        response = requests.get(url+"/content")
+                    except requests.exceptions.ConnectionError:
+                        print("\tA connection error occurred. Check your internet connection.")
                         return False
+                    except requests.exceptions.Timeout:
+                        print("\tThe request timed out.")
+                        return False
+                    except requests.exceptions.HTTPError as e:
+                        print("\tHTTP Error:", e)
+                        return False
+                    except requests.exceptions.RequestException as e:
+                        print("\tAn error occurred:", e)
+                        return False
+                    else:
+                        if response.ok:
+                            with open(local_path, mode="wb") as filesave:
+                                filesave.write(response.content)
+
+                            # on success save local path of downloaded file to its attribute
+                            sourceFile.local_path = local_path
+
+                            # TODO - this should be implemented better, the container type distribution should be defined without using the explicit type strings ... so far I don't know how to achieve it
+                            # create a container from the file with all related actions
+                            if os.path.isdir(local_path):
+                                newContainer = ContainerHandlerFactory().createHandler('directory', sourceFile.filename, local_path)
+                            else:
+                                extension = local_path.split(".")[-1]
+                                if extension in get_supported_archive_formats() or extension == "gz":
+                                    newContainer = ContainerHandlerFactory().createHandler('archive', sourceFile.filename, local_path)
+                                else:
+                                    newContainer = ContainerHandlerFactory().createHandler('file', sourceFile.filename, local_path)
+                            self.containerTree.append(newContainer)
+
+                        else:
+                            # something needs to be done if the response is not OK ...
+                            print("\t\tThe response was not OK!")
+                            sourceFile.local_path= None
+
+                            return False
 
             print(" ... successful\n")
             return result
@@ -304,7 +327,7 @@ class ResourceManager:
         self.datasets.append(dataset)
         return
 
-    def removeDatset(self, index):
+    def removeDataset(self, index):
         """
         Removes DatasetHandler instance to dataset list
         """
@@ -343,16 +366,21 @@ class Dataset:
         self.metadataMap = MetadataStructureMap()
 
     def addContainers(self, containers):
+        """
+        Adds one or more ContainerHandler instances to Dataset's containers list
+        """
         if isinstance(containers, list):
             self.containers.extend(containers)
         else:
             self.containers.append(containers)
         return
-    def removeContainer(self, containers):
-        if isinstance(containers, list):
-            self.containers.remove(containers)
-        else:
-            self.containers.remove(containers)
+    def removeContainer(self, containers_to_remove):
+        """
+        Removes one or more ContainerHandler instances from Dataset's containers list
+        """
+        if not isinstance(containers_to_remove, list):
+            containers = [containers_to_remove]
+        self.containers = [con for con in self.containers if con not in containers_to_remove]
         return
 
     def showContainerTree(self):
@@ -372,6 +400,7 @@ class Dataset:
     def getCrawled(self):
         for container in self.containers:
             container.getCrawled()
+
 class SourceFile:
     def __init__(self, id, filename, size = None, source_url = None, checksum = None, checksum_type = None):
         self.id = id
@@ -434,7 +463,10 @@ class ContainerHandlerFactory:
             # put it in the factory list
             cls.containers.update({new_container.id: new_container})
             # raise the ID for next container
+            # print(f"adding container of type '{containerType}'")
+            # print(args)
             cls.nextContainerID += 1
+            # print(f"next id = {cls.nextContainerID}")
             return new_container
 
 
@@ -446,8 +478,6 @@ class ContainerHandler:
     containerFormat = None
     keywordsDBname = None
 
-    def recognizeType(cls):
-        pass
     def __init__(self, id, name):
         # unique ID in the ResourceManagers scope
         self.id = id
@@ -457,6 +487,8 @@ class ContainerHandler:
         self.containers = []
         # metadata entities that the container contains
         self.metadataElements = []
+        # the crawler assigned to the container
+        self.crawler = None
 
         # make the class properties accessible through instance properties
         self.containerType = type(self).containerType
@@ -487,6 +519,10 @@ class ContainerHandler:
     def getCrawled(self):
         pass
 
+    def assignCrawler(self, crawler):
+        self.crawler = crawler
+
+
 class PublisherFactory:
     """
     Publisher object factory
@@ -505,9 +541,9 @@ class PublisherFactory:
             return class_._instance
 
     @classmethod
-    def registerPublisher(cls, publisherClass, key):
-        cls.publishers[key] = publisherClass
-        print("Publisher '{}' registered".format(key))
+    def registerPublisher(cls, publisherClass):
+        cls.publishers[publisherClass.key] = publisherClass
+        print("Publisher '{}' registered".format(publisherClass.key))
         return
 
     @classmethod
@@ -537,14 +573,6 @@ class Publisher():
 
     def getMetadata(self, *args):
         pass
-
-class FileArchiveContainer(ContainerHandler):
-    containerType = "file_archive"
-    containerFormat = "File Archive"
-
-    def __init__(self, name, archive_type = None):
-        super(FileArchiveContainer, self).__init__(name)
-        self.archiveType = archive_type
 
 class Pointer:
     """
@@ -584,3 +612,13 @@ class Crawler:
         :return: MetadataStructureMap
         """
         return
+
+def get_supported_archive_formats():
+    """
+    Return list of currently supported formats of shutil.unpack_archive() method.
+    The extensions are stripped of the leading '.' so it can be compared to file extensions gained by .split('.')
+    """
+    archive_ext_list = []
+    for format in shutil.get_unpack_formats():
+        archive_ext_list.extend([ext.strip(".") for ext in format[1]])
+    return archive_ext_list
