@@ -1,2 +1,4 @@
 requests
 streamlit
+streamlit-tree-select
+mysql.connector

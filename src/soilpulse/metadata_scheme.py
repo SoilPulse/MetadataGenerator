@@ -4,7 +4,9 @@
 """
 
 
-from .exceptions import MetadataSchemeException
+from .exceptions import DatabaseFetchError, ValueNotInDomainError
+from .db_access import EntitySearchPatternsDB
+from .db_access import EntityKeywordsDB
 
 class MetadataStructureMap:
     """
@@ -91,11 +93,15 @@ class EntityManager:
     maxCounts = {}
     # current count of instances
     currentCount = {}
-    #
-    keywordMapping = {}
+    # collection of all search patterns from all MetadataEntity subclasses
+    searchPatterns = {}
+    keywordPatterns = {}
+    # kyewords database to load keywords from
+    keywordDatabases = {}
 
-    _instance = None
+    # _instance = None
     def __init__(self):
+
         return
 
     @classmethod
@@ -104,8 +110,29 @@ class EntityManager:
         cls.minCounts[entityClass.key] = entityClass.minMultiplicity
         cls.maxCounts[entityClass.key] = entityClass.maxMultiplicity
         cls.currentCount[entityClass.key] = 0
-        for kw in entityClass.keywords:
-            cls.keywordMapping.update({kw: entityClass.key})
+
+        # connect to local database and load search patterns and keywords for the entity type being registered
+        try:
+            # get the search expressions from the DB for the entity type
+            search_patterns = EntitySearchPatternsDB.loadSearchPatterns(entityClass)
+            # if something found put it in class' search_patterns dict
+            if search_patterns:
+                entityClass.searchPatterns = search_patterns
+
+            # get the search keywords from the DB for the entity type
+            keywords = EntityKeywordsDB.loadKeywords(entityClass)
+            if keywords:
+                entityClass.keywords = keywords
+
+            # entityClass.showSearchPhrases()
+
+        except DatabaseFetchError as e:
+            print(e)
+        else:
+            # and if successful put them into the entity managers mapping
+            cls.searchPatterns.update({entityClass.key: entityClass.searchPatterns})
+            cls.keywordPatterns.update({entityClass.key: entityClass.keywords})
+
         return
 
     @classmethod
@@ -134,17 +161,36 @@ class EntityManager:
                 if cls.currentCount[entityType] > entityClass.maxMultiplicity:
                     elementCounts.append([entityClass.name, cls.maxCounts[entityType], cls.currentCount[entityType]])
         return elementCounts
+
     @classmethod
-    def showKeywordsMapping(cls):
-        print("\nkeywords mapping:")
-        for k,v in cls.keywordMapping.items():
-            print("{}: {}".format(k,v))
+    def showSearchExpressions(cls):
+        print("\nEntityManager search patterns:")
+        for k,v in cls.searchPatterns.items():
+            if len(v) > 0:
+                print("\t{}".format(k))
+                for l, w in v.items():
+                    print("\t\t{}: {}".format(l, w))
+            else:
+                print("\t{}: None".format(k))
+
+        print("\nEntityManager keywords search patterns:")
+        for k,v in cls.keywordPatterns.items():
+            if len(v) > 0:
+                print("\t{}".format(k))
+                for l, w in v.items():
+                    print("\t\t{}: {}".format(l, w))
+            else:
+                print("\t{}: None".format(k))
+
+        return
 
     @classmethod
     def showEntityCount(cls):
         print("\ncurrent entity count:")
         for k,v in cls.currentCount.items():
             print("{}: {}".format(k,v))
+        return
+
 
 class MetadataEntity:
     """
@@ -169,10 +215,15 @@ class MetadataEntity:
     dataType = None
     # ? value domain the element can have
     domain = None
-    # list of keywords used for identification of the element in the data resource
-    keywords = None
+    # dictionary of regular expressions used for identification of the element in the data resource { local group name: search pattern, ...}
+    searchPatterns = {}
+    # dictionary of keywords used for identification of the element in the data resource { local group name: keyword, ...}
+    # this waythe keywords are translatable but need to be converted to search patterns before use
+    keywords = {}
 
-    def __init__(self, value):
+    def __init__(self, sourceString, value = None):
+        # the piece of text from which the value was derived
+        self.sourceString = sourceString
         # the actual value of the metadata element instance
         self.value = value
         # list of child metadata elements
@@ -195,6 +246,14 @@ class MetadataEntity:
         """
 
         pass
+
+    @classmethod
+    def showSearchPhrases(cls):
+        print("search patterns of '{}':".format(cls.name))
+        print(cls.searchPatterns)
+        print("keywords of '{}':".format(cls.name))
+        print(cls.keywords)
+        return
 
 class TextMetadataEntity(MetadataEntity):
     """
@@ -232,15 +291,21 @@ class GeographicalMetadataEntity(MetadataEntity):
         # the EPSG code of the coordinate system of the element
         self.EPSGcode = epsg
 
-class RoleMetadataEntity(MetadataEntity):
+
+class SubjectMetadataEntity(MetadataEntity):
     """
-    Abstract interface class of metadata element with role value
+    Abstract interface class of metadata element that represents a person or an institution that is responsible
+    for producing (collecting, managing, distributing, or otherwise contributing to the development of the
+    dataset) the data, or has relation to authors of the publication
     """
 
+    roleTypes = {}
     def __init__(self, value):
         # the actual value of the metadata element
-        super(RoleMetadataEntity, self).__init__(value)
+        super(SubjectMetadataEntity, self).__init__(value)
+
         return
+
 
 class Title(TextMetadataEntity):
     ID = "1"
@@ -249,7 +314,6 @@ class Title(TextMetadataEntity):
     description = "A characteristic, unique name by which the dataset is known."
     minMultiplicity = 1
     maxMultiplicity = 1
-    keywords = ["title", "<h1>"]
 
     def __str__(self):
         return "metadata entity 'Title'"
@@ -257,14 +321,44 @@ class Title(TextMetadataEntity):
 EntityManager.registerMetadataEntityType(Title)
 
 class AlternateTitle(TextMetadataEntity):
-    ID = "2"
+    ID = "2.1"
     key = "alternate_title"
     name = "Alternate title"
     description = "A short name by which the dataset is also known."
     minMultiplicity = 0
-    maxMultiplicity = None
-    keywords = ["<h2>"]
+    maxMultiplicity = 1
+
 EntityManager.registerMetadataEntityType(AlternateTitle)
+
+class Subtitle(TextMetadataEntity):
+    ID = "2.2"
+    key = "subtitle"
+    name = "Subtitle"
+    description = ""
+    minMultiplicity = 0
+    maxMultiplicity = 1
+
+EntityManager.registerMetadataEntityType(Subtitle)
+
+class TranslatedTitle(TextMetadataEntity):
+    ID = "2.3"
+    key = "translated_title"
+    name = "Subtitle"
+    description = ""
+    minMultiplicity = 0
+    maxMultiplicity = 1
+
+EntityManager.registerMetadataEntityType(TranslatedTitle)
+
+class OtherAlternateTitle(TextMetadataEntity):
+    ID = "2.4"
+    key = "other_alternate_title"
+    name = "Other alternate title"
+    description = ""
+    minMultiplicity = 0
+    maxMultiplicity = 1
+
+EntityManager.registerMetadataEntityType(OtherAlternateTitle)
 
 class Summary(TextMetadataEntity):
     ID = "3"
@@ -273,7 +367,7 @@ class Summary(TextMetadataEntity):
     description = "Brief narrative summary of the content of the dataset."
     minMultiplicity = 1
     maxMultiplicity = None
-    keywords = ["<h2>", "description"]
+
 EntityManager.registerMetadataEntityType(Summary)
 
 class GraphicOverview(MetadataEntity):
@@ -283,29 +377,17 @@ class GraphicOverview(MetadataEntity):
     description = "Graphic that provides an illustration of the dataset."
     minMultiplicity = 0
     maxMultiplicity = None
-    keywords = ["scheme"]
-EntityManager.registerMetadataEntityType(GraphicOverview)
 
-# replaced by DateMetadataEntity superclass
-# class Date(MetadataEntity):
-#     ID = "5"
-#     key = "date"
-#     name = "Date"
-#     description = "The date when the dataset was or will be made ..."
-#     minMultiplicity = 4
-#     maxMultiplicity = None
-#     keywords = ["date"]
-# EntityManager.registerMetadataEntityType(Date)
+EntityManager.registerMetadataEntityType(GraphicOverview)
 
 class DateAccapted(DateMetadataEntity):
     ID = "5.1"
     key = "date_accepted"
     name = "Date accepted"
     description = "The date that the publisher accepted the resource into their system."
-    # subtypeOf = Date
     minMultiplicity = 0
     maxMultiplicity = 1
-    keywords = ["accapted"]
+
 EntityManager.registerMetadataEntityType(DateAccapted)
 
 class DateAvailable(DateMetadataEntity):
@@ -313,10 +395,9 @@ class DateAvailable(DateMetadataEntity):
     key = "date_available"
     name = "Date available"
     description = "The date the resource was or will be made publicly available."
-    # subtypeOf = Date
     minMultiplicity = 1
     maxMultiplicity = 1
-    keywords = ["available"]
+
 EntityManager.registerMetadataEntityType(DateAvailable)
 
 class DateCollected(DateMetadataEntity):
@@ -324,10 +405,9 @@ class DateCollected(DateMetadataEntity):
     key = "date_collected"
     name = "Date collected"
     description = "The date or date range in which the dataset content was collected."
-    # subtypeOf = Date
     minMultiplicity = 0
     maxMultiplicity = 2
-    keywords = ["collected"]
+
 EntityManager.registerMetadataEntityType(DateCollected)
 
 class DateCopyrighted(DateMetadataEntity):
@@ -335,10 +415,9 @@ class DateCopyrighted(DateMetadataEntity):
     key = "date_copyrighted"
     name = "Date copyrighted"
     description = "The specific, documented date at which the dataset receives a copyrighted status, if applicable."
-    # subtypeOf = Date
     minMultiplicity = 0
     maxMultiplicity = 1
-    keywords = ["copyrighted", "copyright"]
+
 EntityManager.registerMetadataEntityType(DateCopyrighted)
 
 class DateCreated(DateMetadataEntity):
@@ -346,21 +425,18 @@ class DateCreated(DateMetadataEntity):
     key = "date_created"
     name = "Date created"
     description = "The date the dataset itself was put together; a single date for a final component (e.g. the finalised file with all of the data)."
-    # subtypeOf = Date
     minMultiplicity = 1
     maxMultiplicity = 1
-    keywords = ["created"]
+
 EntityManager.registerMetadataEntityType(DateCreated)
 
 class DateIssued(DateMetadataEntity):
     ID = "5.6"
     key = "date_issued"
     name = "Date issued"
-    description = "The date that the dataset is published or distributed to the data centre."
-    # subtypeOf = Date
     minMultiplicity = 1
     maxMultiplicity = 1
-    keywords = ["issued"]
+
 EntityManager.registerMetadataEntityType(DateIssued)
 
 class DateSubmitted(DateMetadataEntity):
@@ -368,33 +444,153 @@ class DateSubmitted(DateMetadataEntity):
     key = "date_submitted"
     name = "Date submitted"
     description = "The date the author submits the resource to the publisher. This could be different from “Accepted” if the publisher then applies a selection process."
-    # subtypeOf = Date
     minMultiplicity = 0
     maxMultiplicity = 1
-    keywords = ["submitted"]
+
 EntityManager.registerMetadataEntityType(DateSubmitted)
 
 class DateUpdated(DateMetadataEntity):
-    ID = "5.7"
+    ID = "5.8"
     key = "date_updated"
     name = "Date updated"
     description = "The date of the last update (last revision) to the dataset, when the dataset is being added to."
-    # subtypeOf = Date
     minMultiplicity = 1
     maxMultiplicity = 1
-    keywords = ["updated", "update", "revised", "revision"]
+
 EntityManager.registerMetadataEntityType(DateUpdated)
 
 class DateValid(DateMetadataEntity):
-    ID = "5.8"
+    ID = "5.9"
     key = "date_valid"
     name = "Date valid"
     description = "The date or date range during which the dataset or resource is accurate."
-    # subtypeOf = Date
-    minMultiplicity = 1
+    minMultiplicity = 0
     maxMultiplicity = 1
-    keywords = ["valid", "valid until"]
+
 EntityManager.registerMetadataEntityType(DateValid)
+
+class ResponsiblePerson(SubjectMetadataEntity):
+    ID = "6.1"
+    key = "responsible_person"
+    name = "Responsible person"
+    description = "Person involved in producing (collecting, managing, distributing, or otherwise\
+            contributing to the development of the dataset) the data, or the authors of the publication, \
+            in priority order. Will be cited if Author is used as contact type."
+    minMultiplicity = 2
+    maxMultiplicity = None
+
+    # supported roleType values list
+    roleTypes = {"Data Collector": 0,
+                 "Data Curator": 0,
+                 "Editor": 0,
+                 "Producer": 0,
+                 "Project leader": 1,
+                 "Project manager": 0,
+                 "Project member": 0,
+                 "Related person": 0,
+                 "Researcher": 0,
+                 "Rights Holder": 0,
+                 "Sponsor": 0,
+                 "Supervisor": 0,
+                 "Work package leader": 0,
+                 "Author": 1,
+                 "Custodian": 0,
+                 "Originator": 0,
+                 "Owner": 0,
+                 "Point of contact": 0,
+                 "Principal investigator": 0,
+                 "Processor": 0,
+                 "User": 0
+                 }
+
+    def __init__(self, roleType):
+        # the roleType needs to be checked against ResponsiblePerson allowed roleTypes list
+        self.__roleType = self.setRoleType(roleType)
+
+        self.familyName = None
+        self.givenName = None
+        self.organization = None
+        self.position = None
+        # list of Identifier MetadataEntity instances
+        self.identifiers = []
+        self.phone =  None
+        self.fascimile = None
+        # an Address MetadataEntity instance
+        self.address = None
+        self.email = None
+
+
+
+    def setRoleType(self, roleType):
+        """
+        Setter for private __roleType attribute
+        """
+        if roleType not in ResponsiblePerson.roleTypes.keys():
+            raise ValueNotInDomainError("'{}' role is not supported for {}\nSupported role types are: {}".format(roleType, type(ResponsiblePerson), ", ".join(["'"+r+"'" for r in ResponsiblePerson.roleTypes.keys()])))
+        else:
+            self.__roleType = roleType
+
+EntityManager.registerMetadataEntityType(ResponsiblePerson)
+
+class ResponsibleOrganization(SubjectMetadataEntity):
+    ID = "6.2"
+    key = "responsible_organization"
+    name = "Responsible organization"
+    description = "Institution involved in producing (collecting, managing, distributing, or otherwise\
+            contributing to the development of the dataset) the data, or having a relation to the authors of the publication, \
+            in priority order."
+    minMultiplicity = None
+    maxMultiplicity = None
+    # supported roleType values list
+    roleTypes = {"Hosting institution": 0,
+                 "Registration agency": 0,
+                 "Registration authority": 0,
+                 "Research group": 0,
+                 "Rights Holder": 0,
+                 "Sponsor": 0,
+                 "Distributor": 0,
+                 "Owner": 0,
+                 "Point of contact": 0,
+                 "Processor": 0,
+                 "Publisher": 0,
+                 "Resource provider": 0
+                 }
+
+    def __init__(self, roleType):
+        # the roleType needs to be checked against allowed roleTypes list
+        self.__roleType = self.setRoleType(roleType)
+
+    def setRoleType(self, roleType):
+        """
+        Setter for private __roleType attribute
+        """
+        if roleType not in ResponsibleOrganization.roleTypes.keys():
+            raise ValueNotInDomainError("'{}' role is not supported for {}\nSupported role types are: {}".format(roleType, type(ResponsibleOrganization), ", ".join(["'"+r+"'" for r in ResponsibleOrganization.roleTypes.keys()])))
+        else:
+            self.__roleType = roleType
+
+EntityManager.registerMetadataEntityType(ResponsibleOrganization)
+
+class FundingReference(MetadataEntity):
+    ID = "7"
+    key = "funding_reference"
+    name = "Funding reference"
+    description = "Information about financial support (funding) for the dataset being registered."
+    minMultiplicity = 1
+    maxMultiplicity = None
+
+EntityManager.registerMetadataEntityType(FundingReference)
+#
+#
+# class Dummy(MetadataEntity):
+#     ID = ""
+#     key = ""
+#     name = ""
+#     description = ""
+#     minMultiplicity = None
+#     maxMultiplicity = None
+#
+# EntityManager.registerMetadataEntityType()
 
 class GeographicalBoundingBox(GeographicalMetadataEntity):
     ID = "9"
@@ -404,7 +600,6 @@ class GeographicalBoundingBox(GeographicalMetadataEntity):
     Lower left corner and upper right corner. Each point is defined by its longitude and latitude value."
     minMultiplicity = 1
     maxMultiplicity = 1
-    keywords = ["bounding box", "extent", "geographical", "covers", "geoLocations"]
 
     def __init__(self, northLat, southLat, westLong, eastLong, coordinateSystem, epsg = None):
         super(GeographicalBoundingBox, self).__init__(coordinateSystem, epsg)
@@ -422,6 +617,9 @@ class TemporalExtent(DateMetadataEntity):
     description = "The time period in which the resource content was collected (e.g. From 2008-01-01 to 2008-12-31)"
     minMultiplicity = 0
     maxMultiplicity = 1
-    keywords = ["temporal extent"]
+
+    def __init__(self):
+        self.start = None
+        self.end = None
 
 EntityManager.registerMetadataEntityType(TemporalExtent)

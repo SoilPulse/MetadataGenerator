@@ -11,7 +11,6 @@ It pickles to cache metadata.
 """
 
 import streamlit as st
-import requests
 import pickle
 # import shutil
 import os
@@ -19,8 +18,7 @@ import pandas as pd
 import sys
 import re
 sys.path.insert(0, './src/soilpulse')
-import get_metadata as gm
-# from soilpulse import get_metadata as gm
+import get_data as gd
 
 
 def _writes_cache():
@@ -47,6 +45,8 @@ if 'metainf' in st.session_state and 'doiorg' in st.session_state['metainf']:
              "** to generate and complete metadata"))
     cache_dir = re.sub('[^A-Za-z0-9]+', '',
                        st.session_state['metainf']['doiorg']['DOI'])
+    if not os.path.isdir("catalogue/"+cache_dir+"/data"):
+        os.mkdir("catalogue/"+cache_dir+"/data")
 else:
     st.write("Please go back to Metadata retriever first to select dataset.")
     st.link_button("Start Generator", "./Metadata_retriever")
@@ -54,38 +54,45 @@ else:
 #             prepare a data publication.")
 #    st.textbox("paste URL/path to dataset")
 
+
+
 if ('metainf' in st.session_state and
         'ZenodoFiles' in st.session_state.metainf):
+    st.header("download files from Zenodo / URL")
     # ## Test with editable pandas dataframe
     df = pd.DataFrame(st.session_state.metainf['ZenodoFiles'])
     df = df.drop(columns=["id", "filesize", "checksum", "links"])
     df["Download (again)?"] = [".zip" in file for file in df["filename"]]
-    df["File loaded"] = [file in os.listdir("catalogue/"+cache_dir)
-                         for file in df["filename"]]
+    df["File loaded"] = [file.replace(".zip","") in os.listdir(
+        "catalogue/"+cache_dir+"/data") for file in df["filename"]]
     edited_df = st.data_editor(df,
                                hide_index=True,
                                disabled=["filename", "File loaded"]
                                )
     download_files = edited_df.loc[
         edited_df["Download (again)?"]]["filename"].tolist()
-    st.write(download_files)
+#    st.write(download_files)
 
     getZenodoFiles = st.button("Download selected Zenodo files")
     if getZenodoFiles:
-        for file in download_files:
-            url = str("https://zenodo.org/records/" +
-                      st.session_state.metainf['zenodo_id'] +
-                      "/files/" + file)
-            response = requests.get(url, params={"download": "1"})
-            st.write(response.url)
-            if response.ok:
-                with open("catalogue/"+cache_dir+"/"+file,
-                          mode="wb") as filesave:
-                    filesave.write(response.content)
-            # print(base64.b64decode(response['data']['attributes']['xml']))
+        URL = str("https://zenodo.org/records/" +
+                  st.session_state.metainf['zenodo_id'] +
+                  "/files/")
+        res = gd.download_data(URL,
+                               download_files,
+                               target_dir="catalogue/"+cache_dir+"/data/")
+        st.write(res)
+
+
+# print(base64.b64decode(response['data']['attributes']['xml']))
+
+
+    if os.listdir("catalogue/"+cache_dir+"/data"):
+        st.header("Explore downloaded files/folders in http://localhost:8502/File_Crawler")
+
 
 
 if "metainf" in st.session_state:
     st.write("You can cache the retrieved metadata now:")
-    st.json(st.session_state.metainf)
+#    st.json(st.session_state.metainf)
     write_cache = st.button(":green[Write cache]", on_click=_writes_cache)
