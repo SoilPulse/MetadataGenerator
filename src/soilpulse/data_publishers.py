@@ -13,8 +13,7 @@ class ZenodoPublisher(Publisher):
         """
         Collect resource files information from Zenodo record
 
-        :param zenodo_id: Zenodo record identifier
-        :return: dictionary of file info [{filename: name of the file, id: file id, size: file size, checksum: checksum, source_url: download link, local_path: path to local copy}, ...]
+        :return: list of SourceFile instances created from Zenodo API response
         """
 
         try:
@@ -69,4 +68,4 @@ class ZenodoPublisher(Publisher):
             return response
 
 
-PublisherFactory.registerPublisher(ZenodoPublisher, ZenodoPublisher.key)
+PublisherFactory.registerPublisher(ZenodoPublisher)

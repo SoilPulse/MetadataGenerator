@@ -23,6 +23,7 @@ class DBconnector:
     # password of the user
     pwd = "NFDI4earth"
 
+    resourcesTableName = "resources"
     def __init__(self):
         try:
             self.db_connection = mysql.connector.connect(
@@ -40,7 +41,28 @@ class DBconnector:
         else:
             # print ("successfully connected to SoilPulse database")
             pass
+    def createResourceRecord(self, name = None, doi = None):
+        thecursor = self.db_connection.cursor()
+        if name is None:
+            thecursor.execute(f"SELECT AUTO_INCREMENT FROM information_schema.tables"
+                              f"WHERE table_name = '{DBconnector.resourcesTableName}'")
+            results = thecursor.fetchall()
 
+            if thecursor.rowcount > 0:
+                patterns = {}
+                for nextID in results:
+                    name = f"Unnamed resource {nextID}"
+
+        doi = "NULL" if doi is None else doi
+        # execute the query and fetch the results
+        query = f"INSERT INTO `{DBconnector.resourcesTableName}` (`name`, `doi`) VALUES (\"{name}\", \"{doi}\")"
+        print(query)
+        thecursor.execute(query)
+
+        thecursor.execute("SELECT LAST_INSERT_ID()")
+        results = thecursor.fetchall()
+        for newID in results:
+            return newID[0]
 
     def loadSearchPatterns(self, entity):
         """
@@ -145,7 +167,6 @@ class EntityKeywordsDB:
     def registerKeywordsDB(cls, dbType, dbFilename):
         cls.DBs.update({dbType: os.path.join(cls.dbDir, dbFilename)})
         print("Keywords database {} registered as '{}'".format(os.path.join(cls.dbDir, dbFilename), dbType))
-        print(EntityKeywordsDB.DBs)
         return
 
     @classmethod

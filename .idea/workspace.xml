@@ -4,12 +4,13 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="0d8e6823-2450-4805-9015-a6f4ccc5becb" name="Changes" comment="Minor changes in ResourceManager, metadata_scheme.py and FileSystemContainer.showContents()">
-      <change afterPath="$PROJECT_DIR$/src/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/soilpulse/data_publishers.py" afterDir="false" />
+    <list default="true" id="0d8e6823-2450-4805-9015-a6f4ccc5becb" name="Changes" comment="The FileSystemCrawlerFactory tries for 'txt' files the 'csv' crawler first and if it gains any tables (meaning that it went through all the 'filters' of detect_delimiters() and creating the dataframe) the csv Crawler is assigned to the txt file -  the container has 'csv' Crawler eventhough it's a 'txt' file">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/soilpulse/data_publishers.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/soilpulse/data_publishers.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/soilpulse/db_access.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/soilpulse/db_access.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/soilpulse/resource_management.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/soilpulse/resource_management.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/soilpulse/resource_managers/filesystem.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/soilpulse/resource_managers/filesystem.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -33,7 +34,6 @@
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
-    <option name="UPDATE_TYPE" value="REBASE" />
   </component>
   <component name="GitHubPullRequestSearchHistory">{
   &quot;lastFilter&quot;: {
@@ -56,26 +56,26 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ASKED_ADD_EXTERNAL_FILES": "true",
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "WebServerToolWindowFactoryState": "false",
-    "last_opened_file_path": "D:/Dokumenty/RUNOFFDB/runoffdb_miner",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/Dokumenty/RUNOFFDB/runoffdb_miner&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   },
-  "keyToStringList": {
-    "DatabaseDriversLRU": [
-      "mysql"
+  &quot;keyToStringList&quot;: {
+    &quot;DatabaseDriversLRU&quot;: [
+      &quot;mysql&quot;
     ]
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
       <recent name="D:\Dokumenty\SoilPulse\MetadataGenerator\src\soilpulse" />
@@ -129,7 +129,13 @@
       <workItem from="1708353636567" duration="3241000" />
       <workItem from="1708941217046" duration="52107000" />
       <workItem from="1710273612699" duration="9318000" />
-      <workItem from="1710315896242" duration="60424000" />
+      <workItem from="1710315896242" duration="113804000" />
+      <workItem from="1711055387458" duration="39358000" />
+      <workItem from="1711557892976" duration="9954000" />
+      <workItem from="1712301671340" duration="82445000" />
+      <workItem from="1712874777626" duration="6466000" />
+      <workItem from="1713179207047" duration="18804000" />
+      <workItem from="1716794248715" duration="9855000" />
     </task>
     <task id="LOCAL-00001" summary="Establish basic elements structure and entities">
       <created>1702907681115</created>
@@ -285,7 +291,84 @@
       <option name="project" value="LOCAL" />
       <updated>1710846963649</updated>
     </task>
-    <option name="localTasksCounter" value="23" />
+    <task id="LOCAL-00023" summary="Working modular Publisher approach. New publisher can be added by adding subclass in data_publishers.py">
+      <created>1710868486195</created>
+      <option name="number" value="00023" />
+      <option name="presentableId" value="LOCAL-00023" />
+      <option name="project" value="LOCAL" />
+      <updated>1710868486195</updated>
+    </task>
+    <task id="LOCAL-00024" summary="Working modular Publisher approach. New publisher can be added by adding subclass in data_publishers.py">
+      <created>1710868608856</created>
+      <option name="number" value="00024" />
+      <option name="presentableId" value="LOCAL-00024" />
+      <option name="project" value="LOCAL" />
+      <updated>1710868608856</updated>
+    </task>
+    <task id="LOCAL-00025" summary="new JSON container introduced and used for storing DOI record metadata (and will be used for storing any JSON data)">
+      <created>1710920370164</created>
+      <option name="number" value="00025" />
+      <option name="presentableId" value="LOCAL-00025" />
+      <option name="project" value="LOCAL" />
+      <updated>1710920370164</updated>
+    </task>
+    <task id="LOCAL-00026" summary="more fun with the JSON container (method for inner structure printing - will be used as a template for different processing)&#10;adjustements to showContents method of containerHandler">
+      <created>1711017595687</created>
+      <option name="number" value="00026" />
+      <option name="presentableId" value="LOCAL-00026" />
+      <option name="project" value="LOCAL" />
+      <updated>1711017595687</updated>
+    </task>
+    <task id="LOCAL-00027" summary="more adjustments of the 'json' container&#10;&#10;getMetadataFromPublisher method removed from ResourceManagement as it is now method of the Publisher class">
+      <created>1711042329975</created>
+      <option name="number" value="00027" />
+      <option name="presentableId" value="LOCAL-00027" />
+      <option name="project" value="LOCAL" />
+      <updated>1711042329975</updated>
+    </task>
+    <task id="LOCAL-00028" summary="adjustments to the management of file content&#10;json structure recognizing working properly&#10;ValueNotInDomainError exception added">
+      <created>1711372992259</created>
+      <option name="number" value="00028" />
+      <option name="presentableId" value="LOCAL-00028" />
+      <option name="project" value="LOCAL" />
+      <updated>1711372992259</updated>
+    </task>
+    <task id="LOCAL-00029" summary="more adjustments to the scheme">
+      <created>1711373032128</created>
+      <option name="number" value="00029" />
+      <option name="presentableId" value="LOCAL-00029" />
+      <option name="project" value="LOCAL" />
+      <updated>1711373032128</updated>
+    </task>
+    <task id="LOCAL-00030" summary="Separate loading file information from publisher and downloading the files&#10;Create new Dataset through ResourceManager, add containers from RM to Dataset">
+      <created>1711405558121</created>
+      <option name="number" value="00030" />
+      <option name="presentableId" value="LOCAL-00030" />
+      <option name="project" value="LOCAL" />
+      <updated>1711405558121</updated>
+    </task>
+    <task id="LOCAL-00031" summary="First shot on treating the downloaded zip file name so it's not an incorrect dirname">
+      <created>1711406022002</created>
+      <option name="number" value="00031" />
+      <option name="presentableId" value="LOCAL-00031" />
+      <option name="project" value="LOCAL" />
+      <updated>1711406022002</updated>
+    </task>
+    <task id="LOCAL-00032" summary="Source files management changed - SourceFile class introduced to hold information about the original downloaded/uploaded file (for better management of the temporary files storage)&#10;&#10;First working crawling for CSV files - the file is read, individual tables are delineated and processed separately: the headers are recognized and the table is converted into pandas daraframe">
+      <created>1712745350972</created>
+      <option name="number" value="00032" />
+      <option name="presentableId" value="LOCAL-00032" />
+      <option name="project" value="LOCAL" />
+      <updated>1712745350972</updated>
+    </task>
+    <task id="LOCAL-00033" summary="The FileSystemCrawlerFactory tries for 'txt' files the 'csv' crawler first and if it gains any tables (meaning that it went through all the 'filters' of detect_delimiters() and creating the dataframe) the csv Crawler is assigned to the txt file -  the container has 'csv' Crawler eventhough it's a 'txt' file">
+      <created>1712783886518</created>
+      <option name="number" value="00033" />
+      <option name="presentableId" value="LOCAL-00033" />
+      <option name="project" value="LOCAL" />
+      <updated>1712783886518</updated>
+    </task>
+    <option name="localTasksCounter" value="34" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -340,12 +423,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="Establish basic elements structure and entities" />
-    <MESSAGE value="Establish relationships module" />
-    <MESSAGE value="change the resource path to instance property" />
-    <MESSAGE value="Add more metadata element types" />
-    <MESSAGE value="Create first shot of resource management classes structure" />
-    <MESSAGE value="Changes in metadata scheme, introduction of entity manager. Can't make it work because of import problems ... so untested" />
     <MESSAGE value="Change import statements to correct and working form" />
     <MESSAGE value="metadata entity types registration in the EntityManager works," />
     <MESSAGE value="Change the file structure of the project so the resource type related classes are in a separate files in &quot;resource_managers&quot; directory to allow for modularity" />
@@ -361,10 +438,20 @@
     <MESSAGE value="Working loading files from json from Zenodo, unpacking zip, recognizing all the files (downloaded and unzipped) into containers tree" />
     <MESSAGE value="Methods docstrings and comments added" />
     <MESSAGE value="Minor changes in ResourceManager, metadata_scheme.py and FileSystemContainer.showContents()" />
-    <option name="LAST_COMMIT_MESSAGE" value="Minor changes in ResourceManager, metadata_scheme.py and FileSystemContainer.showContents()" />
+    <MESSAGE value="Working modular Publisher approach. New publisher can be added by adding subclass in data_publishers.py" />
+    <MESSAGE value="new JSON container introduced and used for storing DOI record metadata (and will be used for storing any JSON data)" />
+    <MESSAGE value="more fun with the JSON container (method for inner structure printing - will be used as a template for different processing)&#10;adjustements to showContents method of containerHandler" />
+    <MESSAGE value="more adjustments of the 'json' container&#10;&#10;getMetadataFromPublisher method removed from ResourceManagement as it is now method of the Publisher class" />
+    <MESSAGE value="adjustments to the management of file content&#10;json structure recognizing working properly&#10;ValueNotInDomainError exception added" />
+    <MESSAGE value="more adjustments to the scheme" />
+    <MESSAGE value="Separate loading file information from publisher and downloading the files&#10;Create new Dataset through ResourceManager, add containers from RM to Dataset" />
+    <MESSAGE value="First shot on treating the downloaded zip file name so it's not an incorrect dirname" />
+    <MESSAGE value="Source files management changed - SourceFile class introduced to hold information about the original downloaded/uploaded file (for better management of the temporary files storage)&#10;&#10;First working crawling for CSV files - the file is read, individual tables are delineated and processed separately: the headers are recognized and the table is converted into pandas daraframe" />
+    <MESSAGE value="The FileSystemCrawlerFactory tries for 'txt' files the 'csv' crawler first and if it gains any tables (meaning that it went through all the 'filters' of detect_delimiters() and creating the dataframe) the csv Crawler is assigned to the txt file -  the container has 'csv' Crawler eventhough it's a 'txt' file" />
+    <option name="LAST_COMMIT_MESSAGE" value="The FileSystemCrawlerFactory tries for 'txt' files the 'csv' crawler first and if it gains any tables (meaning that it went through all the 'filters' of detect_delimiters() and creating the dataframe) the csv Crawler is assigned to the txt file -  the container has 'csv' Crawler eventhough it's a 'txt' file" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/MetadataGenerator$main.coverage" NAME="main Coverage Results" MODIFIED="1710868387150" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
+    <SUITE FILE_PATH="coverage/MetadataGenerator$main.coverage" NAME="main Coverage Results" MODIFIED="1716815391681" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
     <SUITE FILE_PATH="coverage/MetadataGenerator$metadatascheme.coverage" NAME="metadatascheme Coverage Results" MODIFIED="1704839673854" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/soilpulse" />
   </component>
 </project>
