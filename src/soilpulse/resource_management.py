@@ -18,20 +18,32 @@ class ResourceManager:
 
     _instance = None
 
+    def __new__(cls, *args, **kwargs):
+        if not isinstance(cls._instance, cls):
+            cls._instance = super(ResourceManager, cls).__new__(cls)
+        return cls._instance
+
     def __init__(self, name = None, doi = None, id = None):
         def __new__(class_, *args, **kwargs):
             if not isinstance(class_._instance, class_):
                 class_._instance = object.__new__(class_, *args, **kwargs)
             return class_._instance
 
-        # database connection instance
-        self.dbconnection = DBconnector()
-        # unique ID of the resource (in the scope of SoilPulse)
-        if id is None:
-            # new resource record in DB is established if no ID was provided
-            self.id = self.dbconnection.createResourceRecord(name, doi)
-        else:
-            self.id = id
+        def __init__(self, name=None, doi=None, id=None):
+            if not hasattr(self, 'initialized'):  # Ensures __init__ is only called once
+                self.dbconnection = DBconnector()
+                if id is None:
+                    # Create a new resource record in the database
+                    self.id = self.dbconnection.createResourceRecord(name, doi)
+
+
+                else:
+                    # Load the existing resource from the database
+                    self.id = id
+                    self.loadResource(id)
+
+
+                self.initialized = True
 
         # arbitrary resource name for easy identification
         self.name = name
