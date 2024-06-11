@@ -8,7 +8,7 @@ import sqlite3
 import unicodedata
 import os
 
-from .exceptions import DatabaseFetchError
+from .exceptions import DatabaseFetchError, DatabaseEntryError
 
 class DBconnector:
     """
@@ -24,6 +24,10 @@ class DBconnector:
     pwd = "NFDI4earth"
 
     resourcesTableName = "resources"
+    userResourcesTableName = "user_resource"
+    userTableName = "users"
+
+
     def __init__(self):
         try:
             self.db_connection = mysql.connector.connect(
@@ -41,28 +45,91 @@ class DBconnector:
         else:
             # print ("successfully connected to SoilPulse database")
             pass
-    def createResourceRecord(self, name = None, doi = None):
+
+    def getUserNameByID(self, id):
         thecursor = self.db_connection.cursor()
+        query = f"SELECT `first_name`, `last_name` FROM `{DBconnector.userTableName}` WHERE `id` = {id}"
+        thecursor.execute(query)
+        results = thecursor.fetchall()
+
+        if thecursor.rowcount > 0:
+            return results[0]
+        else:
+            return None
+    def getResourcesOfUser(self, user_id):
+        """
+        Loads ResourceManagers' info of a given user from SoilPulse database.
+        Call this function to obtain dictionary of ResourceManagers' names and IDs that are owned by user with given user_id
+
+        :param user_id: ID of the user whose ResourceManagers should be loaded
+        :return: dictionary of ResourceManagers info {ResourceManager id: ResourceManager name, ...}
+        """
+        thecursor = self.db_connection.cursor()
+        query = f"SELECT `{DBconnector.userResourcesTableName}`.`resource_id`, `{DBconnector.resourcesTableName}`.`name` FROM `{DBconnector.userResourcesTableName}` "\
+                          f"JOIN `{DBconnector.resourcesTableName}` ON `{DBconnector.resourcesTableName}`.`id` = `{DBconnector.userResourcesTableName}`.`resource_id` "\
+                          f"WHERE `{DBconnector.userResourcesTableName}`.`user_id` = {user_id}"
+        thecursor.execute(query)
+        results = thecursor.fetchall()
+
+        if thecursor.rowcount > 0:
+            resources = {}
+            for res in results:
+                resources.update({res[0]: res[1]})
+            return resources
+        else:
+            return None
+
+    def saveResourceManager(self, user_id, name = None, doi = None, overwrite = False):
+        thecursor = self.db_connection.cursor()
+
+        # if no name was provided create one
         if name is None:
             thecursor.execute(f"SELECT AUTO_INCREMENT FROM information_schema.tables"
                               f"WHERE table_name = '{DBconnector.resourcesTableName}'")
             results = thecursor.fetchall()
 
             if thecursor.rowcount > 0:
-                patterns = {}
                 for nextID in results:
+                    print(f"next resource id will be: {nextID}")
                     name = f"Unnamed resource {nextID}"
 
-        doi = "NULL" if doi is None else doi
-        # execute the query and fetch the results
-        query = f"INSERT INTO `{DBconnector.resourcesTableName}` (`name`, `doi`) VALUES (\"{name}\", \"{doi}\")"
-        print(query)
-        thecursor.execute(query)
+        usersResources = self.getResourcesOfUser(user_id)
+        if usersResources is not None:
+            if name in self.getResourcesOfUser(user_id).values():
+                if not overwrite:
+                    raise DatabaseEntryError(f"ResourceManager with name \"{name}\" already exists. Use unique names for your ResoureManagers!")
+                print(f"ResourceManager with name \"{name}\" will be overwritten.")
 
+        doi = "NULL" if doi is None else doi
+
+        # insert line to `resource` table
+        # execute the query
+        query = f"INSERT INTO `{DBconnector.resourcesTableName}` (`name`, `doi`) VALUES (\"{name}\", \"{doi}\")"
+        thecursor.execute(query)
+        # insert queries must be committed
+        self.db_connection.commit()
+        # get and return the ID of  newly created ResourceManager record
         thecursor.execute("SELECT LAST_INSERT_ID()")
         results = thecursor.fetchall()
-        for newID in results:
-            return newID[0]
+        for nid in results:
+            resource_id = nid[0]
+
+        # insert line to `user_resource` table
+        query = f"INSERT INTO `{DBconnector.userResourcesTableName}` (`user_id`, `resource_id`) VALUES ({user_id}, {resource_id})"
+        thecursor.execute(query)
+        self.db_connection.commit()
+
+        return resource_id
+
+    def loadResourceManager(self, id):
+        pass
+
+    def updateResourcaManager(self, id, name = None, doi = None, ):
+        pass
+
+    def deleteResourceManager(self, id):
+        pass
+
 
     def loadSearchPatterns(self, entity):
         """
@@ -202,3 +269,5 @@ class EntityKeywordsDB:
                     typeKeywords = None
             keywords.update({type: typeKeywords})
         return  keywords
+
+

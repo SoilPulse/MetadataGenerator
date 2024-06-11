@@ -24,13 +24,6 @@ class DOIdataRetrievalException(Exception):
     def __init__(self, message):
         self.message = "DOI processing error:\n" + message
 
-class DatabaseFetchError(Exception):
-    """
-    This exception is raised when there's something wrong with data retrieval from SoilPulse database
-    """
-    def __init__(self, message):
-        self.message = "Values requested from SoilPulse were not found:\n" + message
-
 class LocalFileManipulationError(Exception):
     """
     This exception is raised when there's something wrong with local files manipulation
@@ -43,3 +36,15 @@ class ContainerStructureError(Exception):
 
     def __init__(self, message):
         self.message = "Container was requested that doesn't exist within this scope:\n" + message
+
+class DatabaseFetchError(Exception):
+    """
+    This exception is raised when there's something wrong with data retrieval from SoilPulse database
+    """
+    def __init__(self, message):
+        self.message = "Values requested from SoilPulse were not found:\n" + message
+
+class DatabaseEntryError(Exception):
+
+    def __init__(self, message):
+        self.message = "SoilPulse database consistency error:\n" + message

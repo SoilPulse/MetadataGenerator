@@ -7,12 +7,14 @@ import shutil
 
 from .metadata_scheme import MetadataStructureMap
 from .db_access import DBconnector
-from .exceptions import DOIdataRetrievalException, LocalFileManipulationError, ContainerStructureError
+from .exceptions import DOIdataRetrievalException, LocalFileManipulationError, ContainerStructureError, DatabaseEntryError
 
 # general variables
 downloadedFilesDir = "downloaded_files"
 class ResourceManager:
     """
+    Takes care of all files related to a resource composition.
+
     Singleton for a running session (only one Resource can be edited and managed at a time)
     """
 
@@ -23,27 +25,30 @@ class ResourceManager:
             cls._instance = super(ResourceManager, cls).__new__(cls)
         return cls._instance
 
-    def __init__(self, name = None, doi = None, id = None):
-        def __new__(class_, *args, **kwargs):
-            if not isinstance(class_._instance, class_):
-                class_._instance = object.__new__(class_, *args, **kwargs)
-            return class_._instance
+    def __init__(self, user_id, name = None, doi = None, id = None):
+        # on initialization load Resource from DB or establish a new one
+        if not hasattr(self, 'initialized'):  # Ensures __init__ is only called once
+            self.dbconnection = DBconnector()
+            self.ownerID = user_id
 
-        def __init__(self, name=None, doi=None, id=None):
-            if not hasattr(self, 'initialized'):  # Ensures __init__ is only called once
-                self.dbconnection = DBconnector()
-                if id is None:
-                    # Create a new resource record in the database
-                    self.id = self.dbconnection.createResourceRecord(name, doi)
+            if id is None:
+                # Create a new resource record in the database
+                try:
+                    self.id = self.dbconnection.saveResourceManager(user_id, name, doi)
+                except DatabaseEntryError as e:
+                    print("Failed to establish new ResourceManager record in the SoilPulse database.")
+                    raise
 
+            else:
+                # Load the existing resource from the database
+                self.id = id
+                self.dbconnection.loadResourceManager(id)
 
-                else:
-                    # Load the existing resource from the database
-                    self.id = id
-                    self.loadResource(id)
-
-
-                self.initialized = True
+            # dedicated directory where files can be stored
+            self.tempDir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), downloadedFilesDir,
+                                        str(self.id))
+            print(self.tempDir)
+            self.initialized = True
 
         # arbitrary resource name for easy identification
         self.name = name
@@ -65,8 +70,7 @@ class ResourceManager:
         self.containerTree = []
         # the DOI is private, so it can't be changed without consequences - only setDOI(doi) can be used
         self.__doi = None
-        # dedicated directory where files can be stored
-        self.tempDir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), downloadedFilesDir, str(self.id))
+
         # language of the resource
         self.language = None
 
@@ -113,7 +117,7 @@ class ResourceManager:
         # self.getMetadataFromPublisher()
 
         # self.getFileInfoFromPublisher()
-
+        return
 
     def getDOI(self):
         """
