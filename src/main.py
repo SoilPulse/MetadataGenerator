@@ -20,25 +20,14 @@ user_id = 1
 example_1 = {"name": "Jonas Lenz's dissertation package", "doi": "10.5281/zenodo.6654150"}
 example_2 = {"name": "Michael Schmuker's neuromorphic_classifiers", "doi": "10.5281/zenodo.18726"}  # more lightweight repo
 example_3 = {"name": "Ries et al.", "doi": "10.6094/unifr/151460"}
-example_4 = {"name": None, "doi": None, "id": 9}
+example_4 = {"name": None, "doi": None, "id": 16}
 
 
 if __name__ == "__main__":
     # database connection to load/save
     dbcon = DBconnector()
-
-    print("\n"+50*"=")
-    userinfo = dbcon.getUserNameByID(user_id)
-    usersResources = dbcon.getResourcesOfUser(user_id=user_id)
-    if usersResources is not None:
-        print(f"Saved ResourceManagers of user id = {user_id} ({userinfo[1]}, {userinfo[0]})")
-        for rid, rname in usersResources.items():
-            print(f"\t{rid}: {rname}")
-    else:
-        print(f"User id = {user_id} ({userinfo[1]}, {userinfo[0]}) has no saved Resource project.")
-    print(50*"="+"\n")
-
-    print("\n"+40*"|/|\\"+"\n\n")
+    # show current saver resources of user
+    dbcon.printUserInfo(user_id)
 
 
     ###### the resource initiation #####################
@@ -51,11 +40,11 @@ if __name__ == "__main__":
         RM = ResourceManager(**example)
 
     except DatabaseEntryError as e:
+        # this exception is thrown whne trying to add new ResourceManager with same name into the database (for same user)
         # pass the error message to the user ... some pop-up window with the message
         print(e.message)
         pass
     else:
-
         # on initiation (or change of DOI) the RM:
             # loads information about files that are part of the DOI provided
             # unpacks archives
@@ -66,21 +55,30 @@ if __name__ == "__main__":
 
             # loads metadata information that are part of data obtained from DOI record or data host record
 
-        print(f"Current ResourceManager's ID is {RM.id}")
+
+
         # download files associated with the publisher record
         RM.downloadPublishedFiles()
-        # # show the whole container tree
-        # RM.showContainerTree()
+        # setting of files 'licensing' - this property should be available through GUI
+        RM.keepFiles = True
 
+        # show the whole container tree
+        RM.showContainerTree()
 
-        # new empty dataset is created and added to the ResourceManager
-        newDataset = RM.newDataset("Dataset test 1")
-        # add some containers from the ResourceManager - will be done through the GUI
-        newDataset.addContainers(RM.getContainerByID([1, 2, 6]))
+        # change Resource name ... testing
+        RM.name = "Jonas' dissertation"
+        RM.updateDBrecord()
 
-        # show the dataset's container tree
-        newDataset.showContainerTree()
-        newDataset.getCrawled()
+        print(str(RM))
+
+        # # new empty dataset is created and added to the ResourceManager
+        # newDataset = RM.newDataset("Dataset test 1")
+        # # add some containers from the ResourceManager - will be done through the GUI
+        # newDataset.addContainers(RM.getContainerByID([1, 2, 6]))
+        #
+        # # show the dataset's container tree
+        # newDataset.showContainerTree()
+        # newDataset.getCrawled()
 
 
         ###### dataset metadata structure mapping ################

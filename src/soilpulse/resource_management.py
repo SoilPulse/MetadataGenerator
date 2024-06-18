@@ -47,7 +47,6 @@ class ResourceManager:
             # dedicated directory where files can be stored
             self.tempDir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), downloadedFilesDir,
                                         str(self.id))
-            print(self.tempDir)
             self.initialized = True
 
         # arbitrary resource name for easy identification
@@ -74,8 +73,39 @@ class ResourceManager:
         # language of the resource
         self.language = None
 
+        # for now - some kind of licences definition and appropriate actions should be implemented
+        self.keepFiles = False
+
         if doi:
             self.setDOI(doi)
+
+    def __del__(self):
+        if hasattr(self, "keepFiles"):
+            if not self.keepFiles:
+                print(f"\n\nDeleting Resource's files because we can't keep them :-(")
+                failed = self.deleteAllResourceFiles()
+                if len(failed) > 0:
+                    print(f"following files couldn't be deleted:")
+                    for f in failed:
+                        print(f"\t{f}")
+
+    def __str__(self):
+        out = f"\nResourceManager #{self.id} {70 * '='}\n"
+        out += f"name: {self.name}\n"
+        out += f"local directory: {self.tempDir}\n"
+        out += f"keep stored files: {'yes' if self.keepFiles else 'no'}\n"
+        out += f"space occupied: {get_formated_file_size(self.tempDir)}\n"
+        out += f"DOI: {self.__doi}\n" if self.__doi is not None else f"no DOI assigned\n"
+        out += f"{90 * '='}\n"
+        return out
+
+    def updateDBrecord(self):
+        newValues = {"name": self.name, "doi": self.__doi, "files_stored": self.keepFiles}
+        self.dbconnection.updateResourceManager(self.id, **newValues)
+        # for cont in self.containerTree:
+        #     cont.updateDBrecord(self.dbconnection)
+
+
 
     def setDOI(self, doi):
         """
@@ -125,23 +155,23 @@ class ResourceManager:
         """
         return self.__doi
 
-    def deleteAllResourceFiles(self):
-        failed = 0
-        for file in self.sourceFiles:
-            print(file)
-            filename = os.path.basename(file['local_path'])
-            try:
-                os.remove(file['local_path'])
-                print("File '{}' successfully deleted.".format(filename))
-            except:
-                raise LocalFileManipulationError("Failed to delete '{}' from local files storage '{}'."
-                                                 .format(os.path.basename(file['local_path']),
-                                                         os.path.dirname(file['local_path'])))
-                failed += 1
 
-        if failed > 0:
-            return False
-        return True
+    def getAllFilesList(self):
+        filesList = []
+        for cont in self.containerTree:
+            cont.listOwnFiles(filesList)
+        return filesList
+
+    def deleteAllResourceFiles(self):
+        failed = []
+        for cont in self.containerTree:
+            cont.deleteOwnFiles(failed)
+        if len(failed) > 0:
+            flist = "\n".join([f"{f[0]}: {f[1]}" for f in failed])
+            raise LocalFileManipulationError(f"Failed to delete following files:\n{flist}")
+        else:
+            print("All files successfully deleted.")
+        return failed
 
     def getPublisher(self, DOI_metadata):
         """
@@ -167,7 +197,6 @@ class ResourceManager:
                     return publisher
                 else:
                     raise DOIdataRetrievalException(f"Unsupported data repository '{publisherKey}' - currently only implemented for Zenodo")
-                return None
 
 
     @staticmethod
@@ -248,18 +277,18 @@ class ResourceManager:
 
         :param list: list of SourceFile indexes to be downloaded, or None if files are to be downloaded
         :param unzip: if the downloaded file is a .zip archive it will be extracted if unzip=True
-        :return: dictionary of file types for input URLs
+        :return: list of local relative paths of all files copied to the local/temporary storage
         """
 
         if len(self.publishedFiles) == 0:
             print("The list of published files is empty.\n")
         else:
             # create the target directory if not exists
-            print("downloading remote files to local storage ('{}') ...".format(self.tempDir))
+            print("downloading remote files to local storage ...")
 
             if not os.path.isdir(self.tempDir):
                 os.mkdir(self.tempDir)
-            result = {}
+            fileList = []
             if not list:
                 for sourceFile in self.publishedFiles:
                     url = sourceFile.source_url
@@ -289,6 +318,7 @@ class ResourceManager:
 
                             # on success save local path of downloaded file to its attribute
                             sourceFile.local_path = local_path
+                            fileList.append(local_path)
 
                             # TODO - this should be implemented better, the container type distribution should be defined without using the explicit type strings ... so far I don't know how to achieve it
                             # create a container from the file with all related actions
@@ -310,7 +340,7 @@ class ResourceManager:
                             return False
 
             print(" ... successful\n")
-            return result
+            return fileList
 
 
     def uploadFilesFromSession(self, files):
@@ -524,10 +554,20 @@ class ContainerHandler:
         print("{}{} - {} ({}) [{}]".format(t, self.id, self.name, self.containerType, len(self.containers)))
 
         # invoke showContents of sub-containers
-        if self.containers:
+        if len(self.containers) > 0:
             depth += 1
             for cont in self.containers:
                 cont.showContents(depth)
+
+    def updateDBrecord(self, db_connection):
+        if hasattr(self, "path"):
+            path = self.path
+        else:
+            path = None
+
+        newValues = {"id_local": self.id, "name": self.name, "parent_id": None, "resource_id": None, "path": path}
+        db_connection.updateContainer(self.id, **newValues)
+        return
 
     def createTree(self):
         pass
@@ -538,6 +578,38 @@ class ContainerHandler:
     def assignCrawler(self, crawler):
         self.crawler = crawler
 
+    def listOwnFiles(self, collection):
+        pass
+
+    def deleteOwnFiles(self, failed = []):
+        """
+        Deletes container's own file (if exists) from locale storage and induces deleting own files of subcontainers
+
+        :param failed: list of unsuccessful attemtps and reason for that [undeleted file path, description of error]
+        :return: the same list of undeleted files
+        """
+        # first delete sub-container's files (if any)
+        for c in self.containers:
+            c.deleteOwnFiles(failed)
+        # only some of the subclasses have local file data
+        if hasattr(self, 'path'):
+            if self.path is not None:
+                try:
+                    # and afterwards the container's file/directory itself
+                    if os.path.isfile(self.path):
+                        os.remove(self.path)
+                    elif os.path.isdir(self.path):
+                        os.rmdir(self.path)
+                except FileNotFoundError:
+                    failed.append([self.path, "file does not exist"])
+                    # raise LocalFileManipulationError(f"Failed to delete '{self.path}'"
+                    #                                  f" from local files storage - the file does not exist.")
+                except PermissionError:
+                    failed.append([self.path, "permission error"])
+                    # raise LocalFileManipulationError(
+                    #     f"Failed to delete '{self.path}' from local files storage - the file is locked by another process.")
+
+        return failed
 
 class PublisherFactory:
     """
@@ -638,3 +710,29 @@ def get_supported_archive_formats():
     for format in shutil.get_unpack_formats():
         archive_ext_list.extend([ext.strip(".") for ext in format[1]])
     return archive_ext_list
+
+def get_formated_file_size(path):
+    """Return a string of dynamically formatted file size."""
+    suffix = "B"
+    if os.path.isfile(path):
+        size = os.stat(path).st_size
+    else:
+        size = get_directory_size(path)
+    if size:
+        for unit in ("", "k", "M", "G", "T", "P", "E", "Z"):
+            if abs(size) < 1024.0:
+                return f"{size:3.1f} {unit}{suffix}"
+            size /= 1024.0
+        return f"{size:.1f}Yi{suffix}"
+    else:
+        return None
+
+def get_directory_size(path):
+    total_size = 0
+    for dirpath, dirnames, filenames in os.walk(path):
+        for filename in filenames:
+            filepath = os.path.join(dirpath, filename)
+            if not os.path.islink(filepath):
+                total_size += os.path.getsize(filepath)
+    return total_size
+

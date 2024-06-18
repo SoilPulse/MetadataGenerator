@@ -26,6 +26,7 @@ class DBconnector:
     resourcesTableName = "resources"
     userResourcesTableName = "user_resource"
     userTableName = "users"
+    containersTableName = "containers"
 
 
     def __init__(self):
@@ -79,7 +80,19 @@ class DBconnector:
         else:
             return None
 
-    def saveResourceManager(self, user_id, name = None, doi = None, overwrite = False):
+    def printUserInfo(self, user_id):
+        print("\n" + 70 * "-")
+        userinfo = self.getUserNameByID(user_id)
+        usersResources = self.getResourcesOfUser(user_id=user_id)
+        if usersResources is not None:
+            print(f"Saved ResourceManagers of user id = {user_id} ({userinfo[1]}, {userinfo[0]})")
+            for rid, rname in usersResources.items():
+                print(f"\t{rid}: {rname}")
+        else:
+            print(f"User id = {user_id} ({userinfo[1]}, {userinfo[0]}) has no saved Resource project.")
+        print(70 * "-" + "\n")
+
+    def saveResourceManager(self, user_id, name=None, doi=None, unique_names=True):
         thecursor = self.db_connection.cursor()
 
         # if no name was provided create one
@@ -96,7 +109,7 @@ class DBconnector:
         usersResources = self.getResourcesOfUser(user_id)
         if usersResources is not None:
             if name in self.getResourcesOfUser(user_id).values():
-                if not overwrite:
+                if unique_names:
                     raise DatabaseEntryError(f"ResourceManager with name \"{name}\" already exists. Use unique names for your ResoureManagers!")
                 print(f"ResourceManager with name \"{name}\" will be overwritten.")
 
@@ -108,7 +121,7 @@ class DBconnector:
         thecursor.execute(query)
         # insert queries must be committed
         self.db_connection.commit()
-        # get and return the ID of  newly created ResourceManager record
+        # get and return the ID of newly created ResourceManager record
         thecursor.execute("SELECT LAST_INSERT_ID()")
         results = thecursor.fetchall()
         for nid in results:
@@ -118,18 +131,71 @@ class DBconnector:
         query = f"INSERT INTO `{DBconnector.userResourcesTableName}` (`user_id`, `resource_id`) VALUES ({user_id}, {resource_id})"
         thecursor.execute(query)
         self.db_connection.commit()
-
+        thecursor.close()
         return resource_id
 
-    def loadResourceManager(self, id):
-        pass
+    def updateResourceManager(self, rid, **kwargs):
+        thecursor = self.db_connection.cursor()
 
-    def updateResourcaManager(self, id, name = None, doi = None, ):
+        query = f"UPDATE {DBconnector.resourcesTableName} SET "
+        query += ", ".join([f"`{key}` = %s" for key in kwargs.keys()])
+        query += " WHERE `id` = %s"
+
+        values = list(kwargs.values())
+        values.append(rid)
+
+        thecursor.execute(query, values)
+        self.db_connection.commit()
+        thecursor.close()
+        return
+
+    def loadResourceManager(self, id):
         pass
 
     def deleteResourceManager(self, id):
         pass
 
+    def containerRecordExists(self, container_id, resource_id):
+        thecursor = self.db_connection.cursor()
+        query = f"SELECT `{DBconnector.containersTableName}`.`id`" \
+                f"FROM `{DBconnector.containersTableName}` "\
+                f"WHERE `{DBconnector.containersTableName}`.`local_id` = {container_id}" \
+                f"AND `{DBconnector.containersTableName}`.`resource_id` = {resource_id}"
+        thecursor.execute(query)
+
+        if thecursor.rowcount == 0:
+            return False
+        elif thecursor.rowcount == 1:
+            for res in thecursor.fetchall():
+                return res[0]
+            return True
+        else:
+            raise DatabaseEntryError(f"More then one ({thecursor.rowcount}) occurrence of a local container ID ({container_id} within a ResourceManager (ID {resource_id}.")
+
+    def updateContainer(self, container_id, resource_id, **kwargs):
+        thecursor = self.db_connection.cursor()
+
+        if self.containerRecordExists(container_id, resource_id):
+            query = f"UPDATE {DBconnector.containersTableName} SET "
+            query += ", ".join([f"`{key}` = %s" for key in kwargs.keys()])
+            query += " WHERE `id_local` = %s AND resource_id = %s"
+
+            values = list(kwargs.values())
+            values.append(container_id, resource_id)
+        else:
+            arglist = ["id_local", "resource_id"]
+            arglist.extend([k for k in kwargs.keys()])
+
+            query = f"INSERT INTO `{DBconnector.containersTableName}` "
+            query += ", ".join([f"`{key}` = %s" for key in arglist])
+
+            values = [container_id, resource_id]
+            values.extend(list(kwargs.values()))
+
+        thecursor.execute(query, values)
+        self.db_connection.commit()
+        thecursor.close()
+        return
 
     def loadSearchPatterns(self, entity):
         """
@@ -150,6 +216,7 @@ class DBconnector:
             patterns = {}
             for ss in results:
                 patterns.update({entity.key+"_"+ss[0]: str(ss[1])})
+
             return patterns
         else:
             raise DatabaseFetchError("No search strings found for entity_id = '{}'".format(entity.ID))
