@@ -32,7 +32,7 @@ if __name__ == "__main__":
 
     ###### the resource initiation #####################
     # get mockup example dictionary
-    example = example_1
+    example = example_2
     example.update({"user_id": user_id})
 
     # create ResourceManager instance for new/loaded resource:
@@ -67,9 +67,12 @@ if __name__ == "__main__":
 
         # change Resource name ... testing
         RM.name = "Jonas' dissertation"
-        RM.updateDBrecord()
+        try:
+            RM.updateDBrecord()
+        except DatabaseEntryError as e:
+            print(e.message)
 
-        print(str(RM))
+        print("all containers:\n{}".format('\n'.join([str(c) for c in ContainerHandlerFactory.containers.values()])))
 
         # # new empty dataset is created and added to the ResourceManager
         # newDataset = RM.newDataset("Dataset test 1")

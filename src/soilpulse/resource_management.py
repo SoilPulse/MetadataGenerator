@@ -15,7 +15,7 @@ class ResourceManager:
     """
     Takes care of all files related to a resource composition.
 
-    Singleton for a running session (only one Resource can be edited and managed at a time)
+    Singleton for a running session (only one ResourceManager can be edited and managed at a time)
     """
 
     _instance = None
@@ -79,6 +79,7 @@ class ResourceManager:
         if doi:
             self.setDOI(doi)
 
+
     def __del__(self):
         if hasattr(self, "keepFiles"):
             if not self.keepFiles:
@@ -100,8 +101,8 @@ class ResourceManager:
         return out
 
     def updateDBrecord(self):
-        newValues = {"name": self.name, "doi": self.__doi, "files_stored": self.keepFiles}
-        self.dbconnection.updateResourceManager(self.id, **newValues)
+        newValues = {"name": self.name, "doi": self.__doi, "files_stored": self.keepFiles, }
+        self.dbconnection.updateResourceManager(self, **newValues)
         # for cont in self.containerTree:
         #     cont.updateDBrecord(self.dbconnection)
 
@@ -131,7 +132,7 @@ class ResourceManager:
         # populate the metadata properties
         self.DOImetadata = self.getDOImetadata(self.__doi)
         # append the DOI metadata JSON container to the resourceManagers containers
-        self.containerTree.append(ContainerHandlerFactory().createHandler("json", "Resource DOI metadata JSON", self.DOImetadata))
+        self.containerTree.append(ContainerHandlerFactory().createHandler("json", "Resource DOI metadata JSON", self, self.DOImetadata))
         # populate publisher with Publisher class instance
         # try:
         self.publisher = self.getPublisher(self.DOImetadata)
@@ -139,10 +140,9 @@ class ResourceManager:
         #     print(self.DOImetadata['publisher'])
         # else:
         # append the publisher metadata JSON container to the resourceManagers containers
-        self.containerTree.append(ContainerHandlerFactory().createHandler("json", "{} metadata JSON".format(self.publisher.name), self.publisher.getMetadata()))
+        self.containerTree.append(ContainerHandlerFactory().createHandler("json", "{} metadata JSON".format(self.publisher.name), self, self.publisher.getMetadata()))
         # get downloadable files information from publisher
         self.publishedFiles = self.publisher.getFileInfo()
-
 
         # self.getMetadataFromPublisher()
 
@@ -279,68 +279,62 @@ class ResourceManager:
         :param unzip: if the downloaded file is a .zip archive it will be extracted if unzip=True
         :return: list of local relative paths of all files copied to the local/temporary storage
         """
+        if self.publishedFiles is not None:
+            if len(self.publishedFiles) == 0:
+                print("The list of published files is empty.\n")
+            else:
+                # create the target directory if not exists
+                print("downloading remote files to local storage ...")
 
-        if len(self.publishedFiles) == 0:
-            print("The list of published files is empty.\n")
-        else:
-            # create the target directory if not exists
-            print("downloading remote files to local storage ...")
+                if not os.path.isdir(self.tempDir):
+                    os.mkdir(self.tempDir)
+                fileList = []
+                if not list:
+                    for sourceFile in self.publishedFiles:
+                        url = sourceFile.source_url
+                        # any file name manipulation can be performed here
+                        filename = sourceFile.filename.replace("\\/<[^>]*>?", "_")
 
-            if not os.path.isdir(self.tempDir):
-                os.mkdir(self.tempDir)
-            fileList = []
-            if not list:
-                for sourceFile in self.publishedFiles:
-                    url = sourceFile.source_url
-                    # any file name manipulation can be performed here
-                    filename = sourceFile.filename.replace("\\/<[^>]*>?", "_")
+                        local_path = os.path.join(self.tempDir, filename)
 
-                    local_path = os.path.join(self.tempDir, filename)
-
-                    try:
-                        response = requests.get(url+"/content")
-                    except requests.exceptions.ConnectionError:
-                        print("\tA connection error occurred. Check your internet connection.")
-                        return False
-                    except requests.exceptions.Timeout:
-                        print("\tThe request timed out.")
-                        return False
-                    except requests.exceptions.HTTPError as e:
-                        print("\tHTTP Error:", e)
-                        return False
-                    except requests.exceptions.RequestException as e:
-                        print("\tAn error occurred:", e)
-                        return False
-                    else:
-                        if response.ok:
-                            with open(local_path, mode="wb") as filesave:
-                                filesave.write(response.content)
-
-                            # on success save local path of downloaded file to its attribute
-                            sourceFile.local_path = local_path
-                            fileList.append(local_path)
-
-                            # TODO - this should be implemented better, the container type distribution should be defined without using the explicit type strings ... so far I don't know how to achieve it
-                            # create a container from the file with all related actions
-                            if os.path.isdir(local_path):
-                                newContainer = ContainerHandlerFactory().createHandler('directory', sourceFile.filename, local_path)
-                            else:
-                                extension = local_path.split(".")[-1]
-                                if extension in get_supported_archive_formats() or extension == "gz":
-                                    newContainer = ContainerHandlerFactory().createHandler('archive', sourceFile.filename, local_path)
-                                else:
-                                    newContainer = ContainerHandlerFactory().createHandler('file', sourceFile.filename, local_path)
-                            self.containerTree.append(newContainer)
-
-                        else:
-                            # something needs to be done if the response is not OK ...
-                            print("\t\tThe response was not OK!")
-                            sourceFile.local_path= None
-
+                        try:
+                            response = requests.get(url+"/content")
+                        except requests.exceptions.ConnectionError:
+                            print("\tA connection error occurred while trying to download published files - check your internet connection.")
                             return False
+                        except requests.exceptions.Timeout:
+                            print("\tThe request timed out while trying to download published files.")
+                            return False
+                        except requests.exceptions.HTTPError as e:
+                            print("\tHTTP Error occurred while trying to download published files:\n", e)
+                            return False
+                        except requests.exceptions.RequestException as e:
+                            print("\tRequest Error occurred while trying to download published files:\n", e)
+                            return False
+                        else:
+                            if response.ok:
+                                with open(local_path, mode="wb") as filesave:
+                                    filesave.write(response.content)
 
-            print(" ... successful\n")
-            return fileList
+                                # on success save local path of downloaded file to its attribute
+                                sourceFile.local_path = local_path
+                                fileList.append(local_path)
+
+                                # create new container from the file with all related actions
+                                newContainer = ContainerHandlerFactory().createHandler('filesystem', sourceFile.filename, self, None, path=local_path)
+                                self.containerTree.append(newContainer)
+
+                            else:
+                                # something needs to be done if the response is not OK ...
+                                print("\t\tThe response was not OK!")
+                                sourceFile.local_path= None
+
+                                return False
+
+                print(" ... successful\n")
+                return fileList
+        else:
+            raise DOIdataRetrievalException("List of files from DOI record was not retrieved correctly.")
 
 
     def uploadFilesFromSession(self, files):
@@ -461,7 +455,8 @@ class SourceFile:
 
 class ContainerHandlerFactory:
     """
-    Container object factory
+    ContainerHandler object instances factory, global singleton - the only way to create container handlers
+    Keeps track of all the ContainerHandler class and all subclass' instances created
     """
 
     # directory of registered containers types classes
@@ -470,14 +465,11 @@ class ContainerHandlerFactory:
     # the one and only instance
     _instance = None
 
+    # dictionary of already created container handlers by ID
     containers = {}
-    nextContainerID = 1
+    # class counter of ID to be assigned to next created ContainerHandler
+    nextContainerID = 0
 
-    def __init__(self):
-        def __new__(class_, *args, **kwargs):
-            if not isinstance(class_._instance, class_):
-                class_._instance = object.__new__(class_, *args, **kwargs)
-            return class_._instance
     @classmethod
     def getContainerByID(cls, cid):
         """
@@ -491,44 +483,74 @@ class ContainerHandlerFactory:
 
     @classmethod
     def registerContainerType(cls, containerTypeClass, key):
+        """
+        Registers ContainerHandler subclasses in the factory
+        """
         cls.containerTypes[key] = containerTypeClass
         print("DatasetHandler '{}' registered".format(key))
         return
 
     @classmethod
-    def createHandler(cls, containerType, *args):
+    def createHandler(cls, general_type, *args, **kwargs):
         """
-        Creates and returns instance of Container of given type
-        Keeps track of all the instances created
+        Creates and returns instance of ContainerHandler of given type
+        Subclasses can implement further specialization of the type by overriding ContainerHandler.getSpecializedSubclassType()
+
         """
-        if containerType not in ContainerHandlerFactory.containerTypes.keys():
-            raise ValueError("Unsupported container handler type '{}'. Supported are: {}".format(containerType, ",".join(["'"+k+"'" for k in cls.containerTypes.keys()])))
+        # check if the requested container type is registered in the factory
+        if general_type not in ContainerHandlerFactory.containerTypes.keys():
+            raise ValueError("Unsupported container handler type '{}'. Supported are:"
+                             " {}".format(general_type, ",".join( ["'" + k + "'" for k in cls.containerTypes.keys()])))
         else:
+            # raise the ID for next container
+            cls.nextContainerID += 1
+
+            # get specialized subclass type
+            specialized_type = cls.containerTypes[general_type].getSpecializedSubclassType(**kwargs)
+            # check if the requested specialized container type is registered in the factory
+            if specialized_type not in ContainerHandlerFactory.containerTypes.keys():
+                raise ValueError("Unsupported container handler type '{}'. Supported are:"
+                                 " {}".format(general_type, ",".join(["'" + k + "'" for k in cls.containerTypes.keys()])))
+
             # create new container instance with unique id in the ResourceManager scope
-            new_container = cls.containerTypes[containerType](cls.nextContainerID, *args)
+            new_container = cls.containerTypes[specialized_type](cls.nextContainerID, *args, **kwargs)
             # put it in the factory list
             cls.containers.update({new_container.id: new_container})
-            # raise the ID for next container
-            # print(f"adding container of type '{containerType}'")
-            # print(args)
-            cls.nextContainerID += 1
-            # print(f"next id = {cls.nextContainerID}")
             return new_container
+
+    def __init__(self):
+        def __new__(class_, *args, **kwargs):
+            if not isinstance(class_._instance, class_):
+                class_._instance = object.__new__(class_, *args, **kwargs)
+            return class_._instance
+
 
 
 class ContainerHandler:
     """
-    Represents a single data container (file/db/table ) that can be crawled and analyzed
+    Represents an enclosed data structure.
+    It can be either a file or string or other data structure that can be manipulated and analyzed
     """
     containerType = None
     containerFormat = None
     keywordsDBname = None
 
-    def __init__(self, id, name):
+    @classmethod
+    def getSpecializedSubclassType(cls, **kwargs):
+        """
+        This method comes handy when one ContainerHandler subclass needs to control creation of own subclasses
+        """
+        return cls.containerType
+
+    def __init__(self, id, name, resource_manager, parent_container=None):
         # unique ID in the ResourceManagers scope
         self.id = id
         # container name (filename/database name/table name ...)
         self.name = name
+        # reference to the ResourceManager that the container belongs to
+        self.resourceManager = resource_manager
+        # parent container instance (if not root container)
+        self.parentContainer = parent_container
         # data containers that the container contains
         self.containers = []
         # metadata entities that the container contains
@@ -541,9 +563,17 @@ class ContainerHandler:
         self.containerFormat = type(self).containerFormat
         self.keywordsDBname = type(self).keywordsDBname
 
+    def __str__(self):
+        out = f"\n|  # {self.id}  |  {type(self).__name__}\n|  {self.name}  \n"
+        if hasattr(self, "path"):
+            out += f"|  {self.path}"
+
+        return out
+
+
     def showContents(self, depth = 0, ind = ". "):
         """
-        Prints basic info about the container and invokes showContents on all of its containers
+        Prints structured info about the container and invokes showContents on all of its containers
 
         :param depth: current depth of showKeyValueStructure recursion
         :param ind: string of a single level indentation
@@ -569,7 +599,7 @@ class ContainerHandler:
         db_connection.updateContainer(self.id, **newValues)
         return
 
-    def createTree(self):
+    def createTree(self, *args):
         pass
 
     def getCrawled(self):
@@ -621,12 +651,6 @@ class PublisherFactory:
 
     # the one and only instance
     _instance = None
-    def __init__(self):
-
-        def __new__(class_, *args, **kwargs):
-            if not isinstance(class_._instance, class_):
-                class_._instance = object.__new__(class_, *args, **kwargs)
-            return class_._instance
 
     @classmethod
     def registerPublisher(cls, publisherClass):
@@ -640,12 +664,26 @@ class PublisherFactory:
         Creates and returns instance of Publisher of given key
         """
         if publisherKey not in cls.publishers.keys():
-            raise ValueError("Unsupported publisher handler type '{}'.\nRegistred data publishers are: {}".format(publisherKey, ",".join(["'"+k+"'" for k in cls.publishers.keys()])))
+            raise ValueError(
+                "Unsupported publisher handler type '{}'.\nRegistred data publishers are: {}".format(publisherKey,
+                                                                                                     ",".join(
+                                                                                                         ["'" + k + "'"
+                                                                                                          for k in
+                                                                                                          cls.publishers.keys()])))
         else:
             newPublisher = cls.publishers[publisherKey](*args)
             cls.publishers.update({newPublisher.key: newPublisher})
 
             return newPublisher
+
+    def __init__(self):
+
+        def __new__(class_, *args, **kwargs):
+            if not isinstance(class_._instance, class_):
+                class_._instance = object.__new__(class_, *args, **kwargs)
+            return class_._instance
+
+
 
 class Publisher():
     key = None
@@ -701,15 +739,6 @@ class Crawler:
         """
         return
 
-def get_supported_archive_formats():
-    """
-    Return list of currently supported formats of shutil.unpack_archive() method.
-    The extensions are stripped of the leading '.' so it can be compared to file extensions gained by .split('.')
-    """
-    archive_ext_list = []
-    for format in shutil.get_unpack_formats():
-        archive_ext_list.extend([ext.strip(".") for ext in format[1]])
-    return archive_ext_list
 
 def get_formated_file_size(path):
     """Return a string of dynamically formatted file size."""

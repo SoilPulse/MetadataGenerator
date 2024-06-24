@@ -134,15 +134,30 @@ class DBconnector:
         thecursor.close()
         return resource_id
 
-    def updateResourceManager(self, rid, **kwargs):
+    def updateResourceManager(self, rm, **kwargs):
         thecursor = self.db_connection.cursor()
 
-        query = f"UPDATE {DBconnector.resourcesTableName} SET "
+        if kwargs.get("name") is not None:
+            query = f"SELECT `name` FROM `{DBconnector.resourcesTableName}` " \
+                    f"JOIN `{DBconnector.userResourcesTableName}` ON `{DBconnector.resourcesTableName}`.`id` = `{DBconnector.userResourcesTableName}`.`resource_id` " \
+                    f"WHERE `{DBconnector.userResourcesTableName}`.`user_id`  = {rm.ownerID}"
+            thecursor.execute(query)
+
+            results = thecursor.fetchall()
+            if thecursor.rowcount > 0:
+                for res in results:
+                    if kwargs.get("name") == res[0]:
+                        thecursor.close()
+                        raise DatabaseEntryError(
+                        f"ResourceManager with name \"{kwargs.get('name')}\" already exists. Use unique names for your ResoureManagers!")
+
+        thecursor.reset()
+        query = f"UPDATE `{DBconnector.resourcesTableName}` SET "
         query += ", ".join([f"`{key}` = %s" for key in kwargs.keys()])
         query += " WHERE `id` = %s"
 
         values = list(kwargs.values())
-        values.append(rid)
+        values.append(rm.id)
 
         thecursor.execute(query, values)
         self.db_connection.commit()
