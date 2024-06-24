@@ -58,7 +58,11 @@ if __name__ == "__main__":
 
 
         # download files associated with the publisher record
-        RM.downloadPublishedFiles()
+        try:
+            RM.downloadPublishedFiles()
+        except DOIdataRetrievalException as e:
+            print(f"Files of DOI record couldn't be downloaded due to DOI data response error.\n{e.message}")
+
         # setting of files 'licensing' - this property should be available through GUI
         RM.keepFiles = True
 
@@ -66,13 +70,12 @@ if __name__ == "__main__":
         RM.showContainerTree()
 
         # change Resource name ... testing
-        RM.name = "Jonas' dissertation"
-        try:
-            RM.updateDBrecord()
-        except DatabaseEntryError as e:
-            print(e.message)
+        # RM.name = "Jonas' dissertation"
+        print(f"resource id = {RM.id}")
+        RM.updateDBrecord()
 
-        print("all containers:\n{}".format('\n'.join([str(c) for c in ContainerHandlerFactory.containers.values()])))
+
+        # print("all containers:\n{}".format('\n'.join([str(c) for c in ContainerHandlerFactory.containers.values()])))
 
         # # new empty dataset is created and added to the ResourceManager
         # newDataset = RM.newDataset("Dataset test 1")

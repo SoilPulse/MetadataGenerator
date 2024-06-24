@@ -48,3 +48,7 @@ class DatabaseEntryError(Exception):
 
     def __init__(self, message):
         self.message = "SoilPulse database consistency error:\n" + message
+
+class NameNotUniqueError(Exception):
+    def __init__(self, message):
+        self.message = "Provided name is not unique:\n" + message

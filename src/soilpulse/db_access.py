@@ -8,7 +8,7 @@ import sqlite3
 import unicodedata
 import os
 
-from .exceptions import DatabaseFetchError, DatabaseEntryError
+from .exceptions import DatabaseFetchError, DatabaseEntryError, NameNotUniqueError
 
 class DBconnector:
     """
@@ -27,6 +27,7 @@ class DBconnector:
     userResourcesTableName = "user_resource"
     userTableName = "users"
     containersTableName = "containers"
+    datasetsTableName = "datasets"
 
 
     def __init__(self):
@@ -110,15 +111,14 @@ class DBconnector:
         if usersResources is not None:
             if name in self.getResourcesOfUser(user_id).values():
                 if unique_names:
-                    raise DatabaseEntryError(f"ResourceManager with name \"{name}\" already exists. Use unique names for your ResoureManagers!")
+                    raise NameNotUniqueError(name)
                 print(f"ResourceManager with name \"{name}\" will be overwritten.")
-
-        doi = "NULL" if doi is None else doi
 
         # insert line to `resource` table
         # execute the query
-        query = f"INSERT INTO `{DBconnector.resourcesTableName}` (`name`, `doi`) VALUES (\"{name}\", \"{doi}\")"
-        thecursor.execute(query)
+        query = f"INSERT INTO `{DBconnector.resourcesTableName}` (`name`, `doi`) VALUES (%s, %s)"
+        values = [name, doi]
+        thecursor.execute(query, values)
         # insert queries must be committed
         self.db_connection.commit()
         # get and return the ID of newly created ResourceManager record
@@ -128,35 +128,41 @@ class DBconnector:
             resource_id = nid[0]
 
         # insert line to `user_resource` table
-        query = f"INSERT INTO `{DBconnector.userResourcesTableName}` (`user_id`, `resource_id`) VALUES ({user_id}, {resource_id})"
-        thecursor.execute(query)
+        query = f"INSERT INTO `{DBconnector.userResourcesTableName}` (`user_id`, `resource_id`) VALUES (%s, %s)"
+        values = [user_id, resource_id]
+        thecursor.execute(query, values)
         self.db_connection.commit()
         thecursor.close()
         return resource_id
 
-    def updateResourceManager(self, rm, **kwargs):
+    def updateResourceManager(self, rm):
+        """
+        Updates database record of ResourceManager and all of its contents
+
+        :param rm: the ResourceManager instance reference to be saved
+        """
+
         thecursor = self.db_connection.cursor()
+        # check for name duplicity
+        query = f"SELECT COUNT(*) FROM `{DBconnector.resourcesTableName}` " \
+                f"JOIN `{DBconnector.userResourcesTableName}` ON `{DBconnector.resourcesTableName}`.`id` = `{DBconnector.userResourcesTableName}`.`resource_id` " \
+                f"WHERE `{DBconnector.userResourcesTableName}`.`user_id`  = {rm.ownerID} " \
+                f"AND `{DBconnector.resourcesTableName}`.`id` <> %s " \
+                f"AND `{DBconnector.resourcesTableName}`.`name` = %s"
+        thecursor.execute(query, [rm.id, rm.name])
 
-        if kwargs.get("name") is not None:
-            query = f"SELECT `name` FROM `{DBconnector.resourcesTableName}` " \
-                    f"JOIN `{DBconnector.userResourcesTableName}` ON `{DBconnector.resourcesTableName}`.`id` = `{DBconnector.userResourcesTableName}`.`resource_id` " \
-                    f"WHERE `{DBconnector.userResourcesTableName}`.`user_id`  = {rm.ownerID}"
-            thecursor.execute(query)
+        count = thecursor.fetchone()[0]
+        if count > 0:
+            raise NameNotUniqueError(rm.name)
 
-            results = thecursor.fetchall()
-            if thecursor.rowcount > 0:
-                for res in results:
-                    if kwargs.get("name") == res[0]:
-                        thecursor.close()
-                        raise DatabaseEntryError(
-                        f"ResourceManager with name \"{kwargs.get('name')}\" already exists. Use unique names for your ResoureManagers!")
+        newValues = {"name": rm.name, "doi": rm.getDOI(), "files_stored": rm.keepFiles}
 
         thecursor.reset()
         query = f"UPDATE `{DBconnector.resourcesTableName}` SET "
-        query += ", ".join([f"`{key}` = %s" for key in kwargs.keys()])
+        query += ", ".join([f"`{key}` = %s" for key in newValues.keys()])
         query += " WHERE `id` = %s"
 
-        values = list(kwargs.values())
+        values = list(newValues.values())
         values.append(rm.id)
 
         thecursor.execute(query, values)
@@ -170,42 +176,57 @@ class DBconnector:
     def deleteResourceManager(self, id):
         pass
 
-    def containerRecordExists(self, container_id, resource_id):
-        thecursor = self.db_connection.cursor()
-        query = f"SELECT `{DBconnector.containersTableName}`.`id`" \
-                f"FROM `{DBconnector.containersTableName}` "\
-                f"WHERE `{DBconnector.containersTableName}`.`local_id` = {container_id}" \
-                f"AND `{DBconnector.containersTableName}`.`resource_id` = {resource_id}"
-        thecursor.execute(query)
+    def containerRecordExists(self, cont_id, res_id):
+        """
+        Checksk if container with provided local ID (Resourcemanager scope) and ResourceManager ID already has database entry
 
-        if thecursor.rowcount == 0:
+        :param cont_id: local container ID
+        :param res_id: ID of resource manager the container belongs to
+        """
+        thecursor = self.db_connection.cursor()
+        query = f"SELECT COUNT(*) FROM `{DBconnector.containersTableName}` " \
+                f"WHERE `{DBconnector.containersTableName}`.`id_local` = %s " \
+                f"AND `{DBconnector.containersTableName}`.`resource_id` = %s"
+        values = [cont_id, res_id]
+        thecursor.execute(query, values)
+
+        count = thecursor.fetchone()[0]
+        if count == 0:
             return False
-        elif thecursor.rowcount == 1:
-            for res in thecursor.fetchall():
-                return res[0]
+        elif count == 1:
             return True
         else:
-            raise DatabaseEntryError(f"More then one ({thecursor.rowcount}) occurrence of a local container ID ({container_id} within a ResourceManager (ID {resource_id}.")
+            raise DatabaseEntryError(f"More then one ({count}) occurrence of a local container ID {cont_id} within a ResourceManager ID {res_id}.")
 
-    def updateContainer(self, container_id, resource_id, **kwargs):
+    def updateContainer(self, container):
         thecursor = self.db_connection.cursor()
 
-        if self.containerRecordExists(container_id, resource_id):
-            query = f"UPDATE {DBconnector.containersTableName} SET "
-            query += ", ".join([f"`{key}` = %s" for key in kwargs.keys()])
+        if hasattr(self, "path"):
+            path = self.path
+        else:
+            path = None
+        pContID = container.parentContainer.id if container.parentContainer is not None else None
+        arglist = {"name": container.name, "parent_id_local": pContID, "path": path}
+
+        # update properties if the container already exists
+        if self.containerRecordExists(container.id, container.resourceManager.id):
+            query = f"UPDATE `{DBconnector.containersTableName}` SET "
+            query += ", ".join([f"`{key}` = %s" for key in arglist.keys()])
             query += " WHERE `id_local` = %s AND resource_id = %s"
 
-            values = list(kwargs.values())
-            values.append(container_id, resource_id)
+            values = list(arglist.values())
+            values.append(container.id, container.resourceManager.id)
+
+        # insert new record if not yet in DB
         else:
-            arglist = ["id_local", "resource_id"]
-            arglist.extend([k for k in kwargs.keys()])
+            arglist.update({"id_local": container.id, "resource_id": container.resourceManager.id})
 
-            query = f"INSERT INTO `{DBconnector.containersTableName}` "
-            query += ", ".join([f"`{key}` = %s" for key in arglist])
+            query = f"INSERT INTO `{DBconnector.containersTableName}` ("
+            query += ", ".join([f"`{key}`" for key in arglist])
+            query += f") VALUES ("
+            query += ", ".join(["%s" for key in arglist])+")"
 
-            values = [container_id, resource_id]
-            values.extend(list(kwargs.values()))
+            values = list(arglist.values())
 
         thecursor.execute(query, values)
         self.db_connection.commit()

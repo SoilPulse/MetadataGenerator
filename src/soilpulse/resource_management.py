@@ -7,7 +7,7 @@ import shutil
 
 from .metadata_scheme import MetadataStructureMap
 from .db_access import DBconnector
-from .exceptions import DOIdataRetrievalException, LocalFileManipulationError, ContainerStructureError, DatabaseEntryError
+from .exceptions import DOIdataRetrievalException, LocalFileManipulationError, ContainerStructureError, DatabaseEntryError, NameNotUniqueError
 
 # general variables
 downloadedFilesDir = "downloaded_files"
@@ -100,11 +100,22 @@ class ResourceManager:
         out += f"{90 * '='}\n"
         return out
 
-    def updateDBrecord(self):
-        newValues = {"name": self.name, "doi": self.__doi, "files_stored": self.keepFiles, }
-        self.dbconnection.updateResourceManager(self, **newValues)
-        # for cont in self.containerTree:
-        #     cont.updateDBrecord(self.dbconnection)
+    def updateDBrecord(self, cascade=True):
+        print(f"Saving project {self.name} ... ")
+
+        try:
+            self.dbconnection.updateResourceManager(self)
+        except NameNotUniqueError as name:
+            print(f"ResourceManager with name \"{name}\" already exists. Use unique names for your ResourceManagers!")
+            print(f"ResourceManager's record updated.")
+        if cascade:
+            print(f"\tcascading ...")
+            for cont in self.containerTree:
+                cont.updateDBrecord(self.dbconnection)
+            for dataset in self.datasets:
+                dataset.updateDBrecord(self.dbconnection)
+        print(f" ... successful.")
+        return
 
 
 
@@ -367,11 +378,16 @@ class ResourceManager:
         self.datasets.append(dataset)
         return
 
-    def removeDataset(self, index):
+    def removeDataset(self, item):
         """
-        Removes DatasetHandler instance to dataset list
+        Removes DatasetHandler instance from dataset list
         """
-        del self.datasets[index]
+        del self.datasets[item]
+        return
+
+
+
+
 
     def showContainerTree(self):
         """
@@ -419,9 +435,13 @@ class Dataset:
         Removes one or more ContainerHandler instances from Dataset's containers list
         """
         if not isinstance(containers_to_remove, list):
-            containers = [containers_to_remove]
+            containers_to_remove = [containers_to_remove]
         self.containers = [con for con in self.containers if con not in containers_to_remove]
         return
+
+    def updateDBrecord(self, db_connection, cascade=True):
+        print(f"\tupdatind dataset {self.name} ... ")
+        pass
 
     def showContainerTree(self):
         """
@@ -433,6 +453,15 @@ class Dataset:
         for container in self.containers:
             container.showContents(0)
         print(80 * "=" + 2 * "\n")
+
+    def getContainerIDsList(self):
+        """
+        Collects IDs of all containers and subcontainers to list
+        """
+        output_list = []
+        for cont in self.containers:
+            output_list.append(cont.collectContainerIDsToList)
+        return output_list
 
     def checkMetadataStructure(self):
         self.metadataMap.checkConsistency()
@@ -564,7 +593,7 @@ class ContainerHandler:
         self.keywordsDBname = type(self).keywordsDBname
 
     def __str__(self):
-        out = f"\n|  # {self.id}  |  {type(self).__name__}\n|  {self.name}  \n"
+        out = f"\n|  # {self.id}  |  {type(self).__name__}\n|  {self.name}  |  parent: {self.parentContainer.id}\n"
         if hasattr(self, "path"):
             out += f"|  {self.path}"
 
@@ -581,7 +610,8 @@ class ContainerHandler:
         # get the indentation string
         t = ind * depth
         # print attributes of this container
-        print("{}{} - {} ({}) [{}]".format(t, self.id, self.name, self.containerType, len(self.containers)))
+        pContID = self.parentContainer.id if self.parentContainer is not None else "root"
+        print(f"{t}{self.id} - {self.name} ({self.containerType}) [{len(self.containers)}]   >{pContID}")
 
         # invoke showContents of sub-containers
         if len(self.containers) > 0:
@@ -589,15 +619,19 @@ class ContainerHandler:
             for cont in self.containers:
                 cont.showContents(depth)
 
-    def updateDBrecord(self, db_connection):
-        if hasattr(self, "path"):
-            path = self.path
-        else:
-            path = None
+    def updateDBrecord(self, db_connection, cascade=True):
+        db_connection.updateContainer(self)
 
-        newValues = {"id_local": self.id, "name": self.name, "parent_id": None, "resource_id": None, "path": path}
-        db_connection.updateContainer(self.id, **newValues)
+        if cascade:
+            for cont in self.containers:
+                cont.updateDBrecord(db_connection)
         return
+
+    def collectContainerIDsToList(self, output=[]):
+        output.append(self.id)
+        for cont in self.containers:
+            cont.collectContainerIDsToList(output)
+        return output
 
     def createTree(self, *args):
         pass

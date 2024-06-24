@@ -128,8 +128,8 @@ class FileSystemContainer(ContainerHandler):
         """
         t = ind * depth
         dateFormat = "%d.%m.%Y"
-        # print(f"{t}{self.id} - {self.name} ({self.containerType}, {self.getFileSizeFormated()}, {self.dateCreated.strftime(dateFormat)}/{self.dateLastModified.strftime(dateFormat)}) [{len(self.containers)}]")
-        print(f"{t}{self.id} - {self.name} ({self.containerType}, {self.getFileSizeFormated()}, {self.dateCreated.strftime(dateFormat)}/{self.dateLastModified.strftime(dateFormat)}) []")
+        pContID = self.parentContainer.id if self.parentContainer is not None else "root"
+        print(f"{t}{self.id} - {self.name} ({self.containerType}, {self.getFileSizeFormated()}, {self.dateCreated.strftime(dateFormat)}/{self.dateLastModified.strftime(dateFormat)}) [{len(self.containers)}]  >{pContID}")
         if self.containers is None:
             print(f"{t}\tself.containers is None")
 
