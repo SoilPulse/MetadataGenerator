@@ -201,8 +201,8 @@ class DBconnector:
     def updateContainer(self, container):
         thecursor = self.db_connection.cursor()
 
-        if hasattr(self, "path"):
-            path = self.path
+        if hasattr(container, "path"):
+            path = container.path
         else:
             path = None
         pContID = container.parentContainer.id if container.parentContainer is not None else None

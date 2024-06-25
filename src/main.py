@@ -32,7 +32,7 @@ if __name__ == "__main__":
 
     ###### the resource initiation #####################
     # get mockup example dictionary
-    example = example_2
+    example = example_1
     example.update({"user_id": user_id})
 
     # create ResourceManager instance for new/loaded resource:
