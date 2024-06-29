@@ -15,38 +15,60 @@ import streamlit_tree_select
 import SoilPulse_middle as sp
 
 
+# use session state as work around for single container selection
+# https://github.com/Schluca/streamlit_tree_select/issues/1#issuecomment-1554552554
+
+if "selected" not in st.session_state:
+    st.session_state.selected = []
+if "expanded" not in st.session_state:
+    st.session_state.expanded = []
+
 # Frontend imlementation
 
 c1, c2 = st.columns((8, 3), gap="large")
 
 
 with st.sidebar:
-    new_ds_dialog = st.checkbox("Add Dataset Dialog")
+    with st.expander("Add dataset"):
+        st.session_state['new_name'] = st.text_input("Dataset Name")
+        st.session_state['new_doi'] = st.text_input("Dataset DOI")
+        if st.button(
+            "Add Dataset",
+            disabled=st.session_state['new_doi'] == "" or
+            st.session_state['new_name'] == ""
+        ):
+            sp._add_dataset(
+                st.session_state['new_doi'],
+                st.session_state['new_name'])
 
 # show trees of all Datasets
-    for dataset in sp._get__local_datasets():
-        streamlit_tree_select.tree_select(
-            sp._create_tree(dataset)
-            )
+for dataset in sp._get__local_datasets():
+    with st.sidebar:
+        with st.expander(dataset):
+            selected = streamlit_tree_select.tree_select(
+                sp._create_tree(dataset),
+                no_cascade=True,
+                checked=st.session_state.selected,
+                expanded=st.session_state.expanded
+                )
+            st.write(selected)
+            if len(selected["checked"]) > 1:
+                st.session_state.selected = [x for x in selected["checked"] if x != st.session_state.selected[0]][0:1]
+                st.session_state.expanded = selected["expanded"]
+                st.experimental_rerun()
+            else:
+                st.session_state.selected = selected["checked"]
+                st.session_state.expanded = selected["expanded"]
+
+
+#    with c1:
+#        st.write(container)
     st.write("all DS_printed")
 
+with c1:
+    st.write(st.session_state.selected)
 
-if new_ds_dialog:
-    with c1:
-        dia1, dia2, dia3 = st.columns(3)
-        with dia1:
-            st.session_state['new_name'] = st.text_input("Dataset Name")
-        with dia2:
-            st.session_state['new_doi'] = st.text_input("Dataset DOI")
-        with dia3:
-            st.button(
-                "Add Dataset",
-                on_click=sp._add_dataset(
-                    st.session_state['new_doi'],
-                    st.session_state['new_name']),
-                disabled=st.session_state['new_doi'] == "" or
-                         st.session_state['new_name'] == ""
-                )
+
 
 # here the starting point options should be available:
 # and does action according to option selected in the first step

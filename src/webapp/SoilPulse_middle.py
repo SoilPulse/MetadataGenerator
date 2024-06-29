@@ -6,14 +6,23 @@ Created on Sat Jun 29 05:14:24 2024.
 """
 
 import os
-
-
-def _get__local_datasets():
-    return []
+import streamlit as st
 
 
 def _add_dataset(new_doi, new_name):
-    pass
+    try:
+        path = "./catalogue/"+new_doi+new_name
+        os.makedirs(path)
+        f = open(path+"/demofile2.txt", "x")
+        f.write("Hi from SoilPulse!")
+        f.close()
+        st.write("Created Dataset.")
+    except:
+        st.warning("Dataset allready exists.")
+
+
+def _get__local_datasets():
+    return ["./catalogue/" + s for s in next(os.walk("./catalogue"))[1]]
 
 
 def _create_tree(folder):
