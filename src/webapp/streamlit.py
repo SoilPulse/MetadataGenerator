@@ -49,26 +49,40 @@ with st.sidebar:
         checked=st.session_state.selected,
         expanded=st.session_state.expanded
         )
-    st.write(selected)
     if len(selected["checked"]) > 1:
         st.session_state.selected = [x for x in selected["checked"] if x != st.session_state.selected[0]][0:1]
         st.session_state.expanded = selected["expanded"]
-        st.experimental_rerun()
-    if len(selected["expanded"]) != len(st.session_state.expanded):
+        st.rerun()
+    elif len(selected["expanded"]) != len(st.session_state.expanded):
         st.session_state.expanded = selected["expanded"]
-        st.experimental_rerun()
+        st.rerun()
     else:
         st.session_state.selected = selected["checked"]
         st.session_state.expanded = selected["expanded"]
+    dataset = sp._getdatasetofcontainer(st.session_state.selected)
 
-
-#    with c1:
-#        st.write(container)
-    st.write("all DS_printed")
 
 with c1:
-    st.write(st.session_state.selected)
+    with st.container():
+        sp._show_container_content(st.session_state.selected)
+        if st.button("Save Changes for this container locally"):
+            sp._update_container(st.session_state.selected)
+        if st.button("Reset changes on this container"):
+            sp._reload_container(st.session_state.selected)
+    with st.container():
+        # get agrovoc concepts in container for selection of visualisation target
+        agrovoc = ["Corg", "Bulk"]
+        mainID = "experiment ID"
+        if st.button("Show context of other datasets"):
+            sp._visualize_data(st.session_state.selected, mainID, agrovoc, alldatsets = True)
+        else:
+            sp._visualize_data(st.session_state.selected, mainID, agrovoc)
 
+with c2:
+    if st.button("Apply all changes on "+dataset+" to local DB"):
+        sp._update_local_db(dataset)
+    if st.button("Reset all changes to "+dataset):
+        sp._reload_local_db(dataset)
 
 
 # here the starting point options should be available:
