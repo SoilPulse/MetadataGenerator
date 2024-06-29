@@ -55,6 +55,7 @@ with st.sidebar:
         st.session_state.expanded = selected["expanded"]
         st.experimental_rerun()
     if len(selected["expanded"]) != len(st.session_state.expanded):
+        st.session_state.expanded = selected["expanded"]
         st.experimental_rerun()
     else:
         st.session_state.selected = selected["checked"]
