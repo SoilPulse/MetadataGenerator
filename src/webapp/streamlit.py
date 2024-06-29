@@ -10,15 +10,43 @@ It pickles to cache metadata.
 """
 
 import streamlit as st
+import streamlit_tree_select
 
-st.title("Welcome to SoilPulse!")
+import SoilPulse_middle as sp
 
-st.write("SoilPulse allows you to create and maintain metadata for your\
-         dataset, so it can be made machine readable.")
-st.link_button("Start Generator", "./Metadata_retriever")
-st.write("You can also explore and query all datasets, which are made machine\
-         readable through SoilPulse. --> See Explorer")
-st.link_button("Start Explorer", "./Explorer")
+
+# Frontend imlementation
+
+c1, c2 = st.columns((8, 3), gap="large")
+
+
+with st.sidebar:
+    new_ds_dialog = st.checkbox("Add Dataset Dialog")
+
+# show trees of all Datasets
+    for dataset in sp._get__local_datasets():
+        streamlit_tree_select.tree_select(
+            sp._create_tree(dataset)
+            )
+    st.write("all DS_printed")
+
+
+if new_ds_dialog:
+    with c1:
+        dia1, dia2, dia3 = st.columns(3)
+        with dia1:
+            st.session_state['new_name'] = st.text_input("Dataset Name")
+        with dia2:
+            st.session_state['new_doi'] = st.text_input("Dataset DOI")
+        with dia3:
+            st.button(
+                "Add Dataset",
+                on_click=sp._add_dataset(
+                    st.session_state['new_doi'],
+                    st.session_state['new_name']),
+                disabled=st.session_state['new_doi'] == "" or
+                         st.session_state['new_name'] == ""
+                )
 
 # here the starting point options should be available:
 # and does action according to option selected in the first step
