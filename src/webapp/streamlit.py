@@ -42,23 +42,23 @@ with st.sidebar:
                 st.session_state['new_name'])
 
 # show trees of all Datasets
-for dataset in sp._get__local_datasets():
-    with st.sidebar:
-        with st.expander(dataset):
-            selected = streamlit_tree_select.tree_select(
-                sp._create_tree(dataset),
-                no_cascade=True,
-                checked=st.session_state.selected,
-                expanded=st.session_state.expanded
-                )
-            st.write(selected)
-            if len(selected["checked"]) > 1:
-                st.session_state.selected = [x for x in selected["checked"] if x != st.session_state.selected[0]][0:1]
-                st.session_state.expanded = selected["expanded"]
-                st.experimental_rerun()
-            else:
-                st.session_state.selected = selected["checked"]
-                st.session_state.expanded = selected["expanded"]
+with st.sidebar:
+    selected = streamlit_tree_select.tree_select(
+        sp._create_tree("./catalogue/"),
+        no_cascade=True,
+        checked=st.session_state.selected,
+        expanded=st.session_state.expanded
+        )
+    st.write(selected)
+    if len(selected["checked"]) > 1:
+        st.session_state.selected = [x for x in selected["checked"] if x != st.session_state.selected[0]][0:1]
+        st.session_state.expanded = selected["expanded"]
+        st.experimental_rerun()
+    if len(selected["expanded"]) != len(st.session_state.expanded):
+        st.experimental_rerun()
+    else:
+        st.session_state.selected = selected["checked"]
+        st.session_state.expanded = selected["expanded"]
 
 
 #    with c1:
