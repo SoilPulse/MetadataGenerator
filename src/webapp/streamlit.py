@@ -63,20 +63,24 @@ with st.sidebar:
 
 
 with c1:
-    with st.container():
+    with st.container(border = True):
+        st.header("Container Settings")
         sp._show_container_content(st.session_state.selected)
         if st.button("Save Changes for this container locally"):
             sp._update_container(st.session_state.selected)
         if st.button("Reset changes on this container"):
             sp._reload_container(st.session_state.selected)
-    with st.container():
+    with st.container(border = True):
+        st.header("Included Data")
         # get agrovoc concepts in container for selection of visualisation target
         agrovoc = ["Corg", "Bulk"]
         mainID = "experiment ID"
-        if st.button("Show context of other datasets"):
-            sp._visualize_data(st.session_state.selected, mainID, agrovoc, alldatsets = True)
-        else:
-            sp._visualize_data(st.session_state.selected, mainID, agrovoc)
+        datasets = st.multiselect(
+            "Concept availble in",
+            options=sp._get_datasets_by_concept("agrovoc"),
+            )
+        sp._visualize_data(st.session_state.selected, mainID, agrovoc, datasets)
+
 
 with c2:
     if st.button("Apply all changes on "+dataset+" to local DB"):
