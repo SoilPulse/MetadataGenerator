@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import json
+import os
 
 from ..resource_management import ContainerHandler, ContainerHandlerFactory, Pointer, Crawler
 from ..db_access import EntityKeywordsDB
@@ -14,8 +15,8 @@ class JSONContainer(ContainerHandler):
     containerFormat = "JSON"
     keywordsDBname = "keywords_json"
 
-    def __init__(self, id, name, content, path = None):
-        super(JSONContainer, self).__init__(id, name)
+    def __init__(self, id, name, resource_manager, content, path = None):
+        super(JSONContainer, self).__init__(id, name, resource_manager)
         # the JSON content
         self.content = content
         self.path = path
@@ -37,6 +38,8 @@ class JSONContainer(ContainerHandler):
             for cont in self.containers:
                 cont.showContents(depth)
         return
+
+
     def showKeyValueStructure(self, json, t = "", depth = 0, depthLimit = 0, ind = ".", sep = ">"):
         """
         Prints out the structure of JSON container recursively

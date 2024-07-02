@@ -8,6 +8,7 @@ class ZenodoPublisher(Publisher):
 
     def __init__(self, zenodo_id):
         self.zenodoID = zenodo_id
+        self.file_url_request_root = "https://zenodo.org/api/records/"
 
     def getFileInfo(self):
         """
@@ -17,7 +18,7 @@ class ZenodoPublisher(Publisher):
         """
 
         try:
-            response = requests.get("https://zenodo.org/api/records/" + self.zenodoID).json()
+            response = requests.get(self.file_url_request_root + self.zenodoID).json()
 
         except requests.exceptions.ConnectionError:
             print("A connection error occurred. Check your internet connection.")
@@ -44,7 +45,7 @@ class ZenodoPublisher(Publisher):
             else:
                 raise DOIdataRetrievalException(
                     "Dataset files can not be retrieved - incorrect response structure.")
-                return None
+
     def getMetadata(self):
         """
         Collect metadata package from Zenodo record
