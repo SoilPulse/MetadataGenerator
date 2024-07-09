@@ -170,7 +170,7 @@ class DBconnector:
         # insert line to `projects` table
         # execute the query
         query = f"INSERT INTO `{DBconnector.projectsTableName}` (`name`, `doi`) VALUES (%s, %s)"
-        values = [prj.name, prj.getDOI()]
+        values = [prj.name, prj.doi]
         thecursor.execute(query, values)
         # insert queries must be committed
         self.db_connection.commit()
@@ -259,43 +259,47 @@ class DBconnector:
                 project.keepFiles = True
                 project.tempDir = results[0]["temp_dir"]
 
-            if results[0]["doi"] != "NULL":
-                project.setDOI(results[0]["doi"])
-
             thecursor.close()
         else:
             thecursor.close()
             raise DatabaseFetchError(f"No record found in saved projects for given ID {project.id}")
 
         if cascade:
-            self.loadChildContainers(project, parent_id=None)
+            project.containerTree = self.loadChildContainers(project, parent_container=None)
 
         return
 
-    def loadChildContainers(self, project, parent_id=None, t="\t"):
+    def loadChildContainers(self, project, parent_container=None):
+        out_container_list = []
         thecursor = self.db_connection.cursor(dictionary=True)
 
         query = f"SELECT * FROM `{DBconnector.containersTableName}` " \
                 f"WHERE `project_id` = {project.id}"
-        query += f" AND `parent_id_local` IS NULL" if parent_id is None else f" AND `parent_id_local` = {parent_id}"
+        query += f" AND `parent_id_local` IS NULL" if parent_container is None else f" AND `parent_id_local` = {parent_container.id}"
 
         thecursor.execute(query)
         results = thecursor.fetchall()
 
         if thecursor.rowcount > 0:
-            kidsList = []
             for cont in results:
-                name = cont["name"]
-                kidsList.append(cont["id_local"])
-            thecursor.close()
-            t += "\t"
-            for kidID in kidsList:
-                self.loadChildContainers(project, kidID, t)
-            return
+                # replace the global id from DB by project scope 'id_local'
+                del(cont["id"])
+                cont.update({"id": cont.pop("id_local")})
+                # delete properties that are being handled different ways
+                del (cont["parent_id_local"])
+                del (cont["project_id"])
 
-        else:
+                cont_type = cont.get("type")
+
+                newCont = project.containerFactory.createHandler(cont_type, project, parent_container, cascade=False, **cont)
+
+                out_container_list.append(newCont)
+                newCont.containers = self.loadChildContainers(project, newCont)
+
             thecursor.close()
-            return
+
+        return out_container_list
+
 
 
     def deleteProject(self, id):
@@ -349,13 +353,11 @@ class DBconnector:
     def updateContainerRecord(self, container):
         thecursor = self.db_connection.cursor()
 
-        if hasattr(container, "path"):
-            path = container.path
-        else:
-            path = None
-        pContID = container.parentContainer.id if container.parentContainer is not None else None
-        arglist = {"name": container.name, "parent_id_local": pContID, "path": path, "type": container.containerType}
 
+        path = container.path if hasattr(container, "path") else None
+        content = container.content if hasattr(container, "content") else None
+        pContID = container.parentContainer.id if container.parentContainer is not None else None
+        arglist = {"name": container.name, "parent_id_local": pContID, "path": path, "type": container.containerType, "content": str(content)}
         # update properties if the container already exists
         if self.containerRecordExists(container.id, container.project.id):
             query = f"UPDATE `{DBconnector.containersTableName}` SET "

@@ -17,9 +17,9 @@ def establish_new_project(user_id, **example):
     use case function
     """
     print("\n\n" + 150 * "#")
-    print("use case: CREATE NEW PROJECT "+121*"#")
+    print("CREATE NEW PROJECT")
+    print("  |  ".join([f"{k}: {v}" for k, v in example.items()]))
     print(150 * "#"+"\n")
-
     example.update({"user_id": user_id})
 
     # create ResourceManager instance for new resource:
@@ -58,7 +58,8 @@ def establish_new_project(user_id, **example):
         # newDataset.getCrawled()
 
         project.updateDBrecord()
-    return
+
+    return project
 
 def load_existing_project(user_id, project_id):
     """
@@ -66,7 +67,8 @@ def load_existing_project(user_id, project_id):
     """
 
     print("\n\n" + 150 * "#")
-    print("use case: LOAD EXISTING PROJECT "+120*"#")
+    print("LOAD EXISTING PROJECT")
+    print(f"user_id: {user_id}  |  project_id: {project_id}")
     print(150 * "#"+"\n")
 
     example = {"user_id": user_id, "id" : project_id}
@@ -88,11 +90,13 @@ def load_existing_project(user_id, project_id):
         # show the whole container tree
         project.showContainerTree()
 
-        # change Resource name ... testing
-        project.name = "Jonas' dissertation"
-        project.updateDBrecord()
+        #show paths of files and related containers
+        project.showFilesStructure()
+        # # change Resource name ... testing
+        # project.name = "Jonas' dissertation"
+        # project.updateDBrecord()
 
-    return
+    return project
 
 
 if __name__ == "__main__":
@@ -111,12 +115,11 @@ if __name__ == "__main__":
     example_4 = {"name": "Ries et al.", "doi": "10.6094/unifr/151460"}
 
     # do the use case
-    # establish_new_project(user_id, **example_1)
-
-    load_existing_project(user_id, 2)
-
+    # project1 = establish_new_project(user_id, **example_1)
+    # project2 = establish_new_project(user_id, **example_3)
 
 
+    load_existing_project(user_id, 1)
 
 
 

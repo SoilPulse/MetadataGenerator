@@ -35,7 +35,7 @@ class LocalFileManipulationError(Exception):
 class ContainerStructureError(Exception):
 
     def __init__(self, message):
-        self.message = "Container was requested that doesn't exist within this scope:\n" + message
+        self.message = "Container with provided ID couldn't be found/created:\n" + message
 
 class DatabaseFetchError(Exception):
     """
