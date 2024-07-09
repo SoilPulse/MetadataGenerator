@@ -22,6 +22,8 @@ class JSONContainer(ContainerHandler):
         self.path = kwargs["path"]
         self.crawler = JSONcrawler(self)
 
+        self.serializationDict = {"path": self.path, "content": str(self.content)}
+
     def showContents(self, depth = 0, ind = ". "):
         """
         Prints basic info about the container and invokes showContents on all of its containers
@@ -101,6 +103,7 @@ class JSONContainer(ContainerHandler):
 
         fullpath = os.path.join(dir, filename)
         self.path = fullpath
+        self.project.containersOfPaths.update({self.path: self.id})
         return fullpath
 
     def getCrawled(self):

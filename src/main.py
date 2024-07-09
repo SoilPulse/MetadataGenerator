@@ -18,7 +18,7 @@ def establish_new_project(user_id, **example):
     """
     print("\n\n" + 150 * "#")
     print("CREATE NEW PROJECT")
-    print("  |  ".join([f"{k}: {v}" for k, v in example.items()]))
+    print("\n".join([f"{k}: {v}" for k, v in example.items()]))
     print(150 * "#"+"\n")
     example.update({"user_id": user_id})
 
@@ -68,7 +68,7 @@ def load_existing_project(user_id, project_id):
 
     print("\n\n" + 150 * "#")
     print("LOAD EXISTING PROJECT")
-    print(f"user_id: {user_id}  |  project_id: {project_id}")
+    print(f"user_id: {user_id}\nproject_id: {project_id}")
     print(150 * "#"+"\n")
 
     example = {"user_id": user_id, "id" : project_id}
@@ -115,11 +115,11 @@ if __name__ == "__main__":
     example_4 = {"name": "Ries et al.", "doi": "10.6094/unifr/151460"}
 
     # do the use case
-    # project1 = establish_new_project(user_id, **example_1)
+    project1 = establish_new_project(user_id, **example_1)
     # project2 = establish_new_project(user_id, **example_3)
 
 
-    load_existing_project(user_id, 1)
+    # load_existing_project(user_id, 1)
 
 
 

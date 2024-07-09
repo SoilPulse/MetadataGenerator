@@ -613,11 +613,9 @@ class ContainerHandler:
         self.metadataElements = []
         # the crawler assigned to the container
         self.crawler = None
+        # dictionary of attribute serialization
+        self.serializationDict = {}
 
-        # make the class properties accessible through instance properties
-        self.containerType = type(self).containerType
-        self.containerFormat = type(self).containerFormat
-        self.keywordsDBname = type(self).keywordsDBname
 
     def __str__(self):
         out = f"|  # {self.id}  |  {type(self).__name__}\n|  {self.name}  |  parent: "
@@ -660,6 +658,7 @@ class ContainerHandler:
         for cont in self.containers:
             cont.collectContainerIDsToList(output)
         return output
+
 
     def createTree(self, *args):
         pass

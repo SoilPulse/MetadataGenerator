@@ -118,12 +118,14 @@ class FileSystemContainer(ContainerHandler):
         # the file path
         self.path = kwargs["path"]
         self.project.containersOfPaths.update({self.path: self.id})
-        # get other useful of the file (size, date of creation ...)
+        # get other useful properties of the file (size, date of creation ...)
         self.size = None
         self.dateCreated = datetime.datetime.fromtimestamp(os.path.getctime(self.path))
         self.dateLastModified = datetime.datetime.fromtimestamp(os.path.getmtime(self.path))
         self.fileExtension = get_file_extension(self.path)
         self.containers = []
+
+        self.serializationDict = {"path": self.path}
 
     def showContents(self, depth=0, ind=". "):
         """
@@ -168,6 +170,8 @@ class FileSystemContainer(ContainerHandler):
             tree.append(new_container)
         return tree
 
+    def getDBserializationDict(self):
+        return
 
     def listOwnFiles(self, collection):
         collection.append(self.path)

@@ -353,11 +353,11 @@ class DBconnector:
     def updateContainerRecord(self, container):
         thecursor = self.db_connection.cursor()
 
+        # set the general core of properties to be stored
+        arglist = {"type": container.containerType, "name": container.name, "parent_id_local": container.parentContainer.id if container.parentContainer is not None else None}
+        # add container subclass specific properties to be stored
+        arglist.update(container.serializationDict)
 
-        path = container.path if hasattr(container, "path") else None
-        content = container.content if hasattr(container, "content") else None
-        pContID = container.parentContainer.id if container.parentContainer is not None else None
-        arglist = {"name": container.name, "parent_id_local": pContID, "path": path, "type": container.containerType, "content": str(content)}
         # update properties if the container already exists
         if self.containerRecordExists(container.id, container.project.id):
             query = f"UPDATE `{DBconnector.containersTableName}` SET "
