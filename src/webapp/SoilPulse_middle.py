@@ -155,7 +155,7 @@ def _get_data_for_concept(container, agrovoc):
                              [2.3],
                              [-0.5],
                              [1]],
-                            columns=[container])
+                            columns=[str(container)])
     else:
         data = pd.DataFrame(np.random.randn(5, 1),
                             columns=[str(container)])
