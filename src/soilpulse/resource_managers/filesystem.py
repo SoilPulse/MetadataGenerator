@@ -7,6 +7,7 @@ import csv
 import io
 import datetime
 import tarfile
+import zipfile
 from collections import Counter
 import chardet
 import pandas as pd
@@ -94,6 +95,10 @@ class FileSystemContainer(ContainerHandler):
 
     @classmethod
     def getSpecializedSubclassType(cls, **kwargs):
+        if kwargs.get("type") is not None:
+            # if the original container type is loaded from the DB
+            return kwargs["type"]
+
         path = kwargs.get("path")
         if os.path.isfile(path):
             if is_file_archive(path):
@@ -108,16 +113,19 @@ class FileSystemContainer(ContainerHandler):
             raise ValueError(f"Provided path '{path}' is neither file nor directory.")
 
 
-    def __init__(self, id, name, resource_manager, parent_container, path):
-        super(FileSystemContainer, self).__init__(id, name, resource_manager, parent_container)
+    def __init__(self, project_manager, parent_container, **kwargs):
+        super(FileSystemContainer, self).__init__(project_manager, parent_container, **kwargs)
         # the file path
-        self.path = path
-        # get other useful of the file (size, date of creation ...)
+        self.path = kwargs["path"]
+        self.project.containersOfPaths.update({self.path: self.id})
+        # get other useful properties of the file (size, date of creation ...)
         self.size = None
-        self.dateCreated = datetime.datetime.fromtimestamp(os.path.getctime(path))
-        self.dateLastModified = datetime.datetime.fromtimestamp(os.path.getmtime(path))
-        self.fileExtension = get_file_extension(path)
+        self.dateCreated = datetime.datetime.fromtimestamp(os.path.getctime(self.path))
+        self.dateLastModified = datetime.datetime.fromtimestamp(os.path.getmtime(self.path))
+        self.fileExtension = get_file_extension(self.path)
         self.containers = []
+
+        self.serializationDict = {"path": self.path}
 
     def showContents(self, depth=0, ind=". "):
         """
@@ -154,14 +162,16 @@ class FileSystemContainer(ContainerHandler):
         else:
             return None
 
-    def createTree(self, path, resource_manager):
+    def createTree(self, path, project_manager):
         tree = []
         for f in os.listdir(path):
             fullpath = os.path.join(path, f)
-            new_container = ContainerHandlerFactory().createHandler('filesystem', f, resource_manager, self, path=fullpath)
+            new_container = project_manager.containerFactory.createHandler('filesystem', project_manager, self, name=f, path=fullpath)
             tree.append(new_container)
         return tree
 
+    def getDBserializationDict(self):
+        return
 
     def listOwnFiles(self, collection):
         collection.append(self.path)
@@ -179,21 +189,21 @@ class SingleFileContainer(FileSystemContainer):
     containerType = 'file'
     containerFormat = "File system single file"
 
-    def __init__(self, id, name, resource_manager, parent_container, path):
-        super(SingleFileContainer, self).__init__(id, name, resource_manager, parent_container, path)
+    def __init__(self, project_manager, parent_container, **kwargs):
+        super(SingleFileContainer, self).__init__(project_manager, parent_container, **kwargs)
 
         # get mime type of the file
         self.mimeType = self.getMimeType()
         # get other useful info of the file (size, date of creation ...)
         self.size = None
-        self.dateCreated = datetime.datetime.fromtimestamp(os.path.getctime(path))
-        self.dateLastModified = datetime.datetime.fromtimestamp(os.path.getmtime(path))
+        self.dateCreated = datetime.datetime.fromtimestamp(os.path.getctime(self.path))
+        self.dateLastModified = datetime.datetime.fromtimestamp(os.path.getmtime(self.path))
         self.encoding = None
 
         self.crawler = None
         self.type = None
 
-        self.encoding = detect_encoding(path)[0]
+        self.encoding = detect_encoding(self.path)[0]
 
         try:
             self.crawler = FileSystemCrawlerFactory.createCrawler(self.fileExtension, self)
@@ -227,14 +237,15 @@ class DirectoryContainer(FileSystemContainer):
     containerType = 'directory'
     containerFormat = "File system directory"
 
-    def __init__(self, id, name, resource_manager, parent_container, path):
-        super(DirectoryContainer, self).__init__(id, name, resource_manager, parent_container, path)
+    def __init__(self, project_manager, parent_container, cascade=True, **kwargs):
+        super(DirectoryContainer, self).__init__(project_manager, parent_container, **kwargs)
 
         # get other useful of the file (size, date of creation ...)
         self.size = None
-        self.dateCreated = datetime.datetime.fromtimestamp(os.path.getctime(path))
-        self.dateLastModified = datetime.datetime.fromtimestamp(os.path.getmtime(path))
-        self.containers = self.createTree(self.path, resource_manager)
+        self.dateCreated = datetime.datetime.fromtimestamp(os.path.getctime(self.path))
+        self.dateLastModified = datetime.datetime.fromtimestamp(os.path.getmtime(self.path))
+        if cascade:
+            self.containers = self.createTree(self.path, project_manager)
 
     def getCrawled(self):
         """
@@ -250,29 +261,58 @@ class ArchiveFileContainer(FileSystemContainer):
     containerType = 'archive'
     containerFormat = "File system archive file"
 
-    def __init__(self, id, name, resource_manager, parent_container, path):
-        super(ArchiveFileContainer, self).__init__(id, name, resource_manager, parent_container, path)
+    def __init__(self, project_manager, parent_container, cascade=True, **kwargs):
+        super(ArchiveFileContainer, self).__init__(project_manager, parent_container, **kwargs)
         # get mime type of the file
         self.mimeType = self.getMimeType()
         # get other useful of the file (size, date of creation ...)
         self.size = None
-        self.dateCreated = datetime.datetime.fromtimestamp(os.path.getctime(path))
-        self.dateLastModified = datetime.datetime.fromtimestamp(os.path.getmtime(path))
+        self.dateCreated = datetime.datetime.fromtimestamp(os.path.getctime(self.path))
+        self.dateLastModified = datetime.datetime.fromtimestamp(os.path.getmtime(self.path))
 
-        # if the file is an archive - unpack and create the containers from content
-        self.containers = self.unpack(self.path, resource_manager)
+        # if os.path.exists(kwargs.get("path")) and os.path.isdir(kwargs.get("path")):
+        #     # if the directory exists on the storage the archive is already unpacked
+        #     print(f"my path: {kwargs.get('path')}")
+        if cascade:
+            # unpack and create the containers from content if not already on the storage
+            self.containers = self.unpack(self.path, project_manager)
 
     def getMimeType(self):
         # self.mimeType = magic.from_file(self.path)
         return
 
-    def unpack(self, archive_path, resource_manager, same_dir=False, target_dir=None, remove_archive=True):
+    def listContents(self):
+        """
+        Lists the contents of the archive without unpacking it.
+
+        :param archive_path: the source archive file
+        :return: list of file names within the archive
+        """
+        contents = []
+        try:
+            if self.path.endswith(".zip"):
+                with zipfile.ZipFile(self.path, 'r') as zip_ref:
+                    contents = zip_ref.namelist()
+            elif self.path.endswith(".tar.gz") or self.path.endswith(".tar"):
+                with tarfile.open(self.path, 'r:*') as tar_ref:
+                    contents = tar_ref.getnames()
+            elif self.path.endswith(".gz") and not self.path.endswith(".tar.gz"):
+                # For .gz files, we assume it's a single file inside
+                contents = [os.path.basename(self.path).replace('.gz', '')]
+            else:
+                raise ValueError(f"Unsupported archive format: {self.path}")
+        except OSError as err:
+            print(f"Error reading '{self.path}': {err}")
+
+        return contents
+
+    def unpack(self, archive_path, project_manager, same_dir=False, target_dir=None, remove_archive=True):
         """
         Unpacks archive formats supported by shutil to a directory with the name of the archive
         Replaces all '.' with '_' in filename to derive a new directory name.
 
         :param archive_path: the source archive file
-        :param resource_manager: ResourceManager instance the containers belong to
+        :param project_manager: ProjectManager instance the containers belong to
         :param same_dir: the contents are unpacked into parent directory of the source archive file
         :param target_dir: output directory path, name of the archive with removed '.' is used instead if None
         :param remove_archive: whether to delete the source archive file after successful unpacking
@@ -305,20 +345,20 @@ class ArchiveFileContainer(FileSystemContainer):
                     with open(out_path, 'wb') as f_out:
                         shutil.copyfileobj(f_in, f_out)
                 self.path = out_path
-                output_tree = self.createTree(out_path, resource_manager)
+                output_tree = self.createTree(out_path, project_manager)
 
             elif archive_path.endswith(".tar.gz"):
                 print(f"Extracting '{os.path.basename(archive_path)}' to '{outDir}'")
                 with tarfile.open(archive_path, 'r:gz') as tar:
                     tar.extractall(path=outDir)
                 self.path = outDir
-                output_tree = self.createTree(outDir, resource_manager)
+                output_tree = self.createTree(outDir, project_manager)
 
             else:
                 print(f"Extracting '{os.path.basename(archive_path)}' to '{outDir}'")
                 shutil.unpack_archive(archive_path, outDir)
                 self.path = outDir
-                output_tree = self.createTree(outDir, resource_manager)
+                output_tree = self.createTree(outDir, project_manager)
 
         except OSError as err:
             print(f"File '{archive_path}' couldn't be extracted. It is not a valid archive or the file is corrupted.")
@@ -332,43 +372,6 @@ class ArchiveFileContainer(FileSystemContainer):
 
         return output_tree
 
-        # if same_dir:
-        #     outDir = os.path.dirname(archive_path)
-        # else:
-        #     extractDirName = "_".join(os.path.basename(archive_path).split("."))
-        #     # extractDirName = os.path.basename(archive_path).replace("\\/<[^>]*>?.", "_")
-        #     outDir = target_dir if target_dir else os.path.join(os.path.dirname(archive_path), extractDirName)
-        # try:
-        #     if self.fileExtension == "gz":
-        #         # container name is the original filename
-        #         cont_name = os.path.basename(self.path)
-        #         outdir_path = os.path.dirname(self.path)
-        #         # the output filename is the input filename without the '.gz'
-        #         out_path = os.path.join(os.path.dirname(self.path), ".".join(self.path.split(".")[:-1]))
-        #
-        #         print(f"extracting '{os.path.basename(archive_path)}' to '{outdir_path}'")
-        #         with gzip.open(self.path, 'rb') as f_in:
-        #             with open(outdir_path, 'wb') as out_path_:
-        #                 shutil.copyfileobj(f_in, out_path_)
-        #                 # return [ContainerHandlerFactory.createHandler('file', cont_name, out_path)]
-        #         self.path = out_path
-        #         output_tree = self.createTree(self.path, resource_manager)
-        #     else:
-        #         print(f"extracting '{os.path.basename(archive_path)}' to '{outDir}'")
-        #         shutil.unpack_archive(archive_path, outDir)
-        #         self.path = outDir
-        #         output_tree = self.createTree(outDir, resource_manager)
-        # except OSError as err:
-        #     print(f"File '{archive_path}' couldn't be extracted. It is not a valid archive or the file is corrupted.")
-        #     print(err)
-        # else:
-        #     if remove_archive:
-        #         try:
-        #             os.remove(archive_path)
-        #         except OSError:
-        #             print(f"\nFile '{archive_path}' couldn't be deleted. It may be locked by another application.")
-        #
-        #     return output_tree
     def getCrawled(self):
         """
         Executes the routines for scanning, recognizing and extracting metadata (and maybe data)
@@ -547,7 +550,7 @@ class CSVcrawler(Crawler):
     """
     Crawler for CSV table structures
     """
-
+    crawlerType = "CSV crawler"
     extension = "csv"
     def __init__(self, container):
         super(CSVcrawler, self).__init__(container)
@@ -654,7 +657,9 @@ class PlainTextCrawler(Crawler):
     Crawler for plain text files
     Also used as default general crawler if filetype-specific crawler is not registered
     """
+    crawlerType = "plain text crawler"
     extension = "txt"
+
     def __init__(self, container):
         super(PlainTextCrawler, self).__init__(container)
         # print(f"\tTXT crawler created for container #{self.container.id} '{self.container.name}' (file '{self.container.path}')")

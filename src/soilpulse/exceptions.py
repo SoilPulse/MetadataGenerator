@@ -12,7 +12,7 @@ class MetadataSchemeException(Exception):
 
 class ValueNotInDomainError(Exception):
     """
-    This exception is raised when instance is initialized with value not present in class' allowe values list
+    This exception is raised when instance is initialized with value not present in class' allowed values list
     """
     def __init__(self, message):
         self.message = "Value not in domain:\n" + message
@@ -35,14 +35,14 @@ class LocalFileManipulationError(Exception):
 class ContainerStructureError(Exception):
 
     def __init__(self, message):
-        self.message = "Container was requested that doesn't exist within this scope:\n" + message
+        self.message = "Container with provided ID couldn't be found/created:\n" + message
 
 class DatabaseFetchError(Exception):
     """
     This exception is raised when there's something wrong with data retrieval from SoilPulse database
     """
     def __init__(self, message):
-        self.message = "Values requested from SoilPulse were not found:\n" + message
+        self.message = "SoilPulse database doesn't contain requested entry:\n" + message
 
 class DatabaseEntryError(Exception):
 
@@ -52,3 +52,4 @@ class DatabaseEntryError(Exception):
 class NameNotUniqueError(Exception):
     def __init__(self, message):
         self.message = "Provided name is not unique:\n" + message
+

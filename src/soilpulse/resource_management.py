@@ -3,62 +3,42 @@
 
 import requests
 import os
+import sys
 import shutil
 
 from .metadata_scheme import MetadataStructureMap
 from .db_access import DBconnector
-from .exceptions import DOIdataRetrievalException, LocalFileManipulationError, ContainerStructureError, DatabaseEntryError, NameNotUniqueError
+from .exceptions import DOIdataRetrievalException, LocalFileManipulationError, ContainerStructureError, DatabaseEntryError, NameNotUniqueError, DatabaseFetchError
 
 # general variables
-downloadedFilesDir = "downloaded_files"
-class ResourceManager:
+general_path_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+downloaded_files_dir_name = "downloaded_files"
+
+def get_temp_dir_path(id):
+    return os.path.join(general_path_root, downloaded_files_dir_name, id)
+
+
+class ProjectManager:
     """
-    Takes care of all files related to a resource composition.
+    Takes care of all files related to datasets composition.
 
-    Singleton for a running session (only one ResourceManager can be edited and managed at a time)
     """
 
-    _instance = None
+    def __init__(self, user_id, **kwargs):
+        # on initialization load Project from DB or establish a new one
+        self.dbconnection = DBconnector()
+        self.ownerID = user_id
+        self.name = kwargs.get("name")
 
-    def __new__(cls, *args, **kwargs):
-        if not isinstance(cls._instance, cls):
-            cls._instance = super(ResourceManager, cls).__new__(cls)
-        return cls._instance
-
-    def __init__(self, user_id, name = None, doi = None, id = None):
-        # on initialization load Resource from DB or establish a new one
-        if not hasattr(self, 'initialized'):  # Ensures __init__ is only called once
-            self.dbconnection = DBconnector()
-            self.ownerID = user_id
-
-            if id is None:
-                # Create a new resource record in the database
-                try:
-                    self.id = self.dbconnection.saveResourceManager(user_id, name, doi)
-                except DatabaseEntryError as e:
-                    print("Failed to establish new ResourceManager record in the SoilPulse database.")
-                    raise
-
-            else:
-                # Load the existing resource from the database
-                self.id = id
-                self.dbconnection.loadResourceManager(id)
-
-            # dedicated directory where files can be stored
-            self.tempDir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), downloadedFilesDir,
-                                        str(self.id))
-            self.initialized = True
-
-        # arbitrary resource name for easy identification
-        self.name = name
-
-        # list of Dataset class instances present within this resource
+        self.doi = kwargs.get("doi")
+        # list of Dataset class instances present within this project
         self.datasets = []
-
         # registration agency of the DOI
         self.registrationAgency = None
-        # metadata package from DOI record
+        # container with metadata package from DOI record
         self.DOImetadata = None
+        # container with metadata package from Publisher
+        self.publisherMetadata = None
         # publisher instance
         self.publisher = None
         # list of files that were published with the resource - publicly available through url
@@ -67,31 +47,58 @@ class ResourceManager:
         self.uploadedFiles = []
         # the tree structure of included files and other container types
         self.containerTree = []
-        # the DOI is private, so it can't be changed without consequences - only setDOI(doi) can be used
-        self.__doi = None
-
-        # language of the resource
+        # dictionary of file paths and related container IDs - useful for cross-checking between files and containers
+        self.containersOfPaths = {}
+        # language of the project
         self.language = None
 
         # for now - some kind of licences definition and appropriate actions should be implemented
         self.keepFiles = False
 
-        if doi:
-            self.setDOI(doi)
+        # project's own ContainerHandlerFactory to keep track of containers
+        self.containerFactory = ContainerHandlerFactory()
+
+        if kwargs.get("id") is None:
+            # Create a new project record in the database
+            try:
+                self.id = self.dbconnection.establishProjectRecord(user_id, self)
+            except DatabaseEntryError as e:
+                print("Failed to establish new Project record in the SoilPulse database.")
+                raise
+            except NameNotUniqueError:
+                print(f"Project with name \"{kwargs.get('name')}\" already exists. Use unique names for your projects!")
+
+            # dedicated directory where files can be stored
+            self.tempDir = os.path.join(general_path_root, downloaded_files_dir_name, str(self.id))
+
+            self.setDOI(kwargs.get("doi"))
+
+        else:
+            # Load the existing project properties from the database
+            self.id = kwargs.get("id")
+            try:
+                self.dbconnection.loadProject(self)
+            except DatabaseFetchError as e:
+                # this should never happen as the ID will be obtained by query from the DB ...
+                print(f"\n\nERROR LOADING PROJECT {kwargs.get('id')}")
+                print(e.message)
+                sys.exit()
+                pass
+        return
 
 
     def __del__(self):
         if hasattr(self, "keepFiles"):
             if not self.keepFiles:
-                print(f"\n\nDeleting Resource's files because we can't keep them :-(")
-                failed = self.deleteAllResourceFiles()
+                print(f"\n\nDeleting project files because we can't keep them :-(")
+                failed = self.deleteAllProjectFiles()
                 if len(failed) > 0:
                     print(f"following files couldn't be deleted:")
                     for f in failed:
                         print(f"\t{f}")
 
     def __str__(self):
-        out = f"\nResourceManager #{self.id} {70 * '='}\n"
+        out = f"\nProject #{self.id} {70 * '='}\n"
         out += f"name: {self.name}\n"
         out += f"local directory: {self.tempDir}\n"
         out += f"keep stored files: {'yes' if self.keepFiles else 'no'}\n"
@@ -101,70 +108,73 @@ class ResourceManager:
         return out
 
     def updateDBrecord(self, cascade=True):
-        print(f"Saving project {self.name} ... ")
+        print(f"Saving project \"{self.name}\" with ID {self.id} ... ")
 
-        try:
-            self.dbconnection.updateResourceManager(self)
-        except NameNotUniqueError as name:
-            print(f"ResourceManager with name \"{name}\" already exists. Use unique names for your ResourceManagers!")
-            print(f"ResourceManager's record updated.")
+        self.dbconnection.updateProjectRecord(self)
+
         if cascade:
-            print(f"\tcascading ...")
+            print(f"\tsaving containers ...")
+            # update all containers' DB record
             for cont in self.containerTree:
                 cont.updateDBrecord(self.dbconnection)
+
+            # update all datasets' DB record
             for dataset in self.datasets:
                 dataset.updateDBrecord(self.dbconnection)
+
         print(f" ... successful.")
         return
 
+    def loadDBrecord(self, cascade=True):
 
+        return True
 
     def setDOI(self, doi):
         """
-        Changes the DOI of a resource with all appropriate actions
-        - reads the registration agency and publisher response metadata and assigns them to the ResourceManager
+        Changes the DOI of a project with all appropriate actions
+        - reads the registration agency and publisher response metadata and assigns them to the ProjectManager
         - check for files bound to the DOI record
         - download the files (unpack archives if necessary)
         - create container tree from files
         - remove old files if there were any
 
         """
+
         # if the __doi parameter already had some value
-        if self.__doi:
+        if self.doi:
             # and the new value differs from the previous one
-            if self.__doi != doi:
+            if self.doi != doi:
                 # remove the files that were downloaded from the DOI record before
-                self.deleteAllResourceFiles()
+                self.deleteAllProjectFiles()
                 pass
-        # set the new DOI
-        self.__doi = doi
-        # populate the registration agency
-        self.registrationAgency = ResourceManager.getRegistrationAgencyOfDOI(self.__doi)
-        # populate the metadata properties
-        self.DOImetadata = self.getDOImetadata(self.__doi)
-        # append the DOI metadata JSON container to the resourceManagers containers
-        self.containerTree.append(ContainerHandlerFactory().createHandler("json", "Resource DOI metadata JSON", self, self.DOImetadata))
-        # populate publisher with Publisher class instance
-        # try:
-        self.publisher = self.getPublisher(self.DOImetadata)
-        # except DOIdataRetrievalException:
-        #     print(self.DOImetadata['publisher'])
-        # else:
-        # append the publisher metadata JSON container to the resourceManagers containers
-        self.containerTree.append(ContainerHandlerFactory().createHandler("json", "{} metadata JSON".format(self.publisher.name), self, self.publisher.getMetadata()))
-        # get downloadable files information from publisher
-        self.publishedFiles = self.publisher.getFileInfo()
 
-        # self.getMetadataFromPublisher()
+        if doi is not None:
+            # set the new DOI
+            self.doi = doi
+            # populate the registration agency
+            self.registrationAgency = ProjectManager.getRegistrationAgencyOfDOI(doi)
+            # populate the metadata properties
+            self.DOImetadata = self.getDOImetadata(doi)
+            # append the DOI metadata JSON container to the ProjectManagers containers
+            self.containerTree.append(self.containerFactory.createHandler("json", name="DOI metadata", project_manager=self, parent_container=None, content=self.DOImetadata, path=None))
 
-        # self.getFileInfoFromPublisher()
+            # populate publisher with Publisher class instance
+            self.publisher = self.getPublisher(self.DOImetadata)
+            self.publisherMetadata = self.getPublisherMetadata()
+
+            # append the publisher metadata JSON container to the ProjectManagers containers
+            self.containerTree.append(self.containerFactory.createHandler("json", name=f"Publisher metadata", project_manager=self, parent_container=None, content=self.publisherMetadata, path=None))
+            # get downloadable files information from publisher
+            self.publishedFiles = self.publisher.getFileInfo()
+        else:
+            return
         return
 
     def getDOI(self):
         """
         Private attribute __doi getter
         """
-        return self.__doi
+        return self.doi
 
 
     def getAllFilesList(self):
@@ -173,7 +183,7 @@ class ResourceManager:
             cont.listOwnFiles(filesList)
         return filesList
 
-    def deleteAllResourceFiles(self):
+    def deleteAllProjectFiles(self):
         failed = []
         for cont in self.containerTree:
             cont.deleteOwnFiles(failed)
@@ -207,8 +217,7 @@ class ResourceManager:
                     publisher = PublisherFactory.createHandler(publisherKey, zenodo_id)
                     return publisher
                 else:
-                    raise DOIdataRetrievalException(f"Unsupported data repository '{publisherKey}' - currently only implemented for Zenodo")
-
+                    raise NotImplementedError()
 
     @staticmethod
     def getRegistrationAgencyOfDOI(doi, meta=False):
@@ -255,32 +264,34 @@ class ResourceManager:
         :return: json of metadata
         """
         # TODO implement other metadata providers
-        RA = ResourceManager.getRegistrationAgencyOfDOI(doi)
+        RA = ProjectManager.getRegistrationAgencyOfDOI(doi)
         if (RA == 'DataCite'):
             url = "https://api.datacite.org/dois/" + doi
             headers = {"accept": "application/vnd.api+json"}
 
             try:
-                print("obtaining metadata from DOI registration agency ...")
+                print("\nObtaining metadata from DOI registration agency ...")
                 output = requests.get(url, headers=headers).json()
 
             except requests.exceptions.ConnectionError:
-                print("A connection error occurred. Check your internet connection.")
+                print(" A connection error occurred. Check your internet connection.")
             except requests.exceptions.Timeout:
-                print("The request timed out.")
+                print(" The request timed out.")
             except requests.exceptions.HTTPError as e:
-                print("HTTP Error:", e)
+                print(" HTTP Error:", e)
             except requests.exceptions.RequestException as e:
-                print("An error occurred:", e)
+                print(" An error occurred:", e)
             else:
                 if 'error' in output.keys():
-                    raise DOIdataRetrievalException("Registration agency '{}' didn't respond. Error {}: {}".format(ResourceManager.getRegistrationAgencyOfDOI(doi), output['status'], output['error']))
+                    raise DOIdataRetrievalException(f"Registration agency '{ProjectManager.getRegistrationAgencyOfDOI(doi)}' didn't respond. Error {output['status']}: {output['error']}")
                 print(" ... successful\n")
                 return output
         else:
             print("Unsupported registration agency '{}'".format(RA))
-            raise DOIdataRetrievalException("Unsupported registration agency '{}'".format(RA))
-            return None
+            raise DOIdataRetrievalException(f"Unsupported registration agency '{RA}'")
+
+    def getPublisherMetadata(self):
+        return self.publisher.getMetadata()
 
     def downloadPublishedFiles(self, list = None, unzip=True):
         """
@@ -332,7 +343,7 @@ class ResourceManager:
                                 fileList.append(local_path)
 
                                 # create new container from the file with all related actions
-                                newContainer = ContainerHandlerFactory().createHandler('filesystem', sourceFile.filename, self, None, path=local_path)
+                                newContainer = self.containerFactory.createHandler('filesystem', self, None, name=sourceFile.filename, path=local_path)
                                 self.containerTree.append(newContainer)
 
                             else:
@@ -357,17 +368,19 @@ class ResourceManager:
     def getContainerByID(self, cid):
         if isinstance(cid, list):
             try:
-                return [ContainerHandlerFactory.getContainerByID(c) for c in cid]
+                return [self.containerFactory.getContainerByID(c) for c in cid]
             except:
                 raise
         else:
-            ContainerHandlerFactory.getContainerByID(cid)
+            self.containerFactory.getContainerByID(cid)
+    def getContainerByParentID(self, pid):
+        return
 
     def newDataset(self, name):
         """
         Adds DatasetHandler instance to dataset list
         """
-        new_dataset = Dataset(name)
+        new_dataset = Dataset(name, self)
         self.datasets.append(new_dataset)
         return new_dataset
 
@@ -393,12 +406,12 @@ class ResourceManager:
         """
         Induces printing contents of the whole container tree
         """
-        print(80 * "=")
-        print("{}\ncontainer tree:".format(self.name))
+        print("\n" + 80 * "=")
+        print(f"{self.name}\ncontainer tree:")
         print(80 * "-")
         for container in self.containerTree:
             container.showContents(0)
-        print(80 * "=" + 5 * "\n")
+        print(80 * "=" + 2 * "\n")
 
 
     def showDatasetsContents(self):
@@ -406,6 +419,12 @@ class ResourceManager:
             ds.showContents()
         return
 
+    def showFilesStructure(self):
+        print("\n" + 80 * "-")
+        print(f"{self.name}\nfile paths and related container IDs:")
+        print(80 * "-")
+        for path, contID in self.containersOfPaths.items():
+            print(f"\t{path}  -->  {contID}")
 
 class Dataset:
     """
@@ -413,13 +432,16 @@ class Dataset:
     The instance has its own MetadataStructureMap that is being composed during the metadata generation phase
     """
 
-    def __init__(self, name):
+    def __init__(self, name, project):
         # dataset name
         self.name = name
+        # project reference
+        self.project = project
         # data containers that the dataset consists of
         self.containers = []
         # the instance of the metadata mapping
         self.metadataMap = MetadataStructureMap()
+
 
     def addContainers(self, containers):
         """
@@ -439,9 +461,13 @@ class Dataset:
         self.containers = [con for con in self.containers if con not in containers_to_remove]
         return
 
-    def updateDBrecord(self, db_connection, cascade=True):
-        print(f"\tupdatind dataset {self.name} ... ")
-        pass
+    def updateDBrecord(self, db_connection):
+        print(f"\tupdating dataset '{self.name}' ... ")
+        db_connection.updateDatasetRecord(self)
+        return
+
+    def getContainerIDsList(self):
+        return [c.id for c in self.containers]
 
     def showContainerTree(self):
         """
@@ -454,14 +480,6 @@ class Dataset:
             container.showContents(0)
         print(80 * "=" + 2 * "\n")
 
-    def getContainerIDsList(self):
-        """
-        Collects IDs of all containers and subcontainers to list
-        """
-        output_list = []
-        for cont in self.containers:
-            output_list.append(cont.collectContainerIDsToList)
-        return output_list
 
     def checkMetadataStructure(self):
         self.metadataMap.checkConsistency()
@@ -491,25 +509,6 @@ class ContainerHandlerFactory:
     # directory of registered containers types classes
     containerTypes = {}
 
-    # the one and only instance
-    _instance = None
-
-    # dictionary of already created container handlers by ID
-    containers = {}
-    # class counter of ID to be assigned to next created ContainerHandler
-    nextContainerID = 0
-
-    @classmethod
-    def getContainerByID(cls, cid):
-        """
-        Returns container of particular ID from inner dictionary
-        """
-
-        if cls.containers.get(cid):
-            return cls.containers.get(cid)
-        else:
-            raise ContainerStructureError(f"Container id = {cid} was never created by this factory!")
-
     @classmethod
     def registerContainerType(cls, containerTypeClass, key):
         """
@@ -519,8 +518,16 @@ class ContainerHandlerFactory:
         print("DatasetHandler '{}' registered".format(key))
         return
 
-    @classmethod
-    def createHandler(cls, general_type, *args, **kwargs):
+
+    def __init__(self):
+
+        # dictionary of already created container handlers by ID
+        self.containers = {}
+        # class counter of ID that was assigned to last created ContainerHandler
+        self.lastContainerID = 0
+
+
+    def createHandler(self, general_type, *args, **kwargs):
         """
         Creates and returns instance of ContainerHandler of given type
         Subclasses can implement further specialization of the type by overriding ContainerHandler.getSpecializedSubclassType()
@@ -529,31 +536,50 @@ class ContainerHandlerFactory:
         # check if the requested container type is registered in the factory
         if general_type not in ContainerHandlerFactory.containerTypes.keys():
             raise ValueError("Unsupported container handler type '{}'. Supported are:"
-                             " {}".format(general_type, ",".join( ["'" + k + "'" for k in cls.containerTypes.keys()])))
+                             " {}".format(general_type, ",".join( ["'" + k + "'" for k in self.containerTypes.keys()])))
         else:
-            # raise the ID for next container
-            cls.nextContainerID += 1
+            # if 'id' is in kwargs and is not None - e.a. loading the container from DB
+            if kwargs.get("id") is not None:
+                # check if the value is not present in already existing containers of this factory
+                if kwargs["id"] not in self.containers.keys():
+                    self.lastContainerID = max(kwargs["id"], self.lastContainerID)
+                else:
+                    print(f"ContainerHandler's dict: \n{self.containers}")
+                    raise ContainerStructureError(f"This container factory has already produced container "\
+                                                f"with ID {kwargs['id']} (name: '{self.containers.get(kwargs['id']).name}')")
 
-            # get specialized subclass type
-            specialized_type = cls.containerTypes[general_type].getSpecializedSubclassType(**kwargs)
-            # check if the requested specialized container type is registered in the factory
-            if specialized_type not in ContainerHandlerFactory.containerTypes.keys():
-                raise ValueError("Unsupported container handler type '{}'. Supported are:"
-                                 " {}".format(general_type, ",".join(["'" + k + "'" for k in cls.containerTypes.keys()])))
+            # else use the inner counter to assign ID
+            else:
+                self.lastContainerID += 1
+                kwargs.update({"id": self.lastContainerID})
 
-            # create new container instance with unique id in the ResourceManager scope
-            new_container = cls.containerTypes[specialized_type](cls.nextContainerID, *args, **kwargs)
+
+            if kwargs.get("type") is not None:
+                # if 'type' is in kwargs and is not None - e.a. loading the container from DB
+                specialized_type = kwargs.pop("type")
+            else:
+                # get specialized subclass type
+                specialized_type = self.containerTypes[general_type].getSpecializedSubclassType(**kwargs)
+                # check if the requested specialized container type is registered in the factory
+                if specialized_type not in ContainerHandlerFactory.containerTypes.keys():
+                    raise ValueError("Unsupported container handler type '{}'. Supported are:"
+                                     " {}".format(general_type, ",".join(["'" + k + "'" for k in self.containerTypes.keys()])))
+
+                # create new container instance with unique id in the ProjectManager scope
+            new_container = self.containerTypes[specialized_type](*args, **kwargs)
             # put it in the factory list
-            cls.containers.update({new_container.id: new_container})
+            self.containers.update({new_container.id: new_container})
             return new_container
 
-    def __init__(self):
-        def __new__(class_, *args, **kwargs):
-            if not isinstance(class_._instance, class_):
-                class_._instance = object.__new__(class_, *args, **kwargs)
-            return class_._instance
+    def getContainerByID(cls, cid):
+        """
+        Returns container of particular ID from inner dictionary
+        """
 
-
+        if cls.containers.get(cid):
+            return cls.containers.get(cid)
+        else:
+            raise ContainerStructureError(f"Container id = {cid} was never created by this factory!")
 
 class ContainerHandler:
     """
@@ -567,17 +593,18 @@ class ContainerHandler:
     @classmethod
     def getSpecializedSubclassType(cls, **kwargs):
         """
-        This method comes handy when one ContainerHandler subclass needs to control creation of own subclasses
+        This method comes handy when one ContainerHandler subclass needs to control some rules for creation of own subclasses
+        Default is 'no specialization' e.a. returns the same type as is
         """
         return cls.containerType
 
-    def __init__(self, id, name, resource_manager, parent_container=None):
-        # unique ID in the ResourceManagers scope
-        self.id = id
+    def __init__(self, project, parent_container, **kwargs):
+        # unique ID in the project scope
+        self.id = kwargs["id"]
         # container name (filename/database name/table name ...)
-        self.name = name
-        # reference to the ResourceManager that the container belongs to
-        self.resourceManager = resource_manager
+        self.name = kwargs["name"]
+        # reference to the ProjectManager that the container belongs to
+        self.project = project
         # parent container instance (if not root container)
         self.parentContainer = parent_container
         # data containers that the container contains
@@ -586,17 +613,16 @@ class ContainerHandler:
         self.metadataElements = []
         # the crawler assigned to the container
         self.crawler = None
+        # dictionary of attribute serialization
+        self.serializationDict = {}
 
-        # make the class properties accessible through instance properties
-        self.containerType = type(self).containerType
-        self.containerFormat = type(self).containerFormat
-        self.keywordsDBname = type(self).keywordsDBname
 
     def __str__(self):
-        out = f"\n|  # {self.id}  |  {type(self).__name__}\n|  {self.name}  |  parent: {self.parentContainer.id}\n"
+        out = f"|  # {self.id}  |  {type(self).__name__}\n|  {self.name}  |  parent: "
+        out += f"{self.parentContainer.id}\n" if self.parentContainer is not None else f"project\n"
         if hasattr(self, "path"):
             out += f"|  {self.path}"
-
+        out += "\n"
         return out
 
 
@@ -604,7 +630,7 @@ class ContainerHandler:
         """
         Prints structured info about the container and invokes showContents on all of its containers
 
-        :param depth: current depth of showKeyValueStructure recursion
+        :param depth: current depth of showContent recursion
         :param ind: string of a single level indentation
         """
         # get the indentation string
@@ -620,7 +646,7 @@ class ContainerHandler:
                 cont.showContents(depth)
 
     def updateDBrecord(self, db_connection, cascade=True):
-        db_connection.updateContainer(self)
+        db_connection.updateContainerRecord(self)
 
         if cascade:
             for cont in self.containers:
@@ -632,6 +658,7 @@ class ContainerHandler:
         for cont in self.containers:
             cont.collectContainerIDsToList(output)
         return output
+
 
     def createTree(self, *args):
         pass
@@ -704,10 +731,10 @@ class PublisherFactory:
                                                                                                          ["'" + k + "'"
                                                                                                           for k in
                                                                                                           cls.publishers.keys()])))
+        elif publisherKey is None:
+            raise ValueError("Publisher handler type can't be None")
         else:
             newPublisher = cls.publishers[publisherKey](*args)
-            cls.publishers.update({newPublisher.key: newPublisher})
-
             return newPublisher
 
     def __init__(self):
@@ -741,10 +768,10 @@ class Pointer:
     """
     pass
 
-class ResourcePointer(Pointer):
+class ProjectPointer(Pointer):
     """
     Pointer that is not related to any provided file/table.
-    For metadata elements that are found/created for the ResourceManager.
+    For metadata elements that are found/created for the Project.
     """
 
     pass
@@ -761,10 +788,13 @@ class Crawler:
     """
     Top level abstract class of the metadata/data crawler
     """
+    crawlerType = None
 
     def __init__(self, container):
         self.container = container
+        self.crawlerType = type(self).crawlerType
         pass
+
 
     def crawl(self):
         """

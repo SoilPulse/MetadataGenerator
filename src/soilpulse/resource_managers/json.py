@@ -15,12 +15,14 @@ class JSONContainer(ContainerHandler):
     containerFormat = "JSON"
     keywordsDBname = "keywords_json"
 
-    def __init__(self, id, name, resource_manager, content, path = None):
-        super(JSONContainer, self).__init__(id, name, resource_manager)
+    def __init__(self, project_manager, parent_container, **kwargs):
+        super(JSONContainer, self).__init__(project_manager, parent_container, **kwargs)
         # the JSON content
-        self.content = content
-        self.path = path
+        self.content = kwargs["content"]
+        self.path = kwargs["path"]
         self.crawler = JSONcrawler(self)
+
+        self.serializationDict = {"path": self.path, "content": str(self.content)}
 
     def showContents(self, depth = 0, ind = ". "):
         """
@@ -97,6 +99,13 @@ class JSONContainer(ContainerHandler):
 
         return
 
+    def saveAsFile(self, dir, filename):
+
+        fullpath = os.path.join(dir, filename)
+        self.path = fullpath
+        self.project.containersOfPaths.update({self.path: self.id})
+        return fullpath
+
     def getCrawled(self):
         self.crawler.crawl()
         pass
@@ -117,6 +126,8 @@ class JSONcrawler(Crawler):
     """
     Crawler for file system repositories
     """
+
+    crawlerType = "JSON crawler"
 
     def __init__(self, container):
         self.container = container

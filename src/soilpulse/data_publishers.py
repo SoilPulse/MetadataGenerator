@@ -7,6 +7,7 @@ class ZenodoPublisher(Publisher):
     name = "Zenodo"
 
     def __init__(self, zenodo_id):
+        super(ZenodoPublisher, self).__init__()
         self.zenodoID = zenodo_id
         self.file_url_request_root = "https://zenodo.org/api/records/"
 
