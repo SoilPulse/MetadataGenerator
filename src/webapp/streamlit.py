@@ -14,6 +14,7 @@ import streamlit_tree_select
 
 import SoilPulse_middle as sp
 
+st.set_page_config(layout="wide")
 
 # use session state as work around for single container selection
 # https://github.com/Schluca/streamlit_tree_select/issues/1#issuecomment-1554552554
@@ -29,6 +30,8 @@ c1, c2 = st.columns((8, 3), gap="large")
 
 
 with st.sidebar:
+    st.title("Welcome to SoilPulse!")
+    # dialog to create new dataset
     with st.expander("Add dataset"):
         st.session_state['new_name'] = st.text_input("Dataset Name")
         st.session_state['new_doi'] = st.text_input("Dataset DOI")
@@ -43,12 +46,16 @@ with st.sidebar:
 
 # show trees of all Datasets
 with st.sidebar:
+
+    # build and show tree of selectable containers
     selected = streamlit_tree_select.tree_select(
         sp._create_tree("./catalogue/"),
         no_cascade=True,
         checked=st.session_state.selected,
         expanded=st.session_state.expanded
         )
+
+    # use session state as work around for single container selection
     if len(selected["checked"]) > 1:
         st.session_state.selected = [x for x in selected["checked"] if x != st.session_state.selected[0]][0:1]
         st.session_state.expanded = selected["expanded"]
@@ -59,10 +66,13 @@ with st.sidebar:
     else:
         st.session_state.selected = selected["checked"]
         st.session_state.expanded = selected["expanded"]
+
+    # it should be clear which dataset (instance of ressource manger) is active
     dataset = sp._getdatasetofcontainer(st.session_state.selected)
 
 
 with c1:
+    # container editing
     with st.container(border = True):
         st.header("Container Settings")
         sp._show_container_content(st.session_state.selected)
@@ -70,6 +80,8 @@ with c1:
             sp._update_container(st.session_state.selected)
         if st.button("Reset changes on this container"):
             sp._reload_container(st.session_state.selected)
+
+    # container data visualisation
     with st.container(border = True):
         st.header("Included Data")
         # get agrovoc concepts in container for selection of visualisation target
