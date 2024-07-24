@@ -3,4 +3,3 @@ streamlit
 streamlit-tree-select
 mysql.connector
 SPARQLWrapper
-pickle
