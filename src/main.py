@@ -77,7 +77,7 @@ def load_existing_project(user_id, project_id):
         project = ProjectManager(**example)
 
     except DatabaseEntryError as e:
-        # this exception is thrown whne trying to add new ResourceManager with same name into the database (for same user)
+        # this exception is thrown whne trying to add new ProjectManager with same name into the database (for same user)
         # pass the error message to the user ... some pop-up window with the message
         print(e.message)
         pass

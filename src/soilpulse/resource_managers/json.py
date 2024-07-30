@@ -15,6 +15,8 @@ class JSONContainer(ContainerHandler):
     containerFormat = "JSON"
     keywordsDBname = "keywords_json"
 
+    DBfields = {"path": ["text", 255], "content": ["text", 2047]}
+
     def __init__(self, project_manager, parent_container, **kwargs):
         super(JSONContainer, self).__init__(project_manager, parent_container, **kwargs)
         # the JSON content

@@ -93,6 +93,8 @@ class FileSystemContainer(ContainerHandler):
     containerFormat = "File system"
     keywordsDBname = "keywords_filesystem"
 
+    DBfields = {"path": ["text", 255]}
+
     @classmethod
     def getSpecializedSubclassType(cls, **kwargs):
         if kwargs.get("type") is not None:
