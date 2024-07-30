@@ -12,10 +12,10 @@ from .exceptions import DOIdataRetrievalException, LocalFileManipulationError, C
 
 # general variables
 general_path_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-downloaded_files_dir_name = "downloaded_files"
+project_files_dir_name = "project_files"
 
 def get_temp_dir_path(id):
-    return os.path.join(general_path_root, downloaded_files_dir_name, id)
+    return os.path.join(general_path_root, project_files_dir_name, id)
 
 
 class ProjectManager:
@@ -69,7 +69,9 @@ class ProjectManager:
                 print(f"Project with name \"{kwargs.get('name')}\" already exists. Use unique names for your projects!")
 
             # dedicated directory where files can be stored
-            self.tempDir = os.path.join(general_path_root, downloaded_files_dir_name, str(self.id))
+            self.tempDir = os.path.join(general_path_root, project_files_dir_name, str(self.id))
+            if not os.path.exists(os.path.join(general_path_root, project_files_dir_name)):
+                os.mkdir(os.path.join(general_path_root, project_files_dir_name))
 
             self.setDOI(kwargs.get("doi"))
 

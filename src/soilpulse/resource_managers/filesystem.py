@@ -15,7 +15,7 @@ import shutil
 # import magic
 
 
-from ..resource_management import ContainerHandler, ContainerHandlerFactory, Pointer, Crawler
+from ..project_management import ContainerHandler, ContainerHandlerFactory, Pointer, Crawler
 from ..db_access import EntityKeywordsDB
 # just for the standalone functions - will be changed
 # from ..resource_management import *

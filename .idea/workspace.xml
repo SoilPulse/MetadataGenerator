@@ -4,13 +4,16 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="0d8e6823-2450-4805-9015-a6f4ccc5becb" name="Changes" comment="The FileSystemCrawlerFactory tries for 'txt' files the 'csv' crawler first and if it gains any tables (meaning that it went through all the 'filters' of detect_delimiters() and creating the dataframe) the csv Crawler is assigned to the txt file -  the container has 'csv' Crawler eventhough it's a 'txt' file">
+    <list default="true" id="0d8e6823-2450-4805-9015-a6f4ccc5becb" name="Changes" comment="Minor changes in string formating and comments">
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/soilpulse/data_publishers.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/soilpulse/data_publishers.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/soilpulse/db_access.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/soilpulse/db_access.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/soilpulse/resource_management.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/soilpulse/resource_management.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/soilpulse/resource_management.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/soilpulse/project_management.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/soilpulse/resource_managers/filesystem.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/soilpulse/resource_managers/filesystem.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/soilpulse/resource_managers/json.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/soilpulse/resource_managers/json.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/soilpulse/resource_managers/mysql.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/soilpulse/resource_managers/mysql.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/soilpulse/resource_managers/xml.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/soilpulse/resource_managers/xml.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -30,7 +33,7 @@
   <component name="Git.Settings">
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
-        <entry key="$PROJECT_DIR$" value="Restructure_resource_organization" />
+        <entry key="$PROJECT_DIR$" value="main" />
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -108,6 +111,7 @@
       <list>
         <item itemvalue="Python.main" />
         <item itemvalue="Python.main" />
+        <item itemvalue="Python.main" />
       </list>
     </recent_temporary>
   </component>
@@ -136,6 +140,16 @@
       <workItem from="1712874777626" duration="6466000" />
       <workItem from="1713179207047" duration="18804000" />
       <workItem from="1716794248715" duration="9855000" />
+      <workItem from="1717504023885" duration="6711000" />
+      <workItem from="1718029955262" duration="18406000" />
+      <workItem from="1718689491459" duration="108252000" />
+      <workItem from="1719831977290" duration="76503000" />
+      <workItem from="1720536684286" duration="1129000" />
+      <workItem from="1720594143463" duration="2946000" />
+      <workItem from="1720609786186" duration="2446000" />
+      <workItem from="1721594570359" duration="1345000" />
+      <workItem from="1721885076863" duration="1801000" />
+      <workItem from="1722234118272" duration="3586000" />
     </task>
     <task id="LOCAL-00001" summary="Establish basic elements structure and entities">
       <created>1702907681115</created>
@@ -368,7 +382,77 @@
       <option name="project" value="LOCAL" />
       <updated>1712783886518</updated>
     </task>
-    <option name="localTasksCounter" value="34" />
+    <task id="LOCAL-00034" summary="backbone of saving of ResourceManager works, when new ResourceManager is created it gets a record in DB established, assigned ID is used for naming the directory where the resource's files are stored. Resource's name must be unique within one user's resources otherwise a DatabaseEntryError exception is thrown">
+      <created>1718110145510</created>
+      <option name="number" value="00034" />
+      <option name="presentableId" value="LOCAL-00034" />
+      <option name="project" value="LOCAL" />
+      <updated>1718110145510</updated>
+    </task>
+    <task id="LOCAL-00035" summary="file management of ResourceManager extended: all files are deleted on ResourceManager instance destruction if files can't be kept. further development of saving and updating the ResourceManager in database">
+      <created>1718745338240</created>
+      <option name="number" value="00035" />
+      <option name="presentableId" value="LOCAL-00035" />
+      <option name="project" value="LOCAL" />
+      <updated>1718745338240</updated>
+    </task>
+    <task id="LOCAL-00036" summary="Container ID assignment repaired (IDs are unique again).&#10;File extension processing improved to correctly handle filenames starting with dot and no extension (like '.gitignore')&#10;ResourceManager reference and parent container reference added to all containers.&#10;ResourceManager name duplicity check added on DB record update.">
+      <created>1719221211375</created>
+      <option name="number" value="00036" />
+      <option name="presentableId" value="LOCAL-00036" />
+      <option name="project" value="LOCAL" />
+      <updated>1719221211375</updated>
+    </task>
+    <task id="LOCAL-00037" summary="Basic saving added for container structure.&#10;DB access logic for saving, updating (and future loading) moved to db_access.py">
+      <created>1719266271305</created>
+      <option name="number" value="00037" />
+      <option name="presentableId" value="LOCAL-00037" />
+      <option name="project" value="LOCAL" />
+      <updated>1719266271305</updated>
+    </task>
+    <task id="LOCAL-00038" summary="Repair error where container paths were not stored in DB, change data type for path column i DB">
+      <created>1719294165963</created>
+      <option name="number" value="00038" />
+      <option name="presentableId" value="LOCAL-00038" />
+      <option name="project" value="LOCAL" />
+      <updated>1719294165963</updated>
+    </task>
+    <task id="LOCAL-00039" summary="Refactor 'ResourceManager' to 'ProjectManager' with all related appearances in the code and the database.&#10;ProjectManager (former ResourceManager) no longer a singleton - more projects can be active (opened) at once&#10;Save Dataset.&#10;Loading of Project and Containers pushed a little further.">
+      <created>1719988693612</created>
+      <option name="number" value="00039" />
+      <option name="presentableId" value="LOCAL-00039" />
+      <option name="project" value="LOCAL" />
+      <updated>1719988693612</updated>
+    </task>
+    <task id="LOCAL-00040" summary="'Use case' functions created to easily execute a series of commands mimicking a common sequence of actions">
+      <created>1719988849987</created>
+      <option name="number" value="00040" />
+      <option name="presentableId" value="LOCAL-00040" />
+      <option name="project" value="LOCAL" />
+      <updated>1719988849987</updated>
+    </task>
+    <task id="LOCAL-00041" summary="Loading and saving of project and its datasets and container structure works!&#10;The in-memory container tree is reconstructed after loading from DB.">
+      <created>1720525257562</created>
+      <option name="number" value="00041" />
+      <option name="presentableId" value="LOCAL-00041" />
+      <option name="project" value="LOCAL" />
+      <updated>1720525257562</updated>
+    </task>
+    <task id="LOCAL-00042" summary="Saving of ContainerHandler subclasses' attributes generalized - subclass specific attributes are obtained from instance attribute 'serializationDict'">
+      <created>1720532303874</created>
+      <option name="number" value="00042" />
+      <option name="presentableId" value="LOCAL-00042" />
+      <option name="project" value="LOCAL" />
+      <updated>1720532303874</updated>
+    </task>
+    <task id="LOCAL-00043" summary="Minor changes in string formating and comments">
+      <created>1722333073444</created>
+      <option name="number" value="00043" />
+      <option name="presentableId" value="LOCAL-00043" />
+      <option name="project" value="LOCAL" />
+      <updated>1722333073444</updated>
+    </task>
+    <option name="localTasksCounter" value="44" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -410,7 +494,7 @@
                   <entry key="branch">
                     <value>
                       <list>
-                        <option value="main" />
+                        <option value="save_and_load_ResourceManager" />
                       </list>
                     </value>
                   </entry>
@@ -423,16 +507,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="Change import statements to correct and working form" />
-    <MESSAGE value="metadata entity types registration in the EntityManager works," />
-    <MESSAGE value="Change the file structure of the project so the resource type related classes are in a separate files in &quot;resource_managers&quot; directory to allow for modularity" />
-    <MESSAGE value="working re-implementation fo the file downloading and unzipping functions to FileSystemDataset, minor changes to metadata scheme" />
-    <MESSAGE value="first implementation of storing&amp;loading the search strings for entity types from MySQL database - it works when there's MySQL server running on &quot;localhost&quot; (whichever computer it is as long as the python interpreter is on the same machine)" />
-    <MESSAGE value="adujstments to the search patterns loading&#10;in EntityManager&#10;first code in filesystem crawler (not tested, not working)" />
-    <MESSAGE value="more adjustments in search patterns loading: the database split into separate DBs for search patterns and keywords so the keywords may be translated before search. Each of the resource type need to have its own keywords DB to be able to search correctly." />
-    <MESSAGE value="Restructure the resource management classes to allow for multi-type datasets (the Container is now type-specific and Dataset is universal). The DatasetHandler and DatasetHandlerFactory replaced by ContainerHandler and ContainerHandlerFactory.&#10;Split keywords loading for Container type-specific databases to allow modularity (still not working though). Search patterns loading works." />
-    <MESSAGE value="Further adjustments in the resurce management structure" />
-    <MESSAGE value="Comments for the webapp" />
     <MESSAGE value="ResourceManagement loading work in prograss.&#10;Structure main.py as a frontend workflow simulation" />
     <MESSAGE value="More MetadataEntity subclesses added ... working on clearing up the BonaRes scheme transfer" />
     <MESSAGE value="Working loading files from json from Zenodo, unpacking zip, recognizing all the files (downloaded and unzipped) into containers tree" />
@@ -448,10 +522,20 @@
     <MESSAGE value="First shot on treating the downloaded zip file name so it's not an incorrect dirname" />
     <MESSAGE value="Source files management changed - SourceFile class introduced to hold information about the original downloaded/uploaded file (for better management of the temporary files storage)&#10;&#10;First working crawling for CSV files - the file is read, individual tables are delineated and processed separately: the headers are recognized and the table is converted into pandas daraframe" />
     <MESSAGE value="The FileSystemCrawlerFactory tries for 'txt' files the 'csv' crawler first and if it gains any tables (meaning that it went through all the 'filters' of detect_delimiters() and creating the dataframe) the csv Crawler is assigned to the txt file -  the container has 'csv' Crawler eventhough it's a 'txt' file" />
-    <option name="LAST_COMMIT_MESSAGE" value="The FileSystemCrawlerFactory tries for 'txt' files the 'csv' crawler first and if it gains any tables (meaning that it went through all the 'filters' of detect_delimiters() and creating the dataframe) the csv Crawler is assigned to the txt file -  the container has 'csv' Crawler eventhough it's a 'txt' file" />
+    <MESSAGE value="backbone of saving of ResourceManager works, when new ResourceManager is created it gets a record in DB established, assigned ID is used for naming the directory where the resource's files are stored. Resource's name must be unique within one user's resources otherwise a DatabaseEntryError exception is thrown" />
+    <MESSAGE value="file management of ResourceManager extended: all files are deleted on ResourceManager instance destruction if files can't be kept. further development of saving and updating the ResourceManager in database" />
+    <MESSAGE value="Container ID assignment repaired (IDs are unique again).&#10;File extension processing improved to correctly handle filenames starting with dot and no extension (like '.gitignore')&#10;ResourceManager reference and parent container reference added to all containers.&#10;ResourceManager name duplicity check added on DB record update." />
+    <MESSAGE value="Basic saving added for container structure.&#10;DB access logic for saving, updating (and future loading) moved to db_access.py" />
+    <MESSAGE value="Repair error where container paths were not stored in DB, change data type for path column i DB" />
+    <MESSAGE value="Refactor 'ResourceManager' to 'ProjectManager' with all related appearances in the code and the database.&#10;ProjectManager (former ResourceManager) no longer a singleton - more projects can be active (opened) at once&#10;Save Dataset.&#10;Loading of Project and Containers pushed a little further." />
+    <MESSAGE value="'Use case' functions created to easily execute a series of commands mimicking a common sequence of actions" />
+    <MESSAGE value="Loading and saving of project and its datasets and container structure works!&#10;The in-memory container tree is reconstructed after loading from DB." />
+    <MESSAGE value="Saving of ContainerHandler subclasses' attributes generalized - subclass specific attributes are obtained from instance attribute 'serializationDict'" />
+    <MESSAGE value="Minor changes in string formating and comments" />
+    <option name="LAST_COMMIT_MESSAGE" value="Minor changes in string formating and comments" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/MetadataGenerator$main.coverage" NAME="main Coverage Results" MODIFIED="1716815391681" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
+    <SUITE FILE_PATH="coverage/MetadataGenerator$main.coverage" NAME="main Coverage Results" MODIFIED="1722335255340" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
     <SUITE FILE_PATH="coverage/MetadataGenerator$metadatascheme.coverage" NAME="metadatascheme Coverage Results" MODIFIED="1704839673854" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/soilpulse" />
   </component>
 </project>

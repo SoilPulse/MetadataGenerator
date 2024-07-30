@@ -3,7 +3,7 @@
 @author: Jan Devátý, Jonas Lenz
 """
 
-from soilpulse.resource_management import *
+from soilpulse.project_management import *
 from soilpulse.resource_managers.filesystem import *
 from soilpulse.resource_managers.mysql import *
 from soilpulse.resource_managers.xml import *
@@ -115,11 +115,11 @@ if __name__ == "__main__":
     example_4 = {"name": "Ries et al.", "doi": "10.6094/unifr/151460"}
 
     # do the use case
-    project1 = establish_new_project(user_id, **example_1)
+    # project1 = establish_new_project(user_id, **example_1)
     # project2 = establish_new_project(user_id, **example_3)
 
 
-    # load_existing_project(user_id, 1)
+    load_existing_project(user_id, 1)
 
 
 

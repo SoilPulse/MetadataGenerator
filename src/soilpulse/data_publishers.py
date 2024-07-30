@@ -1,5 +1,5 @@
 import requests
-from .resource_management import Publisher, PublisherFactory, SourceFile
+from .project_management import Publisher, PublisherFactory, SourceFile
 from .exceptions import DOIdataRetrievalException
 
 class ZenodoPublisher(Publisher):
