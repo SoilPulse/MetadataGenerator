@@ -36,7 +36,13 @@ jobs:
         python -m pip install --upgrade pip
         python -m pip install flake8 pytest pytest-cov
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-        
+
+    - uses: mirromutth/mysql-action@v1.1
+      with:
+        mysql database: 'soilpulse' # Optional, default value is "test". The specified database which will be create
+        mysql user: 'soilpulse' # Required if "mysql root password" is empty, default is empty. The superuser for the specified database. Can use secrets, too
+        mysql password: NFDI4earth  # Required if "mysql user" exists. The password for the "mysql user"  
+
     - name: Test with pytest
       run: |
         pytest --cov=./ --cov-report=xml
