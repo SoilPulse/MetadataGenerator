@@ -4,7 +4,7 @@
 import json
 import os
 
-from ..resource_management import ContainerHandler, ContainerHandlerFactory, Pointer, Crawler
+from ..project_management import ContainerHandler, ContainerHandlerFactory, Pointer, Crawler
 from ..db_access import EntityKeywordsDB
 # just for the standalone functions - will be changed
 # from ..resource_management import *
@@ -14,6 +14,8 @@ class JSONContainer(ContainerHandler):
     containerType = 'json'
     containerFormat = "JSON"
     keywordsDBname = "keywords_json"
+
+    DBfields = {"path": ["text", 255], "content": ["text", 2047]}
 
     def __init__(self, project_manager, parent_container, **kwargs):
         super(JSONContainer, self).__init__(project_manager, parent_container, **kwargs)

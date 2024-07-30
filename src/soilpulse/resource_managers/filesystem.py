@@ -15,7 +15,7 @@ import shutil
 # import magic
 
 
-from ..resource_management import ContainerHandler, ContainerHandlerFactory, Pointer, Crawler
+from ..project_management import ContainerHandler, ContainerHandlerFactory, Pointer, Crawler
 from ..db_access import EntityKeywordsDB
 # just for the standalone functions - will be changed
 # from ..resource_management import *
@@ -92,6 +92,8 @@ class FileSystemContainer(ContainerHandler):
     containerType = 'filesystem'
     containerFormat = "File system"
     keywordsDBname = "keywords_filesystem"
+
+    DBfields = {"path": ["text", 255]}
 
     @classmethod
     def getSpecializedSubclassType(cls, **kwargs):

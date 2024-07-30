@@ -474,7 +474,7 @@ class EntitySearchPatternsDB:
         with cls.connect() as conn:
             thecursor = conn.cursor()
             # execute the query and fetch the results
-            query = "select group_name, search_pattern from search_patterns where entity_id = '{}'".format(entityClass.ID)
+            query = f"select group_name, search_pattern from search_patterns where entity_id = '{entityClass.ID}'"
             thecursor.execute(query)
             results = thecursor.fetchall()
             if len(results) > 0:

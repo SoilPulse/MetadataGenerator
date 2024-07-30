@@ -1,7 +1,7 @@
 # coding = utf-8
 # -*- coding: utf-8 -*-
 
-from ..resource_management import ContainerHandler, ContainerHandlerFactory, Pointer, Crawler
+from ..project_management import ContainerHandler, ContainerHandlerFactory, Pointer, Crawler
 from ..db_access import EntityKeywordsDB
 
 
