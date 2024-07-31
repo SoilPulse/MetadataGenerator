@@ -1,4 +1,4 @@
-from src.soilpulse import db_access
+from soilpulse import db_access
 
 with open("./database/soilpulse.sql", "r") as file:
     sql = file.read()
