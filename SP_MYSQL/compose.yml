@@ -5,8 +5,8 @@ services:
   SP_MY8.0fromcompose:
     image: mysql:8.0.39
     ports:
-      - "3307:3306"
-      - "33070:33060"
+      - "3306:3306"
+      - "33060:33060"
     environment:
       MYSQL_ROOT_PASSWORD: 'root'
       MYSQL_USER: 'soilpulse'
