@@ -1,0 +1,8 @@
+from src.soilpulse import db_access
+
+with open("../databases/soilpulse.sql", "r") as file:
+    sql = file.read()
+
+cnx = db_access.DBconnector.db_connection
+
+
