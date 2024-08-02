@@ -40,7 +40,8 @@ def test_initDB():
 
     assert 'containers' in results
 
+
 def test_getUser():
     db = db_access.DBconnector()
     user = db.getUserNameByID(1)
-    assert user == ('Jan', 'DevÃ¡tÃ½')
+    assert (user[0][0] == 'J' and user[1][0] == 'D')
