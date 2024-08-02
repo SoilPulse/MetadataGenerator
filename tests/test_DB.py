@@ -1,16 +1,22 @@
 from soilpulse import db_access
+import time
+
 
 with open("./database/soilpulse.sql", "r") as file:
     sql = file.read()
+
+print(sql[0:100])
 
 # init DB
 db = db_access.DBconnector()
 cnx = db.db_connection
 cursor = cnx.cursor()
-
 cursor.execute(sql)
 cursor.fetchall()
 cursor.close()
+
+# wait for DB to be set up
+time.sleep(2)
 
 db = db_access.DBconnector()
 cnx = db.db_connection
@@ -20,6 +26,7 @@ result = cursor.fetchall()
 for r in result:
     print(r)
 cursor.close()
+
 
 def test_initDB():
     # get list of tables in DB
