@@ -205,9 +205,9 @@ class MetadataEntity:
     name = None
     # description of the entity (= definition in BonaRes scheme)
     description = None
-    # lowest number of appearances in resource, also works as optional/mandatory indicator
+    # lowest number of appearances in dataset, also works as optional/mandatory indicator
     minMultiplicity = 0
-    # highest number of appearances in resource (None meaning infinity)
+    # highest number of appearances in dataset (None meaning infinity)
     maxMultiplicity = None
     # ? class of the super-element
     subtypeOf = None

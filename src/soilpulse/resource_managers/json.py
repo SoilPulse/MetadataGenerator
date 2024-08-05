@@ -2,8 +2,9 @@
 # -*- coding: utf-8 -*-
 
 import json
+import os
 
-from ..resource_management import ContainerHandler, ContainerHandlerFactory, Pointer, Crawler
+from ..project_management import ContainerHandler, ContainerHandlerFactory, Pointer, Crawler
 from ..db_access import EntityKeywordsDB
 # just for the standalone functions - will be changed
 # from ..resource_management import *
@@ -14,12 +15,16 @@ class JSONContainer(ContainerHandler):
     containerFormat = "JSON"
     keywordsDBname = "keywords_json"
 
-    def __init__(self, id, name, content, path = None):
-        super(JSONContainer, self).__init__(id, name)
+    DBfields = {"path": ["text", 255], "content": ["text", 2047]}
+
+    def __init__(self, project_manager, parent_container, **kwargs):
+        super(JSONContainer, self).__init__(project_manager, parent_container, **kwargs)
         # the JSON content
-        self.content = content
-        self.path = path
+        self.content = kwargs["content"]
+        self.path = kwargs["path"]
         self.crawler = JSONcrawler(self)
+
+        self.serializationDict = {"path": self.path, "content": str(self.content)}
 
     def showContents(self, depth = 0, ind = ". "):
         """
@@ -37,6 +42,8 @@ class JSONContainer(ContainerHandler):
             for cont in self.containers:
                 cont.showContents(depth)
         return
+
+
     def showKeyValueStructure(self, json, t = "", depth = 0, depthLimit = 0, ind = ".", sep = ">"):
         """
         Prints out the structure of JSON container recursively
@@ -94,6 +101,13 @@ class JSONContainer(ContainerHandler):
 
         return
 
+    def saveAsFile(self, dir, filename):
+
+        fullpath = os.path.join(dir, filename)
+        self.path = fullpath
+        self.project.containersOfPaths.update({self.path: self.id})
+        return fullpath
+
     def getCrawled(self):
         self.crawler.crawl()
         pass
@@ -114,6 +128,8 @@ class JSONcrawler(Crawler):
     """
     Crawler for file system repositories
     """
+
+    crawlerType = "JSON crawler"
 
     def __init__(self, container):
         self.container = container

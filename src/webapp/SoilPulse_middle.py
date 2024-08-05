@@ -1,0 +1,185 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Jun 29 05:14:24 2024.
+
+@author: JL
+"""
+
+import os
+import streamlit as st
+
+import pandas as pd
+import numpy as np
+
+
+def _add_dataset(new_doi, new_name):
+    try:
+        path = "./catalogue/"+new_doi+new_name
+        os.makedirs(path)
+        f = open(path+"/demofile2.txt", "x")
+        f.write("Hi from SoilPulse!")
+        f.close()
+        st.write("Created Dataset.")
+    except:
+        st.warning("Dataset allready exists.")
+
+
+def _get__local_datasets():
+    return ["./catalogue/" + s for s in next(os.walk("./catalogue"))[1]]
+
+
+def _create_tree(folder):
+    sub_folder_dic = []
+    for f in os.listdir(folder):
+        f = os.path.join(folder, f)
+        if os.path.isfile(f):
+            sub_folder_dic.append(
+                {
+                    "label": f.split('\\')[-1].split('/')[-1],
+                    "value": f
+                    }
+                )
+        if os.path.isdir(f):
+            sub_folder_dic.append(
+                {
+                    "label": f.split('\\')[-1].split('/')[-1],
+                    "value": f,
+                    "children": _create_tree(f)
+                    }
+                )
+    return sub_folder_dic
+
+
+def _update_agrovoc_concept_dump():
+    """Get the list of all concepts of agrovoc to a local dict and pickle this.
+
+    Agrovoc currently includes < 44000 concepts, so limit of 100000 concepts
+    is sufficient.
+    the python sparql wrapper is described there:
+        https://sparqlwrapper.readthedocs.io/en/latest/main.html#command-line-script
+    the agrovoc sparql endpoint with examples there:
+        https://agrovoc.fao.org/sparql
+    I build upon the example while deleting date infos:
+        "Select all concepts added since date X (e.g. 31/12/2020), URI and EN prefLabel."
+    """
+    from SPARQLWrapper import SPARQLWrapper, JSON
+    import pickle
+
+    sparql = SPARQLWrapper(
+        "https://agrovoc.fao.org/sparql/"
+    )
+    sparql.setReturnFormat(JSON)
+
+    sparql.setQuery("""
+                    PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+                    PREFIX skosxl: <http://www.w3.org/2008/05/skos-xl#>
+                    SELECT ?concept ?label
+                    WHERE {
+                        ?concept a skos:Concept .
+                        OPTIONAL {
+                            ?concept skosxl:prefLabel ?xEnLabel .
+                            ?xEnLabel skosxl:literalForm ?label .
+                            }
+                        FILTER(lang(?label) = 'en')
+                        }
+                    LIMIT 100000
+                    """
+                    )
+    ret = sparql.queryAndConvert()
+    with open("agrov.dump", 'wb') as handle:
+        pickle.dump(ret, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+
+def _get_agrovoc_dump():
+    import pickle
+
+    if not os.path.isfile("agrov.dump"):
+        _update_agrovoc_concept_dump()
+    with open("agrov.dump", 'rb') as handle:
+        ret = pickle.load(handle)
+    optio = {r["label"]["value"]:
+             r["concept"] for r in ret["results"]["bindings"]}
+    return optio
+
+
+def _modify_agrovoc_concept(container):
+    optio = _get_agrovoc_dump()
+    keys = list(optio.keys())
+    if "agrovoc" in container:
+        index = keys.index("soil organic matter")
+    else:
+        index = None
+    agrovoc = st.selectbox("AGROVOC label",
+                           keys,
+                           help="Agrovoc is a controled vocabulary.\
+                               By assigning these vocabularies to your\
+                               data, a common understanding of the meaning\
+                               can be achieved.",
+                           index=index,
+                           placeholder="Choose an AGROVOC concept.")
+    if agrovoc:
+        st.write(agrovoc)
+        st.write(
+            "https://agrovoc.fao.org/browse/agrovoc/en/page/?uri=" +
+            optio[agrovoc]["value"])
+
+
+def _show_container_content(container):
+    st.write(container)
+    _modify_agrovoc_concept(container)
+    pass
+
+
+def _update_container(container):
+    pass
+
+
+def _reload_container(container):
+    pass
+
+
+def _getdatasetofcontainer(container):
+    return "your fancy dataset"
+
+
+def _get_conceptsofsubcontainers(container):
+    # queries actual and all subcontainers for controlled vocabularies
+    return ["Soil organic carbon", "Sand"]
+
+
+def _get_data_for_concept(container, agrovoc):
+    # queries actual and all subcontainers for data of controlled vocabularies and their main identifier
+    if container == 1:
+        data = pd.DataFrame([[2],
+                             [1.5],
+                             [2.3],
+                             [-0.5],
+                             [1]],
+                            columns=[str(container)])
+    else:
+        data = pd.DataFrame(np.random.randn(5, 1),
+                            columns=[str(container)])
+    return data
+
+
+def _get_datasets_by_concept(agrovoc):
+    return [2, 3, 4]
+
+
+def _visualize_data(container, mainID, agrovoc, datasets=[]):
+    chart_data = _get_data_for_concept(1, "Runoff")
+    for x in datasets:
+        chart_data[str(x)] = _get_data_for_concept(x, "Runoff")[str(x)]
+    # chart_data is data got from container
+    st.write(chart_data)
+    st.write("showing mockup data")
+    st.line_chart(chart_data)
+    pass
+
+
+def _update_local_db(dataset):
+    pass
+
+
+def _reload_local_db(dataset):
+    pass

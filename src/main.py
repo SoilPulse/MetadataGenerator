@@ -3,55 +3,130 @@
 @author: Jan Devátý, Jonas Lenz
 """
 
-from soilpulse.resource_management import *
+from soilpulse.project_management import *
 from soilpulse.resource_managers.filesystem import *
 from soilpulse.resource_managers.mysql import *
 from soilpulse.resource_managers.xml import *
 from soilpulse.resource_managers.json import *
 from soilpulse.data_publishers import *
 from soilpulse.metadata_scheme import *
-from soilpulse.db_access import EntityKeywordsDB
+from soilpulse.db_access import EntityKeywordsDB, DBconnector
+
+def establish_new_project(user_id, **example):
+    """
+    use case function
+    """
+    print("\n\n" + 150 * "#")
+    print("CREATE NEW PROJECT")
+    print("\n".join([f"{k}: {v}" for k, v in example.items()]))
+    print(150 * "#"+"\n")
+    example.update({"user_id": user_id})
+
+    # create ResourceManager instance for new resource:
+    try:
+        project = ProjectManager(**example)
+
+    except DatabaseEntryError as e:
+        # this exception is thrown when trying to add new ResourceManager with existing name into the database (for same user)
+        # pass the error message to the user ... some pop-up window with the message
+        print(e.message)
+        pass
+    except NotImplementedError:
+        print(
+            f"Publisher of requested DOI record related files 'is not supported.\nCurrently implemented publishers: {[', '.join([k for k in PublisherFactory.publishers.keys()])]}")
+
+    else:
+        # download files associated with the publisher record
+        try:
+            project.downloadPublishedFiles()
+        except DOIdataRetrievalException as e:
+            print(f"Files of DOI record couldn't be downloaded due to DOI data response error.\n{e.message}")
+
+        # setting of files 'licensing' - this property should be available through GUI
+        project.keepFiles = True
+
+        # show the whole container tree
+        project.showContainerTree()
+
+        # new empty dataset is created and added to the ResourceManager
+        newDataset = project.newDataset("Dataset test 1")
+        # add some containers from the ResourceManager - will be done through the GUI
+        newDataset.addContainers(project.getContainerByID([1, 2, 6]))
+
+        # # show the dataset's container tree
+        # newDataset.showContainerTree()
+        # newDataset.getCrawled()
+
+        project.updateDBrecord()
+
+    return project
+
+def load_existing_project(user_id, project_id):
+    """
+    use case function
+    """
+
+    print("\n\n" + 150 * "#")
+    print("LOAD EXISTING PROJECT")
+    print(f"user_id: {user_id}\nproject_id: {project_id}")
+    print(150 * "#"+"\n")
+
+    example = {"user_id": user_id, "id" : project_id}
+    # create ProjectManager instance for loaded resource:
+    try:
+        project = ProjectManager(**example)
+
+    except DatabaseEntryError as e:
+        # this exception is thrown whne trying to add new ProjectManager with same name into the database (for same user)
+        # pass the error message to the user ... some pop-up window with the message
+        print(e.message)
+        pass
+    except NotImplementedError:
+        print(
+            f"Publisher of requested DOI record related files 'is not supported.\nCurrently implemented publishers: {[', '.join([k for k in PublisherFactory.publishers.keys()])]}")
+
+    else:
+
+        # show the whole container tree
+        project.showContainerTree()
+
+        #show paths of files and related containers
+        project.showFilesStructure()
+        # # change Resource name ... testing
+        # project.name = "Jonas' dissertation"
+        # project.updateDBrecord()
+
+    return project
 
 
 if __name__ == "__main__":
-    print("\n"+40*"|/|\\"+"\n\n")
-    # example DOI records that can be published
+    # user identifier that will be later managed by some login framework in streamlit
+    # it's needed for loading ProjectManagers from database - user can access only own resources
+    user_id = 1
+    # database connection to load/save
+    dbcon = DBconnector()
+    # show current saver resources of user
+    dbcon.printUserInfo(user_id)
+
+    # example DOI records that can be used
     example_1 = {"name": "Jonas Lenz's dissertation package", "doi": "10.5281/zenodo.6654150"}
-    example_2 = {"name": "Michael Schmuker's neuromorphic_classifiers", "doi": "10.5281/zenodo.18726"} # more lightweight repo
-    example_3 = {"name": "Ries et al.", "doi": "10.6094/unifr/151460"}
+    example_2 = {"name": "", "doi": "10.5281/zenodo.6654150"}
+    example_3 = {"name": "Michael Schmuker's neuromorphic_classifiers", "doi": "10.5281/zenodo.18726"}  # more lightweight repo
+    example_4 = {"name": "Ries et al.", "doi": "10.6094/unifr/151460"}
 
-    ###### the resource initiation #####################
-    # create ResourceManager instance for newly established resource:
-    RM = ResourceManager(**example_1)
-    # on initiation (or change of DOI) the RM:
-        # loads information about files that are part of the DOI provided
-        # unpacks archives
-        # goes through the files, recognizes their type
-        # creates ContainerHandler instances for all of them
-            # ContainerHandlers execute inner structure recognition and fill their properties acoording to type
-        # create the content tree of the ResourceManager - this tree should be returned to the frontend to display it to the user
+    # do the use case
+    # project1 = establish_new_project(user_id, **example_1)
+    # project2 = establish_new_project(user_id, **example_3)
 
-        # loads metadata information that are part of data obtained from DOI record or data host record
 
-    print(f"Newly established resource's ID is {RM.id}")
-    # download files associated with the publisher record
-    RM.downloadPublishedFiles()
-    # # show the whole container tree
-    # RM.showContainerTree()
+    load_existing_project(user_id, 1)
 
 
 
-    # create ResourceManager instance for resource already existing in DB - loading resource:
-    # RM = ResourceManager(id=1)
 
-    # new empty dataset is created and added to the ResourceManager
-    newDataset = RM.newDataset("Dataset test 1")
-    # add some containers from the ResourceManager - will be done through the GUI
-    newDataset.addContainers(RM.getContainerByID([1, 2, 6]))
+    # print("all containers:\n{}".format('\n'.join([str(c) for c in ContainerHandlerFactory.containers.values()])))
 
-    # show the dataset's container tree
-    newDataset.showContainerTree()
-    newDataset.getCrawled()
+
 
 
     ###### dataset metadata structure mapping ################

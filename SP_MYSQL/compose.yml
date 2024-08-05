@@ -1,0 +1,21 @@
+# docker run command
+# docker run -p 3306:3306 -p 33060:33060 --name SP_MY8.0 -e MYSQL_ROOT_PASSWORD=root -e MYSQL_USER=soilpulse -e MYSQL_PASSWORD=NFDI4earth -e MYSQL_DATABASE=soilpulse -d mysql:8.0.39
+
+services:
+  SP_MY8.0fromcompose:
+    image: mysql:8.0.39
+    ports:
+      - "3306:3306"
+      - "33060:33060"
+    environment:
+      MYSQL_ROOT_PASSWORD: 'root'
+      MYSQL_USER: 'soilpulse'
+      MYSQL_PASSWORD: 'NFDI4earth'
+      MYSQL_DATABASE: 'soilpulse'
+    healthcheck:
+# two options: 1 check if admin user can be pinged, 2 check if tables exist in database soilpulse - both dont seem to wait until mysql is really healthy (Postgres has nicer options there, compare https://github.com/VForWaTer/tool_vforwater_loader/commit/7bfa4919f4caa07e1faf102844dac0cc6f0ca88a)
+      test: mysqladmin ping -h'localhost' --user=soilpulse --password=NFDI4earth
+#      test: "/usr/bin/mysql --user=soilpulse --password=NFDI4earth --execute 'SHOW DATABASES;'"
+      interval: 10s
+      timeout: 20s
+      retries: 10

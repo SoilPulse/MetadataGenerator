@@ -10,15 +10,96 @@ It pickles to cache metadata.
 """
 
 import streamlit as st
+import streamlit_tree_select
 
-st.title("Welcome to SoilPulse!")
+import SoilPulse_middle as sp
 
-st.write("SoilPulse allows you to create and maintain metadata for your\
-         dataset, so it can be made machine readable.")
-st.link_button("Start Generator", "./Metadata_retriever")
-st.write("You can also explore and query all datasets, which are made machine\
-         readable through SoilPulse. --> See Explorer")
-st.link_button("Start Explorer", "./Explorer")
+st.set_page_config(layout="wide")
+
+# use session state as work around for single container selection
+# https://github.com/Schluca/streamlit_tree_select/issues/1#issuecomment-1554552554
+
+if "selected" not in st.session_state:
+    st.session_state.selected = []
+if "expanded" not in st.session_state:
+    st.session_state.expanded = []
+
+# Frontend imlementation
+
+c1, c2 = st.columns((8, 3), gap="large")
+
+
+with st.sidebar:
+    st.title("Welcome to SoilPulse!")
+    # dialog to create new dataset
+    with st.expander("Add dataset"):
+        st.session_state['new_name'] = st.text_input("Dataset Name")
+        st.session_state['new_doi'] = st.text_input("Dataset DOI")
+        if st.button(
+            "Add Dataset",
+            disabled=st.session_state['new_doi'] == "" or
+            st.session_state['new_name'] == ""
+        ):
+            sp._add_dataset(
+                st.session_state['new_doi'],
+                st.session_state['new_name'])
+
+# show trees of all Datasets
+with st.sidebar:
+
+    # build and show tree of selectable containers
+    selected = streamlit_tree_select.tree_select(
+        sp._create_tree("./catalogue/"),
+        no_cascade=True,
+        checked=st.session_state.selected,
+        expanded=st.session_state.expanded
+        )
+
+    # use session state as work around for single container selection
+    if len(selected["checked"]) > 1:
+        st.session_state.selected = [x for x in selected["checked"] if x != st.session_state.selected[0]][0:1]
+        st.session_state.expanded = selected["expanded"]
+        st.rerun()
+    elif len(selected["expanded"]) != len(st.session_state.expanded):
+        st.session_state.expanded = selected["expanded"]
+        st.rerun()
+    else:
+        st.session_state.selected = selected["checked"]
+        st.session_state.expanded = selected["expanded"]
+
+    # it should be clear which dataset (instance of ressource manger) is active
+    dataset = sp._getdatasetofcontainer(st.session_state.selected)
+
+
+with c1:
+    # container editing
+    with st.container(border = True):
+        st.header("Container Settings")
+        sp._show_container_content(st.session_state.selected)
+        if st.button("Save Changes for this container locally"):
+            sp._update_container(st.session_state.selected)
+        if st.button("Reset changes on this container"):
+            sp._reload_container(st.session_state.selected)
+
+    # container data visualisation
+    with st.container(border = True):
+        st.header("Included Data")
+        # get agrovoc concepts in container for selection of visualisation target
+        agrovoc = ["Corg", "Bulk"]
+        mainID = "experiment ID"
+        datasets = st.multiselect(
+            "Concept availble in",
+            options=sp._get_datasets_by_concept("agrovoc"),
+            )
+        sp._visualize_data(st.session_state.selected, mainID, agrovoc, datasets)
+
+
+with c2:
+    if st.button("Apply all changes on "+dataset+" to local DB"):
+        sp._update_local_db(dataset)
+    if st.button("Reset all changes to "+dataset):
+        sp._reload_local_db(dataset)
+
 
 # here the starting point options should be available:
 # and does action according to option selected in the first step
