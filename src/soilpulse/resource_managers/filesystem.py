@@ -93,7 +93,8 @@ class FileSystemContainer(ContainerHandler):
     containerFormat = "File system"
     keywordsDBname = "keywords_filesystem"
 
-    DBfields = {"path": ["text", 255]}
+    # dictionary of DB fields needed to save this subclass instance attributes
+    DBfields = {"relative_path": ["text", 255]}
 
     @classmethod
     def getSpecializedSubclassType(cls, **kwargs):
@@ -117,9 +118,10 @@ class FileSystemContainer(ContainerHandler):
 
     def __init__(self, project_manager, parent_container, **kwargs):
         super(FileSystemContainer, self).__init__(project_manager, parent_container, **kwargs)
-        # the file path
+        # file path relative to project temp directory
         self.path = kwargs["path"]
-        self.project.containersOfPaths.update({self.path: self.id})
+        self.rel_path = self.path.replace(project_manager.temp_dir+os.path.sep, "")
+        self.project.containersOfPaths.update({self.rel_path: self.id})
         # get other useful properties of the file (size, date of creation ...)
         self.size = None
         self.dateCreated = datetime.datetime.fromtimestamp(os.path.getctime(self.path))
@@ -127,7 +129,8 @@ class FileSystemContainer(ContainerHandler):
         self.fileExtension = get_file_extension(self.path)
         self.containers = []
 
-        self.serializationDict = {"path": self.path}
+        # dictionary of attribute names to be used for DB save/update - current values need to be obtained at right before saving
+        self.serializationDict = {"relative_path": "rel_path"}
 
     def showContents(self, depth=0, ind=". "):
         """
@@ -279,6 +282,7 @@ class ArchiveFileContainer(FileSystemContainer):
             # unpack and create the containers from content if not already on the storage
             self.containers = self.unpack(self.path, project_manager)
 
+
     def getMimeType(self):
         # self.mimeType = magic.from_file(self.path)
         return
@@ -324,8 +328,12 @@ class ArchiveFileContainer(FileSystemContainer):
         if same_dir:
             outDir = os.path.dirname(archive_path)
         else:
-            extractDirName = "_".join(os.path.basename(archive_path).split("."))
-            outDir = target_dir if target_dir else os.path.join(os.path.dirname(archive_path), extractDirName)
+            extractDirName = os.path.basename(archive_path).replace(".", "_")
+            if target_dir is not None:
+                outDir = target_dir
+                extractDirName = os.path.basename(target_dir)
+            else:
+                outDir = os.path.join(os.path.dirname(archive_path), extractDirName)
 
 
         # container name representing the original archive
@@ -336,9 +344,7 @@ class ArchiveFileContainer(FileSystemContainer):
 
                 if not os.path.exists(outDir):
                     os.makedirs(outDir)
-                print(f"outDir = {outDir}")
                 filename = ".".join(cont_name.split(".")[:-1])
-                print(f"filename = {filename}")
                 out_path = os.path.join(outDir, filename)
 
                 print(f"Extracting '{os.path.basename(archive_path)}' to '{out_path}'")
@@ -347,6 +353,7 @@ class ArchiveFileContainer(FileSystemContainer):
                     with open(out_path, 'wb') as f_out:
                         shutil.copyfileobj(f_in, f_out)
                 self.path = out_path
+                self.rel_path = extractDirName
                 output_tree = self.createTree(out_path, project_manager)
 
             elif archive_path.endswith(".tar.gz"):
@@ -354,12 +361,14 @@ class ArchiveFileContainer(FileSystemContainer):
                 with tarfile.open(archive_path, 'r:gz') as tar:
                     tar.extractall(path=outDir)
                 self.path = outDir
+                self.rel_path = extractDirName
                 output_tree = self.createTree(outDir, project_manager)
 
             else:
                 print(f"Extracting '{os.path.basename(archive_path)}' to '{outDir}'")
                 shutil.unpack_archive(archive_path, outDir)
                 self.path = outDir
+                self.rel_path = extractDirName
                 output_tree = self.createTree(outDir, project_manager)
 
         except OSError as err:

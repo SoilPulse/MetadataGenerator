@@ -51,11 +51,11 @@ class DBconnector:
     # password of the user
     pwd = "NFDI4earth"
 
-    projectsTableName = "projects"
-    userProjectsTableName = "user_projects"
-    userTableName = "users"
-    containersTableName = "containers"
-    datasetsTableName = "datasets"
+    projectsTableName = "`projects`"
+    userProjectsTableName = "`user_projects`"
+    userTableName = "`users`"
+    containersTableName = "`containers`"
+    datasetsTableName = "`datasets`"
 
 
     def __init__(self):
@@ -81,7 +81,7 @@ class DBconnector:
 
     def getUserNameByID(self, id):
         thecursor = self.db_connection.cursor()
-        query = f"SELECT `first_name`, `last_name` FROM `{DBconnector.userTableName}` WHERE `id` = {id}"
+        query = f"SELECT `first_name`, `last_name` FROM {DBconnector.userTableName} WHERE `id` = {id}"
         thecursor.execute(query)
         results = thecursor.fetchall()
 
@@ -98,9 +98,9 @@ class DBconnector:
         :return: dictionary of ProjectManagers info {Project id: Project name, ...}
         """
         thecursor = self.db_connection.cursor()
-        query = f"SELECT `{DBconnector.userProjectsTableName}`.`project_id`, `{DBconnector.projectsTableName}`.`name` FROM `{DBconnector.userProjectsTableName}` "\
-              f"JOIN `{DBconnector.projectsTableName}` ON `{DBconnector.projectsTableName}`.`id` = `{DBconnector.userProjectsTableName}`.`project_id` "\
-              f"WHERE `{DBconnector.userProjectsTableName}`.`user_id` = {user_id}"
+        query = f"SELECT {DBconnector.userProjectsTableName}.`project_id`, {DBconnector.projectsTableName}.`name` FROM {DBconnector.userProjectsTableName} "\
+              f"JOIN {DBconnector.projectsTableName} ON {DBconnector.projectsTableName}.`id` = {DBconnector.userProjectsTableName}.`project_id` "\
+              f"WHERE {DBconnector.userProjectsTableName}.`user_id` = {user_id}"
         thecursor.execute(query)
         results = thecursor.fetchall()
 
@@ -121,7 +121,7 @@ class DBconnector:
         :return: list of dataset names [ID, ... ]
         """
         thecursor = self.db_connection.cursor()
-        query = f"SELECT `name` FROM `{DBconnector.datasetsTableName}` "\
+        query = f"SELECT `name` FROM {DBconnector.datasetsTableName} "\
               f"WHERE `project_id` = {project_id}"
         thecursor.execute(query)
         results = thecursor.fetchall()
@@ -169,7 +169,7 @@ class DBconnector:
 
         # insert line to `projects` table
         # execute the query
-        query = f"INSERT INTO `{DBconnector.projectsTableName}` (`name`, `doi`) VALUES (%s, %s)"
+        query = f"INSERT INTO {DBconnector.projectsTableName} (`name`, `doi`) VALUES (%s, %s)"
         values = [prj.name, prj.doi]
         thecursor.execute(query, values)
         # insert queries must be committed
@@ -181,7 +181,7 @@ class DBconnector:
             prj.id = nid[0]
 
         # insert line to `user_projects` table
-        query = f"INSERT INTO `{DBconnector.userProjectsTableName}` (`user_id`, `project_id`) VALUES (%s, %s)"
+        query = f"INSERT INTO {DBconnector.userProjectsTableName} (`user_id`, `project_id`) VALUES (%s, %s)"
         values = [user_id, prj.id]
         thecursor.execute(query, values)
         self.db_connection.commit()
@@ -204,23 +204,23 @@ class DBconnector:
         # or when duplicit with another project name of the same user
         thecursor = self.db_connection.cursor()
         # check for name duplicity
-        query = f"SELECT COUNT(*) FROM `{DBconnector.projectsTableName}` " \
-                f"JOIN `{DBconnector.userProjectsTableName}` ON `{DBconnector.projectsTableName}`.`id` = `{DBconnector.userProjectsTableName}`.`project_id` " \
-                f"WHERE `{DBconnector.userProjectsTableName}`.`user_id`  = {prj.ownerID} " \
-                f"AND `{DBconnector.projectsTableName}`.`id` <> %s " \
-                f"AND `{DBconnector.projectsTableName}`.`name` = %s"
+        query = f"SELECT COUNT(*) FROM {DBconnector.projectsTableName} " \
+                f"JOIN {DBconnector.userProjectsTableName} ON {DBconnector.projectsTableName}.`id` = {DBconnector.userProjectsTableName}.`project_id` " \
+                f"WHERE {DBconnector.userProjectsTableName}.`user_id`  = {prj.ownerID} " \
+                f"AND {DBconnector.projectsTableName}.`id` <> %s " \
+                f"AND {DBconnector.projectsTableName}.`name` = %s"
         thecursor.execute(query, [prj.id, prj.name])
 
         count = thecursor.fetchone()[0]
         if count > 0:
             update_name = False
 
-        newValues = {"doi": prj.getDOI(), "temp_dir": prj.tempDir}
+        newValues = {"doi": prj.getDOI(), "temp_dir": prj.temp_dir, "keep_files": (1 if prj.keepFiles else 0)}
         if update_name:
             newValues.update({"name": prj.name})
 
         thecursor.reset()
-        query = f"UPDATE `{DBconnector.projectsTableName}` SET "
+        query = f"UPDATE {DBconnector.projectsTableName} SET "
         query += ", ".join([f"`{key}` = %s" for key in newValues.keys()])
         query += " WHERE `id` = %s"
 
@@ -238,34 +238,30 @@ class DBconnector:
 
         :param project: the Project instance to be loaded from DB
         :param cascade: whether to load all contents
-        :return: instance of
+        :return: instance of the input Project with filled attributes
         """
 
         thecursor = self.db_connection.cursor(dictionary=True)
 
-        query = f"SELECT * FROM `{DBconnector.projectsTableName}` " \
-                f"WHERE `id` = {project.id} "
+        query = f"SELECT * FROM {DBconnector.projectsTableName} WHERE `id` = {project.id}"
+        print(query)
+
         thecursor.execute(query)
+        result = thecursor.fetchone()
+        thecursor.close()
+        if result is None:
+            raise DatabaseFetchError(f"No record found in saved projects for given ID {project.id}")
+        else:
+            project.name = result["name"]
+            project.temp_dir = result["temp_dir"]
 
-        results = thecursor.fetchall()
-
-        if thecursor.rowcount > 0:
-            project.name = results[0]["name"]
-
-            if results[0]["temp_dir"] is None:
+            if result["keep_files"] == 0:
                 project.keepFiles = False
-                project.tempDir = None
             else:
                 project.keepFiles = True
-                project.tempDir = results[0]["temp_dir"]
 
-            thecursor.close()
-        else:
-            thecursor.close()
-            raise DatabaseFetchError(f"No record found in saved projects for given ID {project.id}")
-
-        if cascade:
-            project.containerTree = self.loadChildContainers(project, parent_container=None)
+            if cascade:
+                project.containerTree = self.loadChildContainers(project, parent_container=None)
 
         return
 
@@ -273,14 +269,15 @@ class DBconnector:
         out_container_list = []
         thecursor = self.db_connection.cursor(dictionary=True)
 
-        query = f"SELECT * FROM `{DBconnector.containersTableName}` " \
+        query = f"SELECT * FROM {DBconnector.containersTableName} " \
                 f"WHERE `project_id` = {project.id}"
         query += f" AND `parent_id_local` IS NULL" if parent_container is None else f" AND `parent_id_local` = {parent_container.id}"
 
         thecursor.execute(query)
         results = thecursor.fetchall()
+        thecursor.close()
 
-        if thecursor.rowcount > 0:
+        if len(results) > 0:
             for cont in results:
                 # replace the global id from DB by project scope 'id_local'
                 del(cont["id"])
@@ -288,7 +285,12 @@ class DBconnector:
                 # delete properties that are being handled different ways
                 del (cont["parent_id_local"])
                 del (cont["project_id"])
-
+                # replace relative path stored in DB by absolute path needed for proper container creation in factory
+                rel_path = cont.pop("relative_path")
+                print(rel_path)
+                abs_path = os.path.join(project.temp_dir, rel_path) if rel_path is not None else None
+                print(abs_path)
+                cont.update({"path": abs_path})
                 cont_type = cont.get("type")
 
                 newCont = project.containerFactory.createHandler(cont_type, project, parent_container, cascade=False, **cont)
@@ -313,7 +315,7 @@ class DBconnector:
         :param project_id: ID of project the container belongs to
         """
         thecursor = self.db_connection.cursor()
-        query = f"SELECT COUNT(*) FROM `{DBconnector.containersTableName}` " \
+        query = f"SELECT COUNT(*) FROM {DBconnector.containersTableName} " \
                 f"WHERE `id_local` = %s " \
                 f"AND `project_id` = %s"
         values = [cont_id, project_id]
@@ -335,7 +337,7 @@ class DBconnector:
         :param project_id: ID of project the container belongs to
         """
         thecursor = self.db_connection.cursor()
-        query = f"SELECT COUNT(*) FROM `{DBconnector.datasetsTableName}` " \
+        query = f"SELECT COUNT(*) FROM {DBconnector.datasetsTableName} " \
                 f"WHERE `name` = %s " \
                 f"AND `project_id` = %s"
         values = [name, project_id]
@@ -356,11 +358,12 @@ class DBconnector:
         # set the general core of properties to be stored
         arglist = {"type": container.containerType, "name": container.name, "parent_id_local": container.parentContainer.id if container.parentContainer is not None else None}
         # add container subclass specific properties to be stored
-        arglist.update(container.serializationDict)
+        for db_key, attr_key in container.serializationDict.items():
+            arglist.update({db_key: str(getattr(container, attr_key))})
 
         # update properties if the container already exists
         if self.containerRecordExists(container.id, container.project.id):
-            query = f"UPDATE `{DBconnector.containersTableName}` SET "
+            query = f"UPDATE {DBconnector.containersTableName} SET "
             query += ", ".join([f"`{key}` = %s" for key in arglist.keys()])
             query += " WHERE `id_local` = %s AND project_id = %s"
 
@@ -371,7 +374,7 @@ class DBconnector:
         else:
             arglist.update({"id_local": container.id, "project_id": container.project.id})
 
-            query = f"INSERT INTO `{DBconnector.containersTableName}` ("
+            query = f"INSERT INTO {DBconnector.containersTableName} ("
             query += ", ".join([f"`{key}`" for key in arglist])
             query += f") VALUES ("
             query += ", ".join(["%s" for key in arglist])+")"
@@ -391,7 +394,7 @@ class DBconnector:
 
         # update properties if the container already exists
         if self.containerRecordExists(dataset.name, dataset.project.id):
-            query = f"UPDATE `{DBconnector.datasetsTableName}` SET "
+            query = f"UPDATE {DBconnector.datasetsTableName} SET "
             query += ", ".join([f"`{key}` = %s" for key in arglist.keys()])
             query += " WHERE `id_local` = %s AND project_id = %s"
 
@@ -402,7 +405,7 @@ class DBconnector:
         else:
             arglist.update({"name": dataset.name, "project_id": dataset.project.id})
 
-            query = f"INSERT INTO `{DBconnector.datasetsTableName}` ("
+            query = f"INSERT INTO {DBconnector.datasetsTableName} ("
             query += ", ".join([f"`{key}`" for key in arglist])
             query += f") VALUES ("
             query += ", ".join(["%s" for key in arglist])+")"
