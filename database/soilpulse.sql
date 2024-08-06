@@ -16,7 +16,7 @@ CREATE TABLE `containers` (
   `parent_id_local` int(11) DEFAULT NULL,
   `project_id` int(11) NOT NULL,
   `path` varchar(255) DEFAULT NULL,
-  `content` varchar(2047) DEFAULT NULL,
+  `content` varchar(8047) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `parent_id` (`parent_id_local`),
   KEY `project_id` (`project_id`),
