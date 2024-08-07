@@ -43,4 +43,4 @@ def test_initDB():
 def test_getUser():
     db = db_access.DBconnector()
     user = db.getUserNameByID(1)
-    assert (user[0][0] == 'J' and user[1][0] == 'D')
+    assert (user[0][0] == 'D' and user[1][0] == 'U')

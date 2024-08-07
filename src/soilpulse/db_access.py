@@ -474,20 +474,20 @@ class EntitySearchPatternsDB:
         :return: dictionary of regular expression patterns with group names {unique group name: search pattern, ...}
         """
         # get the cursor for current connection
-        with cls.connect() as conn:
-            thecursor = conn.cursor()
-            # execute the query and fetch the results
-            query = f"select group_name, search_pattern from search_patterns where entity_id = '{entityClass.ID}'"
-            thecursor.execute(query)
-            results = thecursor.fetchall()
-            if len(results) > 0:
-                patterns = {}
-                for pat in results:
-                    patterns.update({entityClass.key+"_"+pat[0]: str(pat[1])})
-                return patterns
-            else:
-                # raise DatabaseFetchError("No search strings found for entity_id = '{}' ({})".format(entity.ID, entity.name))
-                return None
+#        with cls.connect() as conn:
+#            thecursor = conn.cursor()
+#            # execute the query and fetch the results
+#            query = f"select group_name, search_pattern from search_patterns where entity_id = '{entityClass.ID}'"
+#            thecursor.execute(query)
+#            results = thecursor.fetchall()
+#            if len(results) > 0:
+#                patterns = {}
+#                for pat in results:
+#                    patterns.update({entityClass.key+"_"+pat[0]: str(pat[1])})
+#                return patterns
+#            else:
+#                # raise DatabaseFetchError("No search strings found for entity_id = '{}' ({})".format(entity.ID, entity.name))
+#                return None
         return None
 
 class EntityKeywordsDB:

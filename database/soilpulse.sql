@@ -4,7 +4,6 @@ SET NAMES utf8;
 SET time_zone = '+00:00';
 SET foreign_key_checks = 0;
 
-CREATE DATABASE `soilpulse` /*!40100 DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci */;
 USE `soilpulse`;
 
 CREATE TABLE `containers` (
@@ -75,6 +74,9 @@ CREATE TABLE `users` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
+
+INSERT INTO `users` (`id`, `username`, `first_name`, `last_name`) VALUES
+(1, 'DemoUser', 'Demo', 'User');
 
 CREATE TABLE `user_projects` (
   `user_id` int(11) NOT NULL,

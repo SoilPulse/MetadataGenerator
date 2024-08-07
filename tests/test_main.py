@@ -4,13 +4,13 @@
 """
 
 from soilpulse.project_management import *
-from src.soilpulse.resource_managers.filesystem import *
-from src.soilpulse.resource_managers.mysql import *
-from src.soilpulse.resource_managers.xml import *
-from src.soilpulse.resource_managers.json import *
-from src.soilpulse.data_publishers import *
-from src.soilpulse.metadata_scheme import *
-from src.soilpulse.db_access import EntityKeywordsDB, DBconnector
+from soilpulse.resource_managers.filesystem import *
+from soilpulse.resource_managers.mysql import *
+from soilpulse.resource_managers.xml import *
+from soilpulse.resource_managers.json import *
+from soilpulse.data_publishers import *
+from soilpulse.metadata_scheme import *
+from soilpulse.db_access import EntityKeywordsDB, DBconnector
 
 def establish_new_project(user_id, **example):
     """
