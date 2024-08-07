@@ -10,6 +10,9 @@ class MySQLContainer(ContainerHandler):
     containerFormat = "MySQL"
     keywordsDBname = "keywords_mysql"
 
+    # dictionary of DB fields needed to save this subclass instance attributes
+    DBfields = {}
+
     def __init__(self, id, name):
         super(MySQLContainer, self).__init__(id, name)
         self.databaseName = None
@@ -17,6 +20,7 @@ class MySQLContainer(ContainerHandler):
         self.foreignKeys = []
         self.crawler = MySQLcrawler(self)
 
+        self.serializationDict = {}
 
     def showContents(self):
         pass

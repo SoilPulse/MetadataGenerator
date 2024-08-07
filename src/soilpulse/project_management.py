@@ -11,12 +11,14 @@ from .db_access import DBconnector
 from .exceptions import DOIdataRetrievalException, LocalFileManipulationError, ContainerStructureError, DatabaseEntryError, NameNotUniqueError, DatabaseFetchError
 
 # general variables
-general_path_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 project_files_dir_name = "project_files"
+project_files_root = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), project_files_dir_name)
 
-def get_temp_dir_path(id):
-    return os.path.join(general_path_root, project_files_dir_name, id)
+doi_metadata_key = "DOI metadata"
+publisher_metadata_key = "Publisher metadata"
 
+if not os.path.exists(project_files_root):
+    os.mkdir(project_files_root)
 
 class ProjectManager:
     """
@@ -25,6 +27,7 @@ class ProjectManager:
     """
 
     def __init__(self, user_id, **kwargs):
+        self.initialized = False
         # on initialization load Project from DB or establish a new one
         self.dbconnection = DBconnector()
         self.ownerID = user_id
@@ -67,13 +70,13 @@ class ProjectManager:
                 raise
             except NameNotUniqueError:
                 print(f"Project with name \"{kwargs.get('name')}\" already exists. Use unique names for your projects!")
+            else:
+                self.initialized = True
+                # dedicated directory where files can be stored
+                self.temp_dir = os.path.join(project_files_root, str(self.id))
 
-            # dedicated directory where files can be stored
-            self.tempDir = os.path.join(general_path_root, project_files_dir_name, str(self.id))
-            if not os.path.exists(os.path.join(general_path_root, project_files_dir_name)):
-                os.mkdir(os.path.join(general_path_root, project_files_dir_name))
+                self.setDOI(kwargs.get("doi"))
 
-            self.setDOI(kwargs.get("doi"))
 
         else:
             # Load the existing project properties from the database
@@ -85,19 +88,21 @@ class ProjectManager:
                 print(f"\n\nERROR LOADING PROJECT {kwargs.get('id')}")
                 print(e.message)
                 sys.exit()
-                pass
+            else:
+                self.initialized = True
         return
 
 
     def __del__(self):
-        if hasattr(self, "keepFiles"):
-            if not self.keepFiles:
-                print(f"\n\nDeleting project files because we can't keep them :-(")
-                failed = self.deleteAllProjectFiles()
-                if len(failed) > 0:
-                    print(f"following files couldn't be deleted:")
-                    for f in failed:
-                        print(f"\t{f}")
+        if self.initialized:
+            if hasattr(self, "keepFiles"):
+                if not self.keepFiles:
+                    print(f"\n\nDeleting project files because we can't keep them :-(")
+                    failed = self.deleteAllProjectFiles()
+                    if len(failed) > 0:
+                        print(f"following files couldn't be deleted:")
+                        for f in failed:
+                            print(f"\t{f}")
 
     def __str__(self):
         out = f"\nProject #{self.id} {70 * '='}\n"
@@ -158,14 +163,14 @@ class ProjectManager:
             # populate the metadata properties
             self.DOImetadata = self.getDOImetadata(doi)
             # append the DOI metadata JSON container to the ProjectManagers containers
-            self.containerTree.append(self.containerFactory.createHandler("json", name="DOI metadata", project_manager=self, parent_container=None, content=self.DOImetadata, path=None))
+            self.containerTree.append(self.containerFactory.createHandler("json", name=doi_metadata_key, project_manager=self, parent_container=None, content=self.DOImetadata, path=None))
 
             # populate publisher with Publisher class instance
             self.publisher = self.getPublisher(self.DOImetadata)
             self.publisherMetadata = self.getPublisherMetadata()
 
             # append the publisher metadata JSON container to the ProjectManagers containers
-            self.containerTree.append(self.containerFactory.createHandler("json", name=f"Publisher metadata", project_manager=self, parent_container=None, content=self.publisherMetadata, path=None))
+            self.containerTree.append(self.containerFactory.createHandler("json", name=publisher_metadata_key, project_manager=self, parent_container=None, content=self.publisherMetadata, path=None))
             # get downloadable files information from publisher
             self.publishedFiles = self.publisher.getFileInfo()
         else:
@@ -310,8 +315,8 @@ class ProjectManager:
                 # create the target directory if not exists
                 print("downloading remote files to local storage ...")
 
-                if not os.path.isdir(self.tempDir):
-                    os.mkdir(self.tempDir)
+                if not os.path.isdir(self.temp_dir):
+                    os.mkdir(self.temp_dir)
                 fileList = []
                 if not list:
                     for sourceFile in self.publishedFiles:
@@ -319,7 +324,7 @@ class ProjectManager:
                         # any file name manipulation can be performed here
                         filename = sourceFile.filename.replace("\\/<[^>]*>?", "_")
 
-                        local_path = os.path.join(self.tempDir, filename)
+                        local_path = os.path.join(self.temp_dir, filename)
 
                         try:
                             response = requests.get(url+"/content")

@@ -10,9 +10,14 @@ class XMLContainer(ContainerHandler):
     containerFormat = "XML"
     keywordsDBname = "keywords_xml"
 
+    # dictionary of DB fields needed to save this subclass instance attributes
+    DBfields = {}
+
     def __init__(self, id, name):
         super(XMLContainer, self).__init__(id, name)
         self.crawler = XMLcrawler(self)
+
+        self.serializationDict = {}
 
     def showContents(self):
         pass
