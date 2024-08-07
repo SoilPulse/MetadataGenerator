@@ -25,7 +25,6 @@ CREATE TABLE `containers` (
 
 CREATE TABLE `datasets` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_local` int(11) NOT NULL,
   `name` varchar(255) NOT NULL,
   `project_id` int(11) NOT NULL,
   `container_ids` varchar(1023) DEFAULT NULL,
