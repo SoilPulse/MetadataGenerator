@@ -390,7 +390,7 @@ class DBconnector:
 
         thecursor = self.db_connection.cursor()
         idListString =  "|".join([str(cid) for cid in dataset.getContainerIDsList()])
-        arglist = {"name": dataset.name, "project_id": dataset.project.id, "container_ids": idListString}
+        arglist = {"id_local": 3,"name": dataset.name, "project_id": dataset.project.id, "container_ids": idListString}
 
         # update properties if the container already exists
         if self.containerRecordExists(dataset.name, dataset.project.id):
