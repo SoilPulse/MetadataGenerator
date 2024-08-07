@@ -3,8 +3,8 @@
 SET NAMES utf8;
 SET time_zone = '+00:00';
 SET foreign_key_checks = 0;
+SET sql_mode = 'NO_AUTO_VALUE_ON_ZERO';
 
-CREATE DATABASE `soilpulse` /*!40100 DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci */;
 USE `soilpulse`;
 
 CREATE TABLE `containers` (
@@ -62,7 +62,7 @@ CREATE TABLE `projects` (
   `name` varchar(255) NOT NULL,
   `doi` varchar(255) DEFAULT NULL,
   `temp_dir` varchar(255) DEFAULT NULL,
-  `keep_files` tinyint(1) NOT NULL,
+  `keep_files` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci COMMENT='stores information about resources';
 
@@ -75,6 +75,8 @@ CREATE TABLE `users` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
+INSERT INTO `users` (`id`, `username`, `first_name`, `last_name`) VALUES
+(1,	'DemoUser',	'Demo',	'User');
 
 CREATE TABLE `user_projects` (
   `user_id` int(11) NOT NULL,
@@ -86,4 +88,4 @@ CREATE TABLE `user_projects` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 
--- 2024-08-06 20:35:15
+-- 2024-08-07 07:44:13
