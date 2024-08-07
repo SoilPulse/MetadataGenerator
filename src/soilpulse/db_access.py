@@ -244,7 +244,6 @@ class DBconnector:
         thecursor = self.db_connection.cursor(dictionary=True)
 
         query = f"SELECT * FROM {DBconnector.projectsTableName} WHERE `id` = {project.id}"
-        print(query)
 
         thecursor.execute(query)
         result = thecursor.fetchone()
@@ -287,9 +286,7 @@ class DBconnector:
                 del (cont["project_id"])
                 # replace relative path stored in DB by absolute path needed for proper container creation in factory
                 rel_path = cont.pop("relative_path")
-                print(rel_path)
                 abs_path = os.path.join(project.temp_dir, rel_path) if rel_path is not None else None
-                print(abs_path)
                 cont.update({"path": abs_path})
                 cont_type = cont.get("type")
 
