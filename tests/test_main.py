@@ -3,14 +3,14 @@
 @author: Jan Devátý, Jonas Lenz
 """
 
-from soilpulse.project_management import *
-from soilpulse.resource_managers.filesystem import *
-from soilpulse.resource_managers.mysql import *
-from soilpulse.resource_managers.xml import *
-from soilpulse.resource_managers.json import *
-from soilpulse.data_publishers import *
-from soilpulse.metadata_scheme import *
-from soilpulse.db_access import EntityKeywordsDB, DBconnector
+from soilpulse.project_management import ProjectManager, DatabaseEntryError
+import soilpulse.resource_managers.filesystem
+import soilpulse.resource_managers.mysql
+import soilpulse.resource_managers.xml
+import soilpulse.resource_managers.json
+from soilpulse.data_publishers import PublisherFactory, DOIdataRetrievalException
+#import soilpulse.metadata_scheme
+#from soilpulse.db_access import EntityKeywordsDB, DBconnector
 
 def establish_new_project(user_id, **example):
     """
@@ -117,7 +117,15 @@ def test_create_project(**example1):
     assert project1.doi == "10.5281/zenodo.6654150"
 
 
-def notest_create_project2(example4):
+def test_load_project1():
+
+    user_id = 1
+    project1 = load_existing_project(user_id, 1)
+
+    assert project1.doi == "10.5281/zenodo.6654150"
+
+
+def test_create_project2(**example4):
     
     # user identifier that will be later managed by some login framework in streamlit
     # it's needed for loading ProjectManagers from database - user can access only own resources
@@ -127,10 +135,10 @@ def notest_create_project2(example4):
     
     assert project1.doi == "10.6094/unifr/151460"
 
-def notest_load_project(example1):
+
+def test_load_project2():
 
     user_id = 1
-    project1 = load_existing_project(user_id, 2)
+    project1 = load_existing_project(user_id, 1)
     
-    assert project1.doi == "10.5281/zenodo.6654150"
-
+    assert project1.doi == "10.6094/unifr/151460"

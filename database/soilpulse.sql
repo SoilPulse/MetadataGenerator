@@ -75,9 +75,6 @@ CREATE TABLE `users` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 INSERT INTO `users` (`id`, `username`, `first_name`, `last_name`) VALUES
-(1,	'DemoUser',	'Demo',	'User');
-
-INSERT INTO `users` (`id`, `username`, `first_name`, `last_name`) VALUES
 (1, 'DemoUser', 'Demo', 'User');
 
 CREATE TABLE `user_projects` (
