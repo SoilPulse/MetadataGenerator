@@ -16,6 +16,17 @@ import SoilPulse_middle as sp
 
 st.set_page_config(layout="wide")
 
+
+if "user_id" not in st.session_state:
+    st.title("Welcome to SoilPulse")
+    st.write("Here you can make your new data or any legacy dataset FAIR.")
+    st.write("")
+    if st.button("Login as Demo User"):
+        st.session_state.user_id = 1
+        st.rerun()
+    else:
+        st.stop()
+
 # use session state as work around for single container selection
 # https://github.com/Schluca/streamlit_tree_select/issues/1#issuecomment-1554552554
 
