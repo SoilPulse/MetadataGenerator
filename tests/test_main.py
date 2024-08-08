@@ -106,7 +106,7 @@ example_3 = {"name": "Michael Schmuker's neuromorphic_classifiers", "doi": "10.5
 example_4 = {"name": "Ries et al.", "doi": "10.6094/unifr/151460"}
 
 
-def test_create_project(**example1):
+def test_create_project():
 
     # user identifier that will be later managed by some login framework in streamlit
     # it's needed for loading ProjectManagers from database - user can access only own resources
@@ -125,20 +125,20 @@ def test_load_project1():
     assert project1.doi == "10.5281/zenodo.6654150"
 
 
-def test_create_project2(**example4):
+def test_create_project2():
     
     # user identifier that will be later managed by some login framework in streamlit
     # it's needed for loading ProjectManagers from database - user can access only own resources
     user_id = 1
 
-    project1 = establish_new_project(user_id, **example_1)
+    project1 = establish_new_project(user_id, **example_3)
     
-    assert project1.doi == "10.6094/unifr/151460"
+    assert project1.doi == "10.5281/zenodo.18726"
 
 
 def test_load_project2():
 
     user_id = 1
-    project1 = load_existing_project(user_id, 1)
+    project1 = load_existing_project(user_id, 2)
     
-    assert project1.doi == "10.6094/unifr/151460"
+    assert project1.doi == "10.5281/zenodo.18726"
