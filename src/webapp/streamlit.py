@@ -35,6 +35,11 @@ if "selected" not in st.session_state:
 if "expanded" not in st.session_state:
     st.session_state.expanded = []
 
+
+if "projectlist" not in st.session_state:
+    st.session_state.projectlist = sp._getprojects(st.session_state.user_id)
+
+
 # Frontend imlementation
 
 c1, c2 = st.columns((8, 3), gap="large")
@@ -55,9 +60,15 @@ with st.sidebar:
                 st.session_state['new_doi'],
                 st.session_state['new_name'])
 
-# show trees of all Projects
+# select Project
 with st.sidebar:
+    with st.expander("Select Project", expanded = True):
+        project_id = sp._select_project(
+            projectlist = st.session_state.projectlist
+            )
 
+# show tree of Project
+with st.sidebar:
     # build and show tree of selectable containers
     selected = streamlit_tree_select.tree_select(
         sp._create_tree("./catalogue/"),
@@ -83,6 +94,8 @@ with st.sidebar:
 
 
 with c1:
+    if project_id:
+        st.write("On Project:" + st.session_state.projectlist[project_id])
     # container editing
     with st.container(border = True):
         st.header("Container Settings")

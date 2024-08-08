@@ -10,7 +10,20 @@ import streamlit as st
 
 import pandas as pd
 import numpy as np
+from soilpulse import db_access as spdb
 
+
+def _getprojects(user_id):
+    return spdb.DBconnector().getProjectsOfUser(user_id)
+
+
+def _select_project(projectlist):
+    project = st.radio("Select your Project",
+                       options = [x for x in projectlist],
+                       format_func = lambda x: projectlist[x],
+                       index = None
+                       )
+    return project
 
 def _add_project(new_doi, new_name):
     try:
@@ -128,7 +141,6 @@ def _show_container_content(container):
     st.write(container)
     _modify_agrovoc_concept(container)
     pass
-
 
 def _update_container(container):
     pass
