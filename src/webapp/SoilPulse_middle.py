@@ -12,19 +12,19 @@ import pandas as pd
 import numpy as np
 
 
-def _add_dataset(new_doi, new_name):
+def _add_project(new_doi, new_name):
     try:
         path = "./catalogue/"+new_doi+new_name
         os.makedirs(path)
         f = open(path+"/demofile2.txt", "x")
         f.write("Hi from SoilPulse!")
         f.close()
-        st.write("Created Dataset.")
+        st.write("Created Project.")
     except:
-        st.warning("Dataset allready exists.")
+        st.warning("Project allready exists.")
 
 
-def _get__local_datasets():
+def _get__local_projects():
     return ["./catalogue/" + s for s in next(os.walk("./catalogue"))[1]]
 
 
@@ -138,8 +138,8 @@ def _reload_container(container):
     pass
 
 
-def _getdatasetofcontainer(container):
-    return "your fancy dataset"
+def _getprojectofcontainer(container):
+    return "your fancy project"
 
 
 def _get_conceptsofsubcontainers(container):
@@ -162,13 +162,13 @@ def _get_data_for_concept(container, agrovoc):
     return data
 
 
-def _get_datasets_by_concept(agrovoc):
+def _get_projects_by_concept(agrovoc):
     return [2, 3, 4]
 
 
-def _visualize_data(container, mainID, agrovoc, datasets=[]):
+def _visualize_data(container, mainID, agrovoc, projects=[]):
     chart_data = _get_data_for_concept(1, "Runoff")
-    for x in datasets:
+    for x in projects:
         chart_data[str(x)] = _get_data_for_concept(x, "Runoff")[str(x)]
     # chart_data is data got from container
     st.write(chart_data)
@@ -177,9 +177,9 @@ def _visualize_data(container, mainID, agrovoc, datasets=[]):
     pass
 
 
-def _update_local_db(dataset):
+def _update_local_db(project):
     pass
 
 
-def _reload_local_db(dataset):
+def _reload_local_db(project):
     pass

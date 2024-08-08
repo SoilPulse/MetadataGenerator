@@ -31,20 +31,20 @@ c1, c2 = st.columns((8, 3), gap="large")
 
 with st.sidebar:
     st.title("Welcome to SoilPulse!")
-    # dialog to create new dataset
-    with st.expander("Add dataset"):
-        st.session_state['new_name'] = st.text_input("Dataset Name")
-        st.session_state['new_doi'] = st.text_input("Dataset DOI")
+    # dialog to create new project
+    with st.expander("Add project"):
+        st.session_state['new_name'] = st.text_input("Project Name")
+        st.session_state['new_doi'] = st.text_input("Project DOI")
         if st.button(
-            "Add Dataset",
+            "Add Project",
             disabled=st.session_state['new_doi'] == "" or
             st.session_state['new_name'] == ""
         ):
-            sp._add_dataset(
+            sp._add_project(
                 st.session_state['new_doi'],
                 st.session_state['new_name'])
 
-# show trees of all Datasets
+# show trees of all Projects
 with st.sidebar:
 
     # build and show tree of selectable containers
@@ -67,8 +67,8 @@ with st.sidebar:
         st.session_state.selected = selected["checked"]
         st.session_state.expanded = selected["expanded"]
 
-    # it should be clear which dataset (instance of ressource manger) is active
-    dataset = sp._getdatasetofcontainer(st.session_state.selected)
+    # it should be clear which Project (instance of ressource manger) is active
+    project = sp._getprojectofcontainer(st.session_state.selected)
 
 
 with c1:
@@ -87,18 +87,18 @@ with c1:
         # get agrovoc concepts in container for selection of visualisation target
         agrovoc = ["Corg", "Bulk"]
         mainID = "experiment ID"
-        datasets = st.multiselect(
+        projects = st.multiselect(
             "Concept availble in",
-            options=sp._get_datasets_by_concept("agrovoc"),
+            options=sp._get_projects_by_concept("agrovoc"),
             )
-        sp._visualize_data(st.session_state.selected, mainID, agrovoc, datasets)
+        sp._visualize_data(st.session_state.selected, mainID, agrovoc, projects)
 
 
 with c2:
-    if st.button("Apply all changes on "+dataset+" to local DB"):
-        sp._update_local_db(dataset)
-    if st.button("Reset all changes to "+dataset):
-        sp._reload_local_db(dataset)
+    if st.button("Apply all changes on "+project+" to local DB"):
+        sp._update_local_db(project)
+    if st.button("Reset all changes to "+project):
+        sp._reload_local_db(project)
 
 
 # here the starting point options should be available:
@@ -111,15 +111,15 @@ with c2:
         # -> re-establish Resource from state saved in resource metadata mappings database
 
 # webapp gets the container tree from ResourceManager
-# webapp gets the Datasets definition from ResourceManager
+# webapp gets the Projects definition from ResourceManager
 
-# Resource and dataset editing page is displayed (container tree, datasets, Resource's metadata entities)
-# here should be available options for manipulating the datasets
+# Resource and project editing page is displayed (container tree, projects, Resource's metadata entities)
+# here should be available options for manipulating the projects
     # add/edit/remove Resource's metadata entities
-    # create Dataset
-    # delete Dataset
-    # edit Dataset properties (change name, description etc.)
-    # add containers (files, tables ...) to Dataset
+    # create Project
+    # delete Project
+    # edit Project properties (change name, description etc.)
+    # add containers (files, tables ...) to Project
     # remove containers
 
 
