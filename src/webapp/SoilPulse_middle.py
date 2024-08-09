@@ -12,6 +12,13 @@ import pandas as pd
 import numpy as np
 from soilpulse import db_access as spdb
 
+from soilpulse.project_management import ProjectManager, DatabaseEntryError
+import soilpulse.resource_managers.filesystem
+import soilpulse.resource_managers.mysql
+import soilpulse.resource_managers.xml
+import soilpulse.resource_managers.json
+from soilpulse.data_publishers import PublisherFactory, DOIdataRetrievalException
+
 
 def _getprojects(user_id):
     return spdb.DBconnector().getProjectsOfUser(user_id)
@@ -24,6 +31,15 @@ def _select_project(projectlist):
                        index = None
                        )
     return project
+
+
+def _get_project(user_id, project_id):
+    example = {"user_id": user_id, "id" : project_id}
+    project = ProjectManager(**example)
+    project.dbconnection = spdb.DBconnector()
+    project.dbconnection.loadProject(project)
+    return project
+
 
 def _add_project(new_doi, new_name):
     try:
