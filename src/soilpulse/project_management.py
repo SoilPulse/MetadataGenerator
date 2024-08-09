@@ -28,8 +28,6 @@ class ProjectManager:
 
     def __init__(self, user_id, **kwargs):
         self.initialized = False
-        # on initialization load Project from DB or establish a new one
-        self.dbconnection = DBconnector()
         self.ownerID = user_id
         self.name = kwargs.get("name")
 
@@ -62,34 +60,20 @@ class ProjectManager:
         self.containerFactory = ContainerHandlerFactory()
 
         if kwargs.get("id") is None:
-            # Create a new project record in the database
+            # Try to create a new project record in the database
             try:
+                self.dbconnection = DBconnector()
                 self.id = self.dbconnection.establishProjectRecord(user_id, self)
-            except DatabaseEntryError as e:
+            except:
                 print("Failed to establish new Project record in the SoilPulse database.")
-                raise
-            except NameNotUniqueError:
-                print(f"Project with name \"{kwargs.get('name')}\" already exists. Use unique names for your projects!")
-            else:
-                self.initialized = True
-                # dedicated directory where files can be stored
-                self.temp_dir = os.path.join(project_files_root, str(self.id))
+                self.id = -1
 
-                self.setDOI(kwargs.get("doi"))
+            self.initialized = True
+            # dedicated directory where files can be stored
+            self.temp_dir = os.path.join(project_files_root, str(self.id))
 
+            self.setDOI(kwargs.get("doi"))
 
-        else:
-            # Load the existing project properties from the database
-            self.id = kwargs.get("id")
-            try:
-                self.dbconnection.loadProject(self)
-            except DatabaseFetchError as e:
-                # this should never happen as the ID will be obtained by query from the DB ...
-                print(f"\n\nERROR LOADING PROJECT {kwargs.get('id')}")
-                print(e.message)
-                sys.exit()
-            else:
-                self.initialized = True
         return
 
 
@@ -116,7 +100,7 @@ class ProjectManager:
 
     def updateDBrecord(self, cascade=True):
         print(f"Saving project \"{self.name}\" with ID {self.id} ... ")
-
+        self.dbconnection = DBconnector()
         self.dbconnection.updateProjectRecord(self)
 
         if cascade:
