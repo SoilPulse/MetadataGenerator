@@ -33,9 +33,21 @@ jobs:
         python -m pip install flake8 pytest pytest-cov
         pip install -r requirements.txt
 
+    - name: startandwaitforMYSQL
+      if: ${{ matrix.os }} == windows-latest
+      run: |
+        cd SP_MYSQL
+        docker compose up -d --wait --wait-timeout 240
+        sleep 30
+
+    - name: Test with pytest
+      if: ${{ matrix.os }} == windows-latest
+      run: |
+        pytest tests/test_DB.py --cov=./ --cov-report=xml
+
     - name: Test with pytest
       run: |
-        pytest --cov=./ --cov-report=xml
+        pytest tests/test_main.py --cov=./ --cov-report=xml
 
     - name: Lint with flake8
       run: |
