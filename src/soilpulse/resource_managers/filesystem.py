@@ -95,6 +95,8 @@ class FileSystemContainer(ContainerHandler):
 
     # dictionary of DB fields needed to save this subclass instance attributes
     DBfields = {"relative_path": ["text", 255]}
+    # dictionary of attribute names to be used for DB save/update - current values need to be obtained at right time before saving
+    serializationDict = {"relative_path": "rel_path"}
 
     @classmethod
     def getSpecializedSubclassType(cls, **kwargs):
@@ -128,9 +130,6 @@ class FileSystemContainer(ContainerHandler):
         self.dateLastModified = datetime.datetime.fromtimestamp(os.path.getmtime(self.path))
         self.fileExtension = get_file_extension(self.path)
         self.containers = []
-
-        # dictionary of attribute names to be used for DB save/update - current values need to be obtained at right before saving
-        self.serializationDict = {"relative_path": "rel_path"}
 
     def showContents(self, depth=0, ind=". "):
         """
@@ -203,17 +202,18 @@ class SingleFileContainer(FileSystemContainer):
         self.size = None
         self.dateCreated = datetime.datetime.fromtimestamp(os.path.getctime(self.path))
         self.dateLastModified = datetime.datetime.fromtimestamp(os.path.getmtime(self.path))
-        self.encoding = None
+        self.encoding = detect_encoding(self.path)[0]
 
         self.crawler = None
         self.type = None
 
-        self.encoding = detect_encoding(self.path)[0]
+        print(f"file {self.rel_path} has encoding: {self.encoding}")
 
         try:
             self.crawler = FileSystemCrawlerFactory.createCrawler(self.fileExtension, self)
         except ValueError as e:
             print(e)
+
 
 
     def createTree(self, *args):
@@ -582,9 +582,11 @@ class CSVcrawler(Crawler):
             return None
 
     def get_tables_from_csv(self, min_lines=3, report = True):
-        # encoding = detect_encoding(self.file)
+        # encoding = detect_encoding(self.container.path)
+        encoding = self.container.encoding
+
         # read the file into a text
-        with open(self.container.path, 'r', encoding='ANSI') as file:
+        with open(self.container.path, 'r', encoding=encoding) as file:
             text = file.read()
         file_length = len(text)
         # try detecting delimiters from file content

@@ -71,18 +71,22 @@ class ProjectManager:
             except NameNotUniqueError:
                 print(f"Project with name \"{kwargs.get('name')}\" already exists. Use unique names for your projects!")
             else:
-                self.initialized = True
                 # dedicated directory where files can be stored
                 self.temp_dir = os.path.join(project_files_root, str(self.id))
+                if not os.path.isdir(self.temp_dir):
+                    os.mkdir(self.temp_dir)
 
+                self.initialized = True
                 self.setDOI(kwargs.get("doi"))
-
 
         else:
             # Load the existing project properties from the database
             self.id = kwargs.get("id")
             try:
                 self.dbconnection.loadProject(self)
+                if not os.path.isdir(self.temp_dir):
+                    os.mkdir(self.temp_dir)
+
             except DatabaseFetchError as e:
                 # this should never happen as the ID will be obtained by query from the DB ...
                 print(f"\n\nERROR LOADING PROJECT {kwargs.get('id')}")
@@ -105,12 +109,12 @@ class ProjectManager:
                             print(f"\t{f}")
 
     def __str__(self):
-        out = f"\nProject #{self.id} {70 * '='}\n"
+        out = f"\n=== Project #{self.id} {70 * '='}\n"
         out += f"name: {self.name}\n"
-        out += f"local directory: {self.tempDir}\n"
+        out += f"local directory: {self.temp_dir}\n"
         out += f"keep stored files: {'yes' if self.keepFiles else 'no'}\n"
-        out += f"space occupied: {get_formated_file_size(self.tempDir)}\n"
-        out += f"DOI: {self.__doi}\n" if self.__doi is not None else f"no DOI assigned\n"
+        out += f"space occupied: {get_formated_file_size(self.temp_dir)}\n"
+        out += f"DOI: {self.doi}\n" if self.doi is not None else f"no DOI assigned\n"
         out += f"{90 * '='}\n"
         return out
 
@@ -163,14 +167,19 @@ class ProjectManager:
             # populate the metadata properties
             self.DOImetadata = self.getDOImetadata(doi)
             # append the DOI metadata JSON container to the ProjectManagers containers
-            self.containerTree.append(self.containerFactory.createHandler("json", name=doi_metadata_key, project_manager=self, parent_container=None, content=self.DOImetadata, path=None))
+            DOIcont = self.containerFactory.createHandler("json", name=doi_metadata_key, project_manager=self, parent_container=None, content=self.DOImetadata, path=None)
+            self.containerTree.append(DOIcont)
+            DOIcont.saveAsFile(self.temp_dir, doi_metadata_key.replace(" ", "_")+".json")
 
             # populate publisher with Publisher class instance
             self.publisher = self.getPublisher(self.DOImetadata)
             self.publisherMetadata = self.getPublisherMetadata()
 
             # append the publisher metadata JSON container to the ProjectManagers containers
-            self.containerTree.append(self.containerFactory.createHandler("json", name=publisher_metadata_key, project_manager=self, parent_container=None, content=self.publisherMetadata, path=None))
+            publisherCont = self.containerFactory.createHandler("json", name=publisher_metadata_key, project_manager=self, parent_container=None, content=self.publisherMetadata, path=None)
+            self.containerTree.append(publisherCont)
+            publisherCont.saveAsFile(self.temp_dir, publisher_metadata_key.replace(" ", "_")+".json")
+
             # get downloadable files information from publisher
             self.publishedFiles = self.publisher.getFileInfo()
         else:
@@ -315,8 +324,6 @@ class ProjectManager:
                 # create the target directory if not exists
                 print("downloading remote files to local storage ...")
 
-                if not os.path.isdir(self.temp_dir):
-                    os.mkdir(self.temp_dir)
                 fileList = []
                 if not list:
                     for sourceFile in self.publishedFiles:
@@ -380,8 +387,9 @@ class ProjectManager:
                 raise
         else:
             self.containerFactory.getContainerByID(cid)
-    def getContainerByParentID(self, pid):
-        return
+    def getContainersByParentID(self, pid):
+
+        return self.getContainerByID(pid).containers
 
     def newDataset(self, name):
         """
@@ -431,7 +439,7 @@ class ProjectManager:
         print(f"{self.name}\nfile paths and related container IDs:")
         print(80 * "-")
         for path, contID in self.containersOfPaths.items():
-            print(f"\t{path}  -->  {contID}")
+            print(f"{path}\t[{contID}]")
 
 class Dataset:
     """
@@ -522,7 +530,7 @@ class ContainerHandlerFactory:
         Registers ContainerHandler subclasses in the factory
         """
         cls.containerTypes[key] = containerTypeClass
-        print("DatasetHandler '{}' registered".format(key))
+        print("Container type '{}' registered".format(key))
         return
 
 
@@ -597,6 +605,11 @@ class ContainerHandler:
     containerFormat = None
     keywordsDBname = None
 
+    # dictionary of DB fields needed to save this subclass instance attributes
+    DBfields = {}
+    # dictionary of attribute names to be used for DB save/update - current values need to be obtained at right time before saving
+    serializationDict = {}
+
     @classmethod
     def getSpecializedSubclassType(cls, **kwargs):
         """
@@ -620,8 +633,6 @@ class ContainerHandler:
         self.metadataElements = []
         # the crawler assigned to the container
         self.crawler = None
-        # dictionary of attribute serialization
-        self.serializationDict = {}
 
 
     def __str__(self):

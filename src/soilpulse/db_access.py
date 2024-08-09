@@ -297,8 +297,6 @@ class DBconnector:
                 cont_args.update({"path": abs_path})
                 cont_type = cont_args.get("type")
 
-                if cont_args["name"] in ["DOI metadata", "Publisher metadata"]:
-                    print("it's here ...")
                 newCont = project.containerFactory.createHandler(cont_type, project, parent_container, cascade=False, **cont_args)
 
                 out_container_list.append(newCont)
@@ -363,6 +361,7 @@ class DBconnector:
 
         # set the general core of properties to be stored
         arglist = {"type": container.containerType, "name": container.name, "parent_id_local": container.parentContainer.id if container.parentContainer is not None else None}
+
         # add container subclass specific properties to be stored
         for db_key, attr_key in container.serializationDict.items():
             arglist.update({db_key: str(getattr(container, attr_key))})
