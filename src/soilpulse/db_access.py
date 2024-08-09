@@ -238,14 +238,12 @@ class DBconnector:
 
         :param project: the Project instance to be loaded from DB
         :param cascade: whether to load all contents
-        :return: instance of the input Project with filled attributes
+        :return: input Project instance with filled attributes
         """
 
         thecursor = self.db_connection.cursor(dictionary=True)
 
         query = f"SELECT * FROM {DBconnector.projectsTableName} WHERE `id` = {project.id}"
-        print(query)
-
         thecursor.execute(query)
         result = thecursor.fetchone()
         thecursor.close()
@@ -253,6 +251,7 @@ class DBconnector:
             raise DatabaseFetchError(f"No record found in saved projects for given ID {project.id}")
         else:
             project.name = result["name"]
+            project.doi = result["doi"]
             project.temp_dir = result["temp_dir"]
 
             if result["keep_files"] == 0:
@@ -278,22 +277,29 @@ class DBconnector:
         thecursor.close()
 
         if len(results) > 0:
-            for cont in results:
+            for cont_args in results:
                 # replace the global id from DB by project scope 'id_local'
-                del(cont["id"])
-                cont.update({"id": cont.pop("id_local")})
+                del(cont_args["id"])
+                cont_args.update({"id": cont_args.pop("id_local")})
                 # delete properties that are being handled different ways
-                del (cont["parent_id_local"])
-                del (cont["project_id"])
+                del (cont_args["parent_id_local"])
+                del (cont_args["project_id"])
                 # replace relative path stored in DB by absolute path needed for proper container creation in factory
-                rel_path = cont.pop("relative_path")
-                print(rel_path)
-                abs_path = os.path.join(project.temp_dir, rel_path) if rel_path is not None else None
-                print(abs_path)
-                cont.update({"path": abs_path})
-                cont_type = cont.get("type")
+                rel_path = cont_args.pop("relative_path")
+                # the "NULL" value from DB is returned as string "None" ...
+                rel_path = None if rel_path == "None" else rel_path
 
-                newCont = project.containerFactory.createHandler(cont_type, project, parent_container, cascade=False, **cont)
+                if rel_path is None:
+                    abs_path = None
+                else:
+                    abs_path = os.path.join(project.temp_dir, rel_path)
+
+                cont_args.update({"path": abs_path})
+                cont_type = cont_args.get("type")
+
+                if cont_args["name"] in ["DOI metadata", "Publisher metadata"]:
+                    print("it's here ...")
+                newCont = project.containerFactory.createHandler(cont_type, project, parent_container, cascade=False, **cont_args)
 
                 out_container_list.append(newCont)
                 newCont.containers = self.loadChildContainers(project, newCont)
