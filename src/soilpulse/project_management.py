@@ -46,6 +46,8 @@ class ProjectManager:
         self.publisher = None
         # list of files that were published with the resource - publicly available through url
         self.publishedFiles = []
+        # list of files that were downloaded
+        self.downloadedFiles = []
         # uploaded files directly from the users computer
         self.uploadedFiles = []
         # the tree structure of included files and other container types
@@ -102,7 +104,7 @@ class ProjectManager:
             if hasattr(self, "keepFiles"):
                 if not self.keepFiles:
                     print(f"\n\nDeleting project files because we can't keep them :-(")
-                    failed = self.deleteAllProjectFiles()
+                    failed = self.deleteDownloadedFiles()
                     if len(failed) > 0:
                         print(f"following files couldn't be deleted:")
                         for f in failed:
@@ -208,6 +210,28 @@ class ProjectManager:
             raise LocalFileManipulationError(f"Failed to delete following files:\n{flist}")
         else:
             print("All files successfully deleted.")
+        return failed
+
+    def deleteDownloadedFiles(self):
+        failed = []
+        for f in self.downloadedFiles:
+            if os.path.isfile(f):
+                try:
+                    os.remove(f)
+                except PermissionError as e:
+                    failed.append(f)
+                    print(f)
+            if os.path.isdir(f):
+                try:
+                    os.rmdir(f)
+                except PermissionError as e:
+                    failed.append(f)
+                    print(f)
+        if len(failed) > 0:
+            flist = "\n".join([f for f in failed])
+            raise LocalFileManipulationError(f"Failed to delete following files:\n{flist}")
+        else:
+            print("All downloaded files successfully deleted.")
         return failed
 
     def getPublisher(self, DOI_metadata):
@@ -368,6 +392,7 @@ class ProjectManager:
                                 return False
 
                 print(" ... successful\n")
+                self.downloadedFiles.extend(fileList)
                 return fileList
         else:
             raise DOIdataRetrievalException("List of files from DOI record was not retrieved correctly.")
@@ -517,11 +542,11 @@ class SourceFile:
 
 class ContainerHandlerFactory:
     """
-    ContainerHandler object instances factory, global singleton - the only way to create container handlers
-    Keeps track of all the ContainerHandler class and all subclass' instances created
+    ContainerHandler object instances factory, the only way to create container handlers
+    Each Project has one to keep track of all the ContainerHandler class and all subclass' instances created
     """
 
-    # directory of registered containers types classes
+    # directory of registered container types subclasses
     containerTypes = {}
 
     @classmethod
@@ -781,7 +806,7 @@ class Publisher():
 
 class Pointer:
     """
-    Points to an exact location in a dataset and defines a way to extract the value of a particular matedata entity instance.
+    Points to an exact location in a resource and defines a way to extract the value of a particular metadata entity instance.
     Concrete implementations defined in subclasses.
     """
     pass

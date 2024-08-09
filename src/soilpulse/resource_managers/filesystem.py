@@ -172,6 +172,7 @@ class FileSystemContainer(ContainerHandler):
             fullpath = os.path.join(path, f)
             new_container = project_manager.containerFactory.createHandler('filesystem', project_manager, self, name=f, path=fullpath)
             tree.append(new_container)
+            project_manager.downloadedFiles.append(fullpath)
         return tree
 
     def getDBserializationDict(self):
@@ -381,6 +382,7 @@ class ArchiveFileContainer(FileSystemContainer):
                 except OSError:
                     print(f"\nFile '{archive_path}' couldn't be deleted. It may be locked by another application.")
 
+        project_manager.downloadedFiles.append(self.path)
         return output_tree
 
     def getCrawled(self):
