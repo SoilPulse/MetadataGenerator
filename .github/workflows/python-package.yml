@@ -34,14 +34,14 @@ jobs:
         pip install -r requirements.txt
 
     - name: startandwaitforMYSQL
-      if: matrix.os == 'windows-latest'
+      if: matrix.os == 'ubuntu-latest'
       run: |
         cd SP_MYSQL
         docker compose up -d --wait --wait-timeout 240
         sleep 30
 
     - name: Test DB with pytest
-      if: matrix.os == 'windows-latest'
+      if: matrix.os == 'ubuntu-latest'
       run: |
         pytest tests/test_DB.py --cov=./ --cov-report=xml
 
