@@ -17,6 +17,7 @@ import SoilPulse_middle as sp
 st.set_page_config(layout="wide")
 
 
+#### Mockup login page
 if "user_id" not in st.session_state:
     st.title("Welcome to SoilPulse")
     st.write("Here you can make your new data or any legacy dataset FAIR.")
@@ -27,6 +28,8 @@ if "user_id" not in st.session_state:
     else:
         st.stop()
 
+
+
 # use session state as work around for single container selection
 # https://github.com/Schluca/streamlit_tree_select/issues/1#issuecomment-1554552554
 
@@ -36,18 +39,26 @@ if "expanded" not in st.session_state:
     st.session_state.expanded = []
 
 
+# get projectlist of User
 if "projectlist" not in st.session_state:
-    st.session_state.projectlist = sp._getprojects(st.session_state.user_id)
-
+    try:
+        st.session_state.projectlist = sp._getprojects(st.session_state.user_id)
+    except:
+        with st.sidebar:
+            st.warning("Can not connect to SoilPulse Database! You still can work locally.")
+        st.session_state.projectlist = None
 
 # Frontend imlementation
 
 c1, c2 = st.columns((8, 3), gap="large")
 
 
+# welcome
 with st.sidebar:
     st.title("Welcome to SoilPulse!")
-    # dialog to create new project
+
+# dialog to create new project
+with st.sidebar:
     with st.expander("Add project"):
         st.session_state['new_name'] = st.text_input("Project Name")
         st.session_state['new_doi'] = st.text_input("Project DOI")
@@ -62,10 +73,13 @@ with st.sidebar:
 
 # select Project
 with st.sidebar:
-    with st.expander("Select Project", expanded = True):
-        project_id = sp._select_project(
-            projectlist = st.session_state.projectlist
-            )
+    if st.session_state.projectlist:
+        with st.expander("Select Project", expanded = True):
+            project_id = sp._select_project(
+                projectlist = st.session_state.projectlist
+                )
+    else:
+        project_id = None
 
 # show tree of Project
 with st.sidebar:
@@ -89,8 +103,6 @@ with st.sidebar:
         st.session_state.selected = selected["checked"]
         st.session_state.expanded = selected["expanded"]
 
-    # it should be clear which Project (instance of ressource manger) is active
-    project = sp._getprojectofcontainer(st.session_state.selected)
 
 
 with c1:
@@ -118,11 +130,11 @@ with c1:
         sp._visualize_data(st.session_state.selected, mainID, agrovoc, projects)
 
 
-with c2:
-    if st.button("Apply all changes on "+project+" to local DB"):
-        sp._update_local_db(project)
-    if st.button("Reset all changes to "+project):
-        sp._reload_local_db(project)
+    with c2:
+        if st.button("Apply all changes on "+st.session_state.projectlist[project_id]+" to local DB"):
+            sp._update_local_db(project_id)
+        if st.button("Reset all changes to "+st.session_state.projectlist[project_id]):
+            sp._reload_local_db(project_id)
 
 
 # here the starting point options should be available:
