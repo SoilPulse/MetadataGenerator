@@ -95,28 +95,27 @@ with st.sidebar:
                 )
 
 
+if "project" in st.session_state:
 # show tree of Project
-with st.sidebar:
-    # build and show tree of selectable containers
-    selected = streamlit_tree_select.tree_select(
-        sp._create_tree("./catalogue/"),
-        no_cascade=True,
-        checked=st.session_state.selected,
-        expanded=st.session_state.expanded
-        )
+    with st.sidebar:
+        selected = streamlit_tree_select.tree_select(
+            sp._create_tree_from_project(st.session_state.project),
+            no_cascade=True,
+            checked=st.session_state.selected,
+            expanded=st.session_state.expanded
+            )
 
-    # use session state as work around for single container selection
-    if len(selected["checked"]) > 1:
-        st.session_state.selected = [x for x in selected["checked"] if x != st.session_state.selected[0]][0:1]
-        st.session_state.expanded = selected["expanded"]
-        st.rerun()
-    elif len(selected["expanded"]) != len(st.session_state.expanded):
-        st.session_state.expanded = selected["expanded"]
-        st.rerun()
-    else:
-        st.session_state.selected = selected["checked"]
-        st.session_state.expanded = selected["expanded"]
-
+            # use session state as work around for single container selection
+        if len(selected["checked"]) > 1:
+            st.session_state.selected = [x for x in selected["checked"] if x != st.session_state.selected[0]][0:1]
+            st.session_state.expanded = selected["expanded"]
+            st.rerun()
+        elif len(selected["expanded"]) != len(st.session_state.expanded):
+            st.session_state.expanded = selected["expanded"]
+            st.rerun()
+        else:
+            st.session_state.selected = selected["checked"]
+            st.session_state.expanded = selected["expanded"]
 
 
 with c1:

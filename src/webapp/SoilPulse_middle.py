@@ -54,27 +54,32 @@ def _add_project(new_doi, new_name):
 
 
 
+def _create_tree_from_project(project):
+    projecttree = project.containerTree
+    tree = _create_tree_from_container(projecttree)
+    return tree
 
-def _create_tree(folder):
-    sub_folder_dic = []
-    for f in os.listdir(folder):
-        f = os.path.join(folder, f)
-        if os.path.isfile(f):
-            sub_folder_dic.append(
+
+def _create_tree_from_container(projecttree):
+    tree_dict = []
+    for container in projecttree:
+
+        if len(container.containers)==0:
+            tree_dict.append(
                 {
-                    "label": f.split('\\')[-1].split('/')[-1],
-                    "value": f
+                    "label": container.name,
+                    "value": container.id
                     }
                 )
-        if os.path.isdir(f):
-            sub_folder_dic.append(
+        else:
+            tree_dict.append(
                 {
-                    "label": f.split('\\')[-1].split('/')[-1],
-                    "value": f,
-                    "children": _create_tree(f)
+                    "label": container.name,
+                    "value": container.id,
+                    "children": _create_tree_from_container(container.containers)
                     }
                 )
-    return sub_folder_dic
+    return tree_dict
 
 
 def _update_agrovoc_concept_dump():
