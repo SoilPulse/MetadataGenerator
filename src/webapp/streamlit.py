@@ -29,6 +29,7 @@ if "user_id" not in st.session_state:
         st.stop()
 
 
+#### Set session states
 
 # use session state as work around for single container selection
 # https://github.com/Schluca/streamlit_tree_select/issues/1#issuecomment-1554552554
@@ -48,6 +49,9 @@ if "projectlist" not in st.session_state:
             st.warning("Can not connect to SoilPulse Database! You still can work locally.")
         st.session_state.projectlist = None
 
+
+
+###########################################
 # Frontend imlementation
 
 c1, c2 = st.columns((8, 3), gap="large")
@@ -80,6 +84,16 @@ with st.sidebar:
                 )
     else:
         project_id = None
+
+
+    # load project from DB
+    if project_id:
+        if st.button("load project"):
+            st.session_state.project = sp._load_project(
+                user_id=st.session_state.user_id,
+                project_id=project_id
+                )
+
 
 # show tree of Project
 with st.sidebar:

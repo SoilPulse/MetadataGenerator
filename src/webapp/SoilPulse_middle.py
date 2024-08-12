@@ -33,11 +33,11 @@ def _select_project(projectlist):
     return project
 
 
-def _get_project(user_id, project_id):
+def _load_project(user_id, project_id):
     example = {"user_id": user_id, "id" : project_id}
     project = ProjectManager(**example)
-    project.dbconnection = spdb.DBconnector()
-    project.dbconnection.loadProject(project)
+#    project.dbconnection = spdb.DBconnector()
+#    project.dbconnection.loadProject(project)
     return project
 
 
@@ -53,8 +53,6 @@ def _add_project(new_doi, new_name):
         st.warning("Project allready exists.")
 
 
-def _get__local_projects():
-    return ["./catalogue/" + s for s in next(os.walk("./catalogue"))[1]]
 
 
 def _create_tree(folder):
