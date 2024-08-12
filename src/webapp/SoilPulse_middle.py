@@ -41,17 +41,24 @@ def _load_project(user_id, project_id):
     return project
 
 
-def _add_project(new_doi, new_name):
-    try:
-        path = "./catalogue/"+new_doi+new_name
-        os.makedirs(path)
-        f = open(path+"/demofile2.txt", "x")
-        f.write("Hi from SoilPulse!")
-        f.close()
-        st.write("Created Project.")
-    except:
-        st.warning("Project allready exists.")
+def _add_local_project(new_name, new_doi, user_id):
+    example = {"name": new_name,
+               "doi": new_doi,
+               "user_id" : user_id,
+               "id" : "local"}
 
+    #todo - add precheck, if DOI could be valid to not spam doi.org
+
+    try:
+        st.write("trying to add project "+new_name)
+        project = ProjectManager(**example)
+        st.write("Got metadata, trying to get Data. This may take some time...")
+        project.downloadPublishedFiles()
+        project.keepFiles = True
+        st.write("Created temporary Project. Please upload to persist your changes.")
+        return project
+    except Exception as e:
+        st.warning(e)
 
 
 def _create_tree_from_project(project):

@@ -39,6 +39,11 @@ if "selected" not in st.session_state:
 if "expanded" not in st.session_state:
     st.session_state.expanded = []
 
+if "localproject" not in st.session_state:
+    st.session_state.localproject = None
+
+if "DBprojects" not in st.session_state:
+    st.session_state.DBprojects = None
 
 # get projectlist of User
 if "projectlist" not in st.session_state:
@@ -61,45 +66,49 @@ c1, c2 = st.columns((8, 3), gap="large")
 with st.sidebar:
     st.title("Welcome to SoilPulse!")
 
+# local warning
+with st.sidebar:
+    if st.session_state.localproject and st.session_state.localproject.id == 'local':
+        st.warning("You are on a local project and will loose all progress until uploading to DB!")
+
+
 # dialog to create new project
 with st.sidebar:
-    with st.expander("Add project"):
-        st.session_state['new_name'] = st.text_input("Project Name")
-        st.session_state['new_doi'] = st.text_input("Project DOI")
+    with st.expander("New project"):
+        new_name = st.text_input("Project Name")
+        new_doi = st.text_input("Project DOI")
         if st.button(
             "Add Project",
-            disabled=st.session_state['new_doi'] == "" or
-            st.session_state['new_name'] == ""
+            disabled=new_doi == "" or
+            new_name == ""
         ):
-            sp._add_project(
-                st.session_state['new_doi'],
-                st.session_state['new_name'])
+            st.session_state.localproject = sp._add_local_project(
+                new_name,
+                new_doi,
+                st.session_state.user_id)
 
-# select Project
+# Load Project from DB
 with st.sidebar:
-    if st.session_state.projectlist:
-        with st.expander("Select Project", expanded = True):
-            project_id = sp._select_project(
+    if not st.session_state.projectlist:
+        DB_project_id = None
+    else:
+        with st.expander("Load Project from DB", expanded = False):
+            DB_project_id = sp._select_project(
                 projectlist = st.session_state.projectlist
                 )
-    else:
-        project_id = None
+            # load project from DB
+            if DB_project_id:
+                if st.button("load project"):
+                    st.session_state.localproject = sp._load_project(
+                        user_id=st.session_state.user_id,
+                        project_id=DB_project_id
+                        )
 
-
-    # load project from DB
-    if project_id:
-        if st.button("load project"):
-            st.session_state.project = sp._load_project(
-                user_id=st.session_state.user_id,
-                project_id=project_id
-                )
-
-
-if "project" in st.session_state:
+if st.session_state.localproject:
 # show tree of Project
     with st.sidebar:
         selected = streamlit_tree_select.tree_select(
-            sp._create_tree_from_project(st.session_state.project),
+            sp._create_tree_from_project(st.session_state.localproject),
             no_cascade=True,
             checked=st.session_state.selected,
             expanded=st.session_state.expanded
@@ -118,36 +127,36 @@ if "project" in st.session_state:
             st.session_state.expanded = selected["expanded"]
 
 
-with c1:
-    if project_id:
-        st.write("On Project:" + st.session_state.projectlist[project_id])
-    # container editing
-    with st.container(border = True):
-        st.header("Container Settings")
-        sp._show_container_content(st.session_state.selected)
-        if st.button("Save Changes for this container locally"):
-            sp._update_container(st.session_state.selected)
-        if st.button("Reset changes on this container"):
-            sp._reload_container(st.session_state.selected)
 
-    # container data visualisation
-    with st.container(border = True):
-        st.header("Included Data")
-        # get agrovoc concepts in container for selection of visualisation target
-        agrovoc = ["Corg", "Bulk"]
-        mainID = "experiment ID"
-        projects = st.multiselect(
-            "Concept availble in",
-            options=sp._get_projects_by_concept("agrovoc"),
-            )
-        sp._visualize_data(st.session_state.selected, mainID, agrovoc, projects)
+    with c1:
+        st.write("On Project:" + st.session_state.localproject.name)
+        # container editing
+        with st.container(border = True):
+            st.header("Container Settings")
+            sp._show_container_content(st.session_state.selected)
+            if st.button("Save Changes for this container locally"):
+                sp._update_container(st.session_state.selected)
+            if st.button("Reset changes on this container"):
+                sp._reload_container(st.session_state.selected)
+
+        # container data visualisation
+        with st.container(border = True):
+            st.header("Included Data")
+            # get agrovoc concepts in container for selection of visualisation target
+            agrovoc = ["Corg", "Bulk"]
+            mainID = "experiment ID"
+            projects = st.multiselect(
+                "Concept availble in",
+                options=sp._get_projects_by_concept("agrovoc"),
+                )
+            sp._visualize_data(st.session_state.selected, mainID, agrovoc, projects)
 
 
     with c2:
-        if st.button("Apply all changes on "+st.session_state.projectlist[project_id]+" to local DB"):
-            sp._update_local_db(project_id)
-        if st.button("Reset all changes to "+st.session_state.projectlist[project_id]):
-            sp._reload_local_db(project_id)
+        if st.button("Apply all changes on "+st.session_state.localproject.name+" to local DB"):
+            sp._update_local_db(DB_project_id)
+        if st.button("Reset all changes to "+st.session_state.localproject.name):
+            sp._reload_local_db(DB_project_id)
 
 
 # here the starting point options should be available:
