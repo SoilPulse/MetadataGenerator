@@ -21,7 +21,13 @@ from soilpulse.data_publishers import PublisherFactory, DOIdataRetrievalExceptio
 
 
 def _getprojects(user_id):
-    return spdb.DBconnector().getProjectsOfUser(user_id)
+    try:
+        DBprojectlist = spdb.DBconnector().getProjectsOfUser(user_id)
+    except:
+        with st.sidebar:
+            st.warning("Can not connect to SoilPulse Database! You still can work locally.")
+        DBprojectlist = None
+    return DBprojectlist
 
 
 def _select_project(projectlist):
@@ -162,10 +168,29 @@ def _modify_agrovoc_concept(container):
             "https://agrovoc.fao.org/browse/agrovoc/en/page/?uri=" +
             optio[agrovoc]["value"])
 
+def _get_container_content(project, container_id):
+    return project.getContainerByID(int(container_id))
 
-def _show_container_content(container):
-    st.write(container)
-    _modify_agrovoc_concept(container)
+def _show_container_content(project, container_id):
+    container = _get_container_content(project, container_id)
+    if container.containerType == 'json':
+        attributes = ['containerType', 'content']
+    elif container.containerType == 'file':
+        attributes = ['encoding', 'metadataElements']
+    elif container.containerType == 'directory':
+        attributes = ['parentContainer', 'containers', 'name']
+    else:
+        attributes = [method_name for method_name in dir(container)
+                          if not callable(getattr(container, method_name))]
+    for attribute in attributes:
+## json error
+        if attribute == 'scontent':
+            st.json(getattr(container, attribute))
+        else:
+            st.text_input(label = attribute, value= getattr(container, attribute))
+    st.json( {'test':'101','mr':'103','bishop':'102'})
+
+    #_modify_agrovoc_concept(container)
     pass
 
 def _update_container(container):
@@ -215,9 +240,10 @@ def _visualize_data(container, mainID, agrovoc, projects=[]):
     pass
 
 
-def _update_local_db(project):
-    pass
+def _update_local_db(project, user_id):
+    project.dbconnection = spdb.DBconnector()
+    if project.id == 'local':
+        project.id = project.dbconnection.establishProjectRecord(user_id, project)
 
-
-def _reload_local_db(project):
-    pass
+    project.updateDBrecord()
+    return project.id

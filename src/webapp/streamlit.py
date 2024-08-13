@@ -42,18 +42,10 @@ if "expanded" not in st.session_state:
 if "localproject" not in st.session_state:
     st.session_state.localproject = None
 
-if "DBprojects" not in st.session_state:
-    st.session_state.DBprojects = None
 
 # get projectlist of User
-if "projectlist" not in st.session_state:
-    try:
-        st.session_state.projectlist = sp._getprojects(st.session_state.user_id)
-    except:
-        with st.sidebar:
-            st.warning("Can not connect to SoilPulse Database! You still can work locally.")
-        st.session_state.projectlist = None
-
+if "DBprojectlist" not in st.session_state:
+    st.session_state.DBprojectlist = sp._getprojects(st.session_state.user_id)
 
 
 ###########################################
@@ -89,12 +81,12 @@ with st.sidebar:
 
 # Load Project from DB
 with st.sidebar:
-    if not st.session_state.projectlist:
+    if not st.session_state.DBprojectlist:
         DB_project_id = None
     else:
         with st.expander("Load Project from DB", expanded = False):
             DB_project_id = sp._select_project(
-                projectlist = st.session_state.projectlist
+                projectlist = st.session_state.DBprojectlist
                 )
             # load project from DB
             if DB_project_id:
@@ -129,15 +121,17 @@ if st.session_state.localproject:
 
 
     with c1:
-        st.write("On Project:" + st.session_state.localproject.name)
+        st.write("On Project: " + st.session_state.localproject.name)
         # container editing
-        with st.container(border = True):
-            st.header("Container Settings")
-            sp._show_container_content(st.session_state.selected)
-            if st.button("Save Changes for this container locally"):
-                sp._update_container(st.session_state.selected)
-            if st.button("Reset changes on this container"):
-                sp._reload_container(st.session_state.selected)
+        if st.session_state.selected:
+            with st.container(border = True):
+                st.header("Container Settings")
+                sp._show_container_content(project = st.session_state.localproject,
+                                           container_id = st.session_state.selected[0])
+                if st.button("Save Changes for this container locally"):
+                    sp._update_container(st.session_state.selected)
+                    if st.button("Reset changes on this container"):
+                        sp._reload_container(st.session_state.selected)
 
         # container data visualisation
         with st.container(border = True):
@@ -154,9 +148,16 @@ if st.session_state.localproject:
 
     with c2:
         if st.button("Apply all changes on "+st.session_state.localproject.name+" to local DB"):
-            sp._update_local_db(DB_project_id)
+            DB_project_id = sp._update_local_db(project=st.session_state.localproject,
+                                user_id=st.session_state.user_id)
+            st.session_state.DBprojectlist = sp._getprojects(st.session_state.user_id)
+
         if st.button("Reset all changes to "+st.session_state.localproject.name):
-            sp._reload_local_db(DB_project_id)
+            st.session_state.localproject = sp._load_project(
+                user_id=st.session_state.user_id,
+                project_id=DB_project_id
+                )
+
 
 
 # here the starting point options should be available:
