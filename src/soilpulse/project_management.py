@@ -245,9 +245,9 @@ class ProjectManager:
             raise DOIdataRetrievalException("An unknown error occurred while getting registration agency of provided DOI:", e)
         else:
             if 'status' in RAjson[0].keys():
-                if RAjson['status'] == "Invalid DOI":
+                if RAjson[0]['status'] == "Invalid DOI":
                     raise DOIdataRetrievalException(f"Provided DOI '{doi}' is invalid.")
-                if RAjson['status'] == "DOI does not exist":
+                if RAjson[0]['status'] == "DOI does not exist":
                     raise DOIdataRetrievalException(f"Provided DOI '{doi}' is not registered.")
             else:
                 if (meta):
