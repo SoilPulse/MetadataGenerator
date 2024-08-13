@@ -194,6 +194,17 @@ class SingleFileContainer(FileSystemContainer):
     containerType = 'file'
     containerFormat = "File system single file"
 
+    # dictionary of DB fields needed to save this subclass instance attributes
+    DBfields = {"relative_path": ["text", 255],
+                "date_created": ["datetime", None],
+                "date_last_modified": ["datetime", None],
+                "encoding": ["text", 127]}
+    # dictionary of attribute names to be used for DB save/update - current values need to be obtained at right time before saving
+    serializationDict = {"relative_path": "rel_path",
+                         "date_created": "dateCreated",
+                         "date_last_modified": "dateLastModified",
+                         "encoding": "encoding"}
+
     def __init__(self, project_manager, parent_container, **kwargs):
         super(SingleFileContainer, self).__init__(project_manager, parent_container, **kwargs)
 
@@ -267,6 +278,14 @@ class ArchiveFileContainer(FileSystemContainer):
     containerType = 'archive'
     containerFormat = "File system archive file"
 
+    # dictionary of DB fields needed to save this subclass instance attributes
+    DBfields = {"relative_path": ["text", 255],
+                "date_created": ["datetime", None],
+                "date_last_modified": ["datetime", None]}
+    # dictionary of attribute names to be used for DB save/update - current values need to be obtained at right time before saving
+    serializationDict = {"relative_path": "rel_path",
+                         "date_created": "dateCreated",
+                         "date_last_modified": "dateLastModified"}
     def __init__(self, project_manager, parent_container, cascade=True, **kwargs):
         super(ArchiveFileContainer, self).__init__(project_manager, parent_container, **kwargs)
         # get mime type of the file
@@ -325,10 +344,14 @@ class ArchiveFileContainer(FileSystemContainer):
         :param remove_archive: whether to delete the source archive file after successful unpacking
         """
         output_tree = []
+        # container name representing the original archive
+        cont_name = os.path.basename(archive_path)
 
         if same_dir:
+            #
             outDir = os.path.dirname(archive_path)
         else:
+            # name of the directory that will be created to hold the contents instead of the original archive
             extractDirName = os.path.basename(archive_path).replace(".", "_")
             if target_dir is not None:
                 outDir = target_dir
@@ -336,15 +359,12 @@ class ArchiveFileContainer(FileSystemContainer):
             else:
                 outDir = os.path.join(os.path.dirname(archive_path), extractDirName)
 
-
-        # container name representing the original archive
-        cont_name = os.path.basename(archive_path)
-
         try:
             if archive_path.endswith(".gz") and not archive_path.endswith(".tar.gz"):
 
                 if not os.path.exists(outDir):
                     os.makedirs(outDir)
+                # just remove the ending ".gz"
                 filename = ".".join(cont_name.split(".")[:-1])
                 out_path = os.path.join(outDir, filename)
 
@@ -354,18 +374,20 @@ class ArchiveFileContainer(FileSystemContainer):
                     with open(out_path, 'wb') as f_out:
                         shutil.copyfileobj(f_in, f_out)
                 self.path = out_path
-                self.rel_path = extractDirName
-                output_tree = self.createTree(out_path, project_manager)
+                self.rel_path = out_path.replace(project_manager.temp_dir, "").strip("\\/ ")
+
+                output_tree = self.createTree(outDir, project_manager)
 
             elif archive_path.endswith(".tar.gz"):
                 print(f"Extracting '{os.path.basename(archive_path)}' to '{outDir}'")
                 with tarfile.open(archive_path, 'r:gz') as tar:
                     tar.extractall(path=outDir)
                 self.path = outDir
-                self.rel_path = extractDirName
+                self.rel_path = outDir.replace(project_manager.temp_dir, "").strip("\\/ ")
                 output_tree = self.createTree(outDir, project_manager)
 
             else:
+                # all other archive types
                 print(f"Extracting '{os.path.basename(archive_path)}' to '{outDir}'")
                 shutil.unpack_archive(archive_path, outDir)
                 self.path = outDir

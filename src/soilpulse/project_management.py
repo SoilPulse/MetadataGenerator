@@ -22,14 +22,16 @@ if not os.path.exists(project_files_root):
 
 class ProjectManager:
     """
-    Takes care of all files related to datasets composition.
+    Top level manager of metadata mining project.
+    Gathers all source files either from remote sources (download from URL) or local sources (upload from local computer).
+
 
     """
 
-    def __init__(self, user_id, **kwargs):
+    def __init__(self, db_connection, user_id, **kwargs):
         self.initialized = False
         # on initialization load Project from DB or establish a new one
-        self.dbconnection = DBconnector()
+        self.dbconnection = db_connection
         self.ownerID = user_id
         self.name = kwargs.get("name")
 
@@ -74,7 +76,6 @@ class ProjectManager:
                 print(f"Project with name \"{kwargs.get('name')}\" already exists. Use unique names for your projects!")
             else:
                 # dedicated directory where files can be stored
-                self.temp_dir = os.path.join(project_files_root, str(self.id))
                 if not os.path.isdir(self.temp_dir):
                     os.mkdir(self.temp_dir)
 
@@ -402,6 +403,7 @@ class ProjectManager:
         """
         handles all needed steps to upload files from a session (unpack archives if necessary) and create file structure tree
         """
+
         return
 
     def getContainerByID(self, cid):
