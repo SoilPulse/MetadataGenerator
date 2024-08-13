@@ -374,7 +374,8 @@ class ProjectManager:
             except:
                 raise
         else:
-            self.containerFactory.getContainerByID(cid)
+            return self.containerFactory.getContainerByID(cid)
+
     def getContainerByParentID(self, pid):
         return
 
