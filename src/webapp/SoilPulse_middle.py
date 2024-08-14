@@ -171,27 +171,43 @@ def _modify_agrovoc_concept(container):
 def _get_container_content(project, container_id):
     return project.getContainerByID(int(container_id))
 
-def _show_container_content(project, container_id):
-    container = _get_container_content(project, container_id)
-    if container.containerType == 'json':
-        attributes = ['containerType', 'content']
-    elif container.containerType == 'file':
-        attributes = ['encoding', 'metadataElements']
-    elif container.containerType == 'directory':
+def _mod_container_content(container_org):
+    import copy
+    container_mod = copy.deepcopy(container_org)
+    if container_mod.containerType == 'json':
+        attributes = ['containerType', 'content', 'name']
+    elif container_mod.containerType == 'file':
+        attributes = ['encoding', 'metadataElements', 'name']
+    elif container_mod.containerType == 'directory':
         attributes = ['parentContainer', 'containers', 'name']
     else:
-        attributes = [method_name for method_name in dir(container)
-                          if not callable(getattr(container, method_name))]
+        attributes = [method_name for method_name in dir(container_mod)
+                          if not callable(getattr(container_mod, method_name))
+                          and not "__" in method_name]
+
     for attribute in attributes:
 ## json error
         if attribute == 'scontent':
-            st.json(getattr(container, attribute))
+            st.json(getattr(container_mod, attribute))
         else:
-            st.text_input(label = attribute, value= getattr(container, attribute))
-    st.json( {'test':'101','mr':'103','bishop':'102'})
+            setattr(container_mod, attribute, st.text_input(
+                label = attribute,
+                value = str(getattr(container_mod, attribute))
+                )
+            )
+        test = st.button("Test Changes for "+attribute,
+                           disabled = getattr(container_mod, attribute) == getattr(container_org, attribute))
 
-    #_modify_agrovoc_concept(container)
-    pass
+        change = st.button("Save Changes for "+attribute,
+                           disabled = getattr(container_mod, attribute) == getattr(container_org, attribute))
+        if change:
+            change = False
+            setattr(container_org, attribute, getattr(container_mod, attribute))
+            st.rerun()
+        if test:
+            return container_mod
+        else:
+            return container_org
 
 def _update_container(container):
     pass

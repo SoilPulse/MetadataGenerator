@@ -43,6 +43,9 @@ def set_session(clear = False):
     if "localproject" not in st.session_state or clear:
         st.session_state.localproject = None
 
+    if "container" not in st.session_state or clear:
+        st.session_state.container = None
+
     # get projectlist of User
     if "DBprojectlist" not in st.session_state or clear:
         st.session_state.DBprojectlist = sp._getprojects(st.session_state.user_id)
@@ -105,7 +108,10 @@ with st.sidebar:
                         project_id=DB_project_id
                         )
 
-if st.session_state.localproject:
+if not st.session_state.localproject:
+    with c1:
+        st.warning("Please create a new project or load one from DB.")
+else:
 # show tree of Project
     with st.sidebar:
         selected = streamlit_tree_select.tree_select(
@@ -128,21 +134,33 @@ if st.session_state.localproject:
             st.session_state.expanded = selected["expanded"]
 
 
-
-    with c1:
-        st.write("On Project: " + st.session_state.localproject.name)
+with c1:
+    if not st.session_state.selected:    
+#        st.write("On Project: " + st.session_state.localproject.name)
         # container editing
-        if st.session_state.selected:
-            with st.container(border = True):
-                st.header("Container Settings")
-                sp._show_container_content(project = st.session_state.localproject,
-                                           container_id = st.session_state.selected[0])
-                if st.button("Save Changes for this container locally"):
-                    sp._update_container(st.session_state.selected)
-                    if st.button("Reset changes on this container"):
-                        sp._reload_container(st.session_state.selected)
+        st.warning("Please select an element from your project tree.")
+    else:
+        container = sp._get_container_content(
+            project = st.session_state.localproject,
+            container_id = st.session_state.selected[0]
+            )
+
+        with st.container(border = True):
+            st.header("Container Settings")
+            st.session_state.container = sp._mod_container_content(container)
+
+
+        #st.json( {'test':'101','mr':'103','bishop':'102'})
+
+        #_modify_agrovoc_concept(container)
+
+
+# data visualisation
+with c1:
+    if st.session_state.container:
 
         # container data visualisation
+
         with st.container(border = True):
             st.header("Included Data")
             # get agrovoc concepts in container for selection of visualisation target
@@ -155,7 +173,8 @@ if st.session_state.localproject:
             sp._visualize_data(st.session_state.selected, mainID, agrovoc, projects)
 
 
-    with c2:
+with c2:
+    if not st.session_state.localproject:
         if st.button("Apply all changes on "+st.session_state.localproject.name+" to local DB"):
             DB_project_id = sp._update_local_db(project=st.session_state.localproject,
                                 user_id=st.session_state.user_id)
