@@ -34,25 +34,34 @@ if "user_id" not in st.session_state:
 # use session state as work around for single container selection
 # https://github.com/Schluca/streamlit_tree_select/issues/1#issuecomment-1554552554
 
-if "selected" not in st.session_state:
-    st.session_state.selected = []
-if "expanded" not in st.session_state:
-    st.session_state.expanded = []
+def set_session(clear = False):
+    if "selected" not in st.session_state or clear:
+        st.session_state.selected = []
+    if "expanded" not in st.session_state or clear:
+        st.session_state.expanded = []
 
-if "localproject" not in st.session_state:
-    st.session_state.localproject = None
+    if "localproject" not in st.session_state or clear:
+        st.session_state.localproject = None
 
+    # get projectlist of User
+    if "DBprojectlist" not in st.session_state or clear:
+        st.session_state.DBprojectlist = sp._getprojects(st.session_state.user_id)
+    if clear:
+        del st.session_state.user_id
+        st.rerun()
 
-# get projectlist of User
-if "DBprojectlist" not in st.session_state:
-    st.session_state.DBprojectlist = sp._getprojects(st.session_state.user_id)
-
+set_session()
 
 ###########################################
 # Frontend imlementation
 
 c1, c2 = st.columns((8, 3), gap="large")
 
+with c2:
+    logout = st.button("Logout and restart session.")
+    if logout:
+        logout = False
+        set_session(clear=True)
 
 # welcome
 with st.sidebar:
