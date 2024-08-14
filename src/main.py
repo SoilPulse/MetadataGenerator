@@ -113,6 +113,8 @@ if __name__ == "__main__":
     example_2 = {"name": "", "doi": "10.5281/zenodo.6654150"}
     example_3 = {"name": "Michael Schmuker's neuromorphic_classifiers", "doi": "10.5281/zenodo.18726"}  # more lightweight repo
     example_4 = {"name": "Ries et al.", "doi": "10.6094/unifr/151460"}
+    example_5 = {"name": "NFDItest", "doi": "10.5281/zenodo.8345022"}
+
 
     # do the use case
     # project1 = establish_new_project(user_id, **example_1)
