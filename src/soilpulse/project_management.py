@@ -59,6 +59,8 @@ class ProjectManager:
         # language of the project
         self.language = None
 
+        # dedicated directory for file saving
+        self.temp_dir = None
         # for now - some kind of licences definition and appropriate actions should be implemented
         self.keepFiles = False
 
@@ -75,7 +77,7 @@ class ProjectManager:
             except NameNotUniqueError:
                 print(f"Project with name \"{kwargs.get('name')}\" already exists. Use unique names for your projects!")
             else:
-                # dedicated directory where files can be stored
+                # create dedicated directory where files can be stored
                 if not os.path.isdir(self.temp_dir):
                     os.mkdir(self.temp_dir)
 
@@ -87,15 +89,16 @@ class ProjectManager:
             self.id = kwargs.get("id")
             try:
                 self.dbconnection.loadProject(self)
-                if not os.path.isdir(self.temp_dir):
-                    os.mkdir(self.temp_dir)
-
             except DatabaseFetchError as e:
                 # this should never happen as the ID will be obtained by query from the DB ...
-                print(f"\n\nERROR LOADING PROJECT {kwargs.get('id')}")
+                print(f"\n\nERROR LOADING PROJECT")
                 print(e.message)
-                sys.exit()
+                self.initialized = False
             else:
+                # # dedicated directory where files can be stored
+                # if self.temp_dir is not None:
+                #     if not os.path.isdir(self.temp_dir):
+                #         os.mkdir(self.temp_dir)
                 self.initialized = True
         return
 
@@ -124,20 +127,17 @@ class ProjectManager:
     def updateDBrecord(self, cascade=True):
         print(f"Saving project \"{self.name}\" with ID {self.id} ... ")
 
-        self.dbconnection.updateProjectRecord(self)
-
-        if cascade:
-            print(f"\tsaving containers ...")
-            # update all containers' DB record
-            for cont in self.containerTree:
-                cont.updateDBrecord(self.dbconnection)
-
-            # update all datasets' DB record
-            for dataset in self.datasets:
-                dataset.updateDBrecord(self.dbconnection)
+        self.dbconnection.updateProjectRecord(self, cascade)
 
         print(f" ... successful.")
         return
+
+    def getContainersSerialization(self):
+        cont_dict = {}
+        for cont in self.containerTree:
+            cont_dict.update({cont.id: cont.getSerializationDictionary()})
+        # print(f"collected serialization dictionary of all projects containers:\n{cont_dict}")
+        return cont_dict
 
     def loadDBrecord(self, cascade=True):
 
@@ -697,6 +697,14 @@ class ContainerHandler:
             for cont in self.containers:
                 cont.updateDBrecord(db_connection)
         return
+
+    def getSerializationDictionary(self):
+        dict = {"type": self.containerType, "name": self.name, "parent_id_local": self.parentContainer.id if self.parentContainer is not None else None}
+        sub_conts = []
+        for cont in self.containers:
+            sub_conts.append(cont.getSerializationDictionary())
+        dict.update({"containers": sub_conts})
+        return dict
 
     def collectContainerIDsToList(self, output=[]):
         output.append(self.id)

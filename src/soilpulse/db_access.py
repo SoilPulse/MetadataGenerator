@@ -156,6 +156,22 @@ class MySQLConnector(DBconnector):
             return results[0]
         else:
             return None
+
+    def checkoutUser(self, user_id):
+        thecursor = self.db_connection.cursor()
+        query = f"SELECT `id` FROM {self.userTableName}"
+        thecursor.execute(query)
+        results = thecursor.fetchall()
+        all_user_ids = []
+        if thecursor.rowcount > 0:
+            for res in results:
+                all_user_ids.append(res[0])
+            if user_id in all_user_ids:
+                return user_id
+            return None
+        else:
+            return None
+
     def getProjectsOfUser(self, user_id):
         """
         Loads Projects info of a given user from SoilPulse database.
@@ -310,7 +326,7 @@ class MySQLConnector(DBconnector):
         result = thecursor.fetchone()
         thecursor.close()
         if result is None:
-            raise DatabaseFetchError(f"No record found in saved projects for given ID {project.id}")
+            raise DatabaseFetchError(f"Project ID {project.id} does not exist within MySQL database.")
         else:
             project.name = result["name"]
             project.doi = result["doi"]
@@ -524,13 +540,16 @@ class MySQLConnector(DBconnector):
 class NullConnector(DBconnector):
     dirname_prefix = "temp_"
     project_attr_filename = "_project.json"
-    datasets_attr_filename = "_datasets"
+    containers_attr_filename = "_containers.json"
+    datasets_attr_filename = "_datasets.json"
 
     def __init__(self, project_files_root):
         super().__init__(project_files_root)
 
-    def getUserNameByID(self, id):
+    def getUserNameByID(self, user_id):
         return ["Local", "User"]
+    def checkoutUser(self, user_id):
+        return 0
 
     def getProjectsOfUser(self, user_id):
 
@@ -581,12 +600,18 @@ class NullConnector(DBconnector):
 
         return project.id
 
-    def updateProjectRecord(self, project):
+    def updateProjectRecord(self, project, cascade=False):
         with open(os.path.join(project.temp_dir, self.project_attr_filename), "w") as f:
             project_attr = {"name": project.name, "doi": project.getDOI(), "temp_dir": project.temp_dir,
                          "keep_files": (1 if project.keepFiles else 0)}
             json.dump(project_attr, f)
-            return
+
+        if cascade:
+            print(f"\tsaving containers ...")
+            with open(os.path.join(project.temp_dir, self.containers_attr_filename), "w") as f:
+                json.dump(project.getContainersSerialization(), f)
+
+        return
 
     def loadProject(self, project):
         if project.id in self.getAllTempProjectIDs():
@@ -602,6 +627,9 @@ class NullConnector(DBconnector):
                 else:
                     project.keepFiles = True
             return project
+        else:
+            raise DatabaseFetchError(f"Project ID {project.id} does not exist within local temporary projects."
+                 f"\nAvailable project IDs are: {', '.join([str(pid) for pid in self.getAllTempProjectIDs()])}")
 
     def deleteProject(self, project, delete_dir):
         if os.path.exists(project.temp_dir):

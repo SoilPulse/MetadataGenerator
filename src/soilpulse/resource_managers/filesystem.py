@@ -175,8 +175,12 @@ class FileSystemContainer(ContainerHandler):
             project_manager.downloadedFiles.append(fullpath)
         return tree
 
-    def getDBserializationDict(self):
-        return
+
+    def getSerializationDictionary(self):
+        dict = super().getSerializationDictionary()
+        for db_key, attr_key in self.serializationDict.items():
+            dict.update({db_key: str(getattr(self, attr_key))})
+        return dict
 
     def listOwnFiles(self, collection):
         collection.append(self.path)
@@ -225,8 +229,6 @@ class SingleFileContainer(FileSystemContainer):
             self.crawler = FileSystemCrawlerFactory.createCrawler(self.fileExtension, self)
         except ValueError as e:
             print(e)
-
-
 
     def createTree(self, *args):
         return []
