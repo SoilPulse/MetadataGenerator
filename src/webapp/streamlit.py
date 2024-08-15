@@ -13,6 +13,7 @@ import streamlit as st
 import streamlit_tree_select
 
 import SoilPulse_middle as sp
+import streamlit_helper as sf
 
 st.set_page_config(layout="wide")
 
@@ -69,6 +70,8 @@ with c2:
 # welcome
 with st.sidebar:
     st.title("Welcome to SoilPulse!")
+    if not st.session_state.DBprojectlist:
+        st.warning("Can not connect to SoilPulse Database! You still can work locally.")
 
 # local warning
 with st.sidebar:
@@ -97,7 +100,7 @@ with st.sidebar:
         DB_project_id = None
     else:
         with st.expander("Load Project from DB", expanded = False):
-            DB_project_id = sp._select_project(
+            DB_project_id = sf._select_project(
                 projectlist = st.session_state.DBprojectlist
                 )
             # load project from DB
@@ -108,11 +111,13 @@ with st.sidebar:
                         project_id=DB_project_id
                         )
 
+
+# show tree of Project and select container
 if not st.session_state.localproject:
     with c1:
         st.warning("Please create a new project or load one from DB.")
 else:
-# show tree of Project
+
     with st.sidebar:
         selected = streamlit_tree_select.tree_select(
             sp._create_tree_from_project(st.session_state.localproject),
@@ -134,47 +139,44 @@ else:
             st.session_state.expanded = selected["expanded"]
 
 
+# Container edit
 with c1:
-    if not st.session_state.selected:    
-#        st.write("On Project: " + st.session_state.localproject.name)
-        # container editing
-        st.warning("Please select an element from your project tree.")
-    else:
-        container = sp._get_container_content(
-            project = st.session_state.localproject,
-            container_id = st.session_state.selected[0]
-            )
+    if st.session_state.localproject:
+        if not st.session_state.selected:
+            st.warning("Please select an element from your project tree.")
+        else:
+            container = sp._get_container_content(
+                project = st.session_state.localproject,
+                container_id = st.session_state.selected[0]
+                )
 
-        with st.container(border = True):
-            st.header("Container Settings")
-            st.session_state.container = sp._mod_container_content(container)
+            with st.expander("Container Settings"):
+                #st.header("")
+                st.session_state.container = sf._mod_container_content(container)
 
 
-        #st.json( {'test':'101','mr':'103','bishop':'102'})
+            #st.json( {'test':'101','mr':'103','bishop':'102'})
 
-        #_modify_agrovoc_concept(container)
+            #sf._modify_agrovoc_concept(container)
 
 
 # data visualisation
 with c1:
-    if st.session_state.container:
+    if st.session_state.selected and st.session_state.container:
 
         # container data visualisation
 
-        with st.container(border = True):
-            st.header("Included Data")
-            # get agrovoc concepts in container for selection of visualisation target
-            agrovoc = ["Corg", "Bulk"]
-            mainID = "experiment ID"
-            projects = st.multiselect(
-                "Concept availble in",
-                options=sp._get_projects_by_concept("agrovoc"),
-                )
-            sp._visualize_data(st.session_state.selected, mainID, agrovoc, projects)
+        with st.expander("Container Content", expanded = True):
+            if st.session_state.container.crawler:
+                tables = st.session_state.container.crawler.crawl()
+                if tables:
+                    for x in tables:
+                        st.data_editor(x)
+
 
 
 with c2:
-    if not st.session_state.localproject:
+    if st.session_state.localproject:
         if st.button("Apply all changes on "+st.session_state.localproject.name+" to local DB"):
             DB_project_id = sp._update_local_db(project=st.session_state.localproject,
                                 user_id=st.session_state.user_id)
