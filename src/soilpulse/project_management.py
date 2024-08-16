@@ -70,17 +70,14 @@ class ProjectManager:
         if kwargs.get("id") is None:
             # Create a new project record in the database
             try:
-                self.id = self.dbconnection.establishProjectRecord(user_id, self)
+                self.id, self.temp_dir = self.dbconnection.establishProjectRecord(user_id, self)
             except DatabaseEntryError as e:
                 print("Failed to establish new Project record in the SoilPulse database.")
                 raise
             except NameNotUniqueError:
                 print(f"Project with name \"{kwargs.get('name')}\" already exists. Use unique names for your projects!")
             else:
-                # create dedicated directory where files can be stored
-                if not os.path.isdir(self.temp_dir):
-                    os.mkdir(self.temp_dir)
-
+                self.keepFiles = True
                 self.initialized = True
                 self.setDOI(kwargs.get("doi"))
 
@@ -699,10 +696,10 @@ class ContainerHandler:
         return
 
     def getSerializationDictionary(self):
-        dict = {"type": self.containerType, "name": self.name, "parent_id_local": self.parentContainer.id if self.parentContainer is not None else None}
-        sub_conts = []
+        dict = {"id": self.id, "type": self.containerType, "name": self.name, "parent_id_local": self.parentContainer.id if self.parentContainer is not None else None}
+        sub_conts = {}
         for cont in self.containers:
-            sub_conts.append(cont.getSerializationDictionary())
+            sub_conts.update({cont.id: cont.getSerializationDictionary()})
         dict.update({"containers": sub_conts})
         return dict
 

@@ -113,7 +113,7 @@ class JSONContainer(ContainerHandler):
         self.path = fullpath
         self.rel_path = fullpath.replace(self.project.temp_dir, "").strip("\\")
         self.project.containersOfPaths.update({self.path: self.id})
-        print(self.rel_path)
+        print(f"File '{self.rel_path}' successfuly saved.")
         return fullpath
 
     def getCrawled(self):

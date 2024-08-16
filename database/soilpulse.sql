@@ -15,6 +15,9 @@ CREATE TABLE `containers` (
   `parent_id_local` int(11) DEFAULT NULL,
   `project_id` int(11) NOT NULL,
   `relative_path` varchar(255) DEFAULT NULL,
+  `date_created` datetime DEFAULT NULL,
+  `date_last_modified` datetime DEFAULT NULL,
+  `encoding` varchar(127) DEFAULT NULL,
   `content` varchar(2047) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `parent_id` (`parent_id_local`),
@@ -77,9 +80,6 @@ CREATE TABLE `users` (
 INSERT INTO `users` (`id`, `username`, `first_name`, `last_name`) VALUES
 (1,	'DemoUser',	'Demo',	'User');
 
-INSERT INTO `users` (`id`, `username`, `first_name`, `last_name`) VALUES
-(1, 'DemoUser', 'Demo', 'User');
-
 CREATE TABLE `user_projects` (
   `user_id` int(11) NOT NULL,
   `project_id` int(11) NOT NULL,
@@ -90,4 +90,4 @@ CREATE TABLE `user_projects` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 
--- 2024-08-07 07:44:13
+-- 2024-08-13 13:14:57

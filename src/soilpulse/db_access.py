@@ -9,6 +9,7 @@ import sqlite3
 import unicodedata
 import os
 import re
+import shutil
 
 from .exceptions import DatabaseFetchError, DatabaseEntryError, NameNotUniqueError
 
@@ -89,10 +90,14 @@ class DBconnector:
     def deleteProjectRecord(self, project, delete_dir):
         pass
 
-    def _create_project_directory(self, project_id, prefix=""):
-        dir_name = f"{prefix}{project_id}"
+    def create_project_directory(self, project_id):
+        dir_name = f"{self.dirname_prefix}{project_id}"
         project_dir = os.path.join(self.project_files_root, dir_name)
-        os.makedirs(project_dir, exist_ok=True)
+
+        if os.path.isdir(project_dir):
+            print(f"Directory for newly established project '{project_dir}' already exists - all of it's current contents will be deleted.")
+            shutil.rmtree(project_dir)
+        os.mkdir(project_dir)
         return project_dir
 
     def getDatasetsOfProject(self, project_id):
@@ -219,8 +224,9 @@ class MySQLConnector(DBconnector):
 
     def getNewProjectID(self):
         thecursor = self.db_connection.cursor()
-        thecursor.execute(f"SELECT AUTO_INCREMENT FROM information_schema.tables "
-                          f"WHERE table_name = '{self.projectsTableName}'")
+        query = f"SELECT AUTO_INCREMENT FROM information_schema.tables "\
+                          f"WHERE table_name = '{self.projectsTableName.strip('`')}'"
+        thecursor.execute(query)
         results = thecursor.fetchall()
 
         if thecursor.rowcount > 0:
@@ -243,30 +249,38 @@ class MySQLConnector(DBconnector):
                 project.name = generate_project_unique_name(usersProjects.values(), project.name)
                 print(f"The name was modified to \"{project.name}\" and can be changed later.")
 
+        project_id = newID
+        project_temp_dir = self.create_project_directory(project_id)
+
         # insert line to `projects` table
-        # execute the query
-        query = f"INSERT INTO {self.projectsTableName} (`name`, `doi`) VALUES (%s, %s)"
-        values = [project.name, project.doi]
+        query = f"INSERT INTO {self.projectsTableName} (`name`, `doi`, `temp_dir`) VALUES (%s, %s, %s)"
+        values = [project.name, project.doi, project_temp_dir]
         thecursor.execute(query, values)
         # insert queries must be committed
         self.db_connection.commit()
-        # get and return the ID of newly created ProjectManager record
-        thecursor.execute("SELECT LAST_INSERT_ID()")
-        results = thecursor.fetchall()
-        # assign the DB ID to Project instance
-        for nid in results:
-            project.id = nid[0]
-        # assign the project files directory path
-        project.temp_dir = os.path.join(self.project_files_root, str(project.id))
+
+        # # optionally the ID can be assigned based on last inserted ID - assured match of project.id and DB ID
+        # # because there is a very small chance that mismatch can happen while two projects are established at the same time
+
+        # # get and return the ID of newly created ProjectManager record
+        # thecursor.execute("SELECT LAST_INSERT_ID()")
+        # results = thecursor.fetchall()
+        # # assign the DB ID to Project instance
+        # for nid in results:
+        #     project.id = nid[0]
+        #     print(nid[0])
+        # # assign the project files directory path
+        # project.temp_dir = os.path.join(self.project_files_root, str(project.id))
+
         # insert line to `user_projects` table
         query = f"INSERT INTO {self.userProjectsTableName} (`user_id`, `project_id`) VALUES (%s, %s)"
-        values = [user_id, project.id]
+        values = [user_id, project_id]
         thecursor.execute(query, values)
         self.db_connection.commit()
         thecursor.close()
-        return project.id
+        return project_id, project_temp_dir
 
-    def updateProjectRecord(self, project):
+    def updateProjectRecord(self, project, cascade=False):
         """
         Updates database record of a Project and all of its contents
 
@@ -288,7 +302,7 @@ class MySQLConnector(DBconnector):
                 f"AND {self.projectsTableName}.`id` <> %s " \
                 f"AND {self.projectsTableName}.`name` = %s"
         thecursor.execute(query, [project.id, project.name])
-
+        # don't update name if another project exists with the same name
         count = thecursor.fetchone()[0]
         if count > 0:
             update_name = False
@@ -308,6 +322,10 @@ class MySQLConnector(DBconnector):
         thecursor.execute(query, values)
         self.db_connection.commit()
         thecursor.close()
+
+        if cascade:
+            for cont in project.containerTree:
+                self.updateContainerRecord(cont, cascade)
         return
 
     def loadProject(self, project, cascade=True):
@@ -349,7 +367,6 @@ class MySQLConnector(DBconnector):
         query = f"SELECT * FROM {self.containersTableName} " \
                 f"WHERE `project_id` = {project.id}"
         query += f" AND `parent_id_local` IS NULL" if parent_container is None else f" AND `parent_id_local` = {parent_container.id}"
-
         thecursor.execute(query)
         results = thecursor.fetchall()
         thecursor.close()
@@ -384,7 +401,6 @@ class MySQLConnector(DBconnector):
                 newCont.containers = self.loadChildContainers(project, newCont)
 
             thecursor.close()
-
         return out_container_list
 
 
@@ -446,7 +462,7 @@ class MySQLConnector(DBconnector):
             raise DatabaseEntryError(
                 f"More then one ({count}) occurrence of dataset '{name}' within a project ID {project_id}.")
 
-    def updateContainerRecord(self, container):
+    def updateContainerRecord(self, container, cascade=False):
         thecursor = self.db_connection.cursor()
 
         # set the general core of properties to be stored
@@ -479,6 +495,10 @@ class MySQLConnector(DBconnector):
         thecursor.execute(query, values)
         self.db_connection.commit()
         thecursor.close()
+
+        if cascade:
+            for cont in container.containers:
+                self.updateContainerRecord(cont, cascade)
         return
 
     def updateDatasetRecord(self, dataset):
@@ -587,18 +607,19 @@ class NullConnector(DBconnector):
 
     def establishProjectRecord(self, user_id, project, unique_names=True):
         # assign correct ID to Project instance
-        project.id = self.getNewProjectID()
+        project_id = self.getNewProjectID()
         project.user_id = 0
         # assign the project files directory path
-        project.temp_dir = self._create_project_directory(project.id, prefix="temp_")
+        project_temp_dir = self.create_project_directory(project_id)
+
         project.keepFiles = True
         # save attributes to a JSON file
-        with open(os.path.join(project.temp_dir, self.project_attr_filename), "w") as f:
-            project_attr = {"name": project.name, "doi": project.getDOI(), "temp_dir": project.temp_dir,
+        with open(os.path.join(project_temp_dir, self.project_attr_filename), "w") as f:
+            project_attr = {"name": project.name, "doi": project.getDOI(), "temp_dir": project_temp_dir,
                          "keep_files": (1 if project.keepFiles else 0)}
             json.dump(project_attr, f)
 
-        return project.id
+        return project_id, project_temp_dir
 
     def updateProjectRecord(self, project, cascade=False):
         with open(os.path.join(project.temp_dir, self.project_attr_filename), "w") as f:
