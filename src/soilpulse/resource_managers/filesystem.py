@@ -126,9 +126,13 @@ class FileSystemContainer(ContainerHandler):
         self.project.containersOfPaths.update({self.rel_path: self.id})
         # get other useful properties of the file (size, date of creation ...)
         self.size = None
-        self.dateCreated = datetime.datetime.fromtimestamp(os.path.getctime(self.path))
-        self.dateLastModified = datetime.datetime.fromtimestamp(os.path.getmtime(self.path))
-
+        if os.path.exists(self.path):
+            self.dateCreated = datetime.datetime.fromtimestamp(os.path.getctime(self.path))
+            self.dateLastModified = datetime.datetime.fromtimestamp(os.path.getmtime(self.path))
+        else:
+            print(f"\tos.path item of container '{self.name}' was not found.")
+            self.dateCreated = None
+            self.dateLastModified = None
         self.containers = []
 
     def showContents(self, depth=0, ind=". "):
@@ -141,7 +145,7 @@ class FileSystemContainer(ContainerHandler):
         t = ind * depth
         dateFormat = "%d.%m.%Y"
         pContID = self.parentContainer.id if self.parentContainer is not None else "root"
-        print(f"{t}{self.id} - {self.name} ({self.containerType}, {self.getFileSizeFormated()}, {self.dateCreated.strftime(dateFormat)}/{self.dateLastModified.strftime(dateFormat)}) [{len(self.containers)}]  >{pContID}")
+        print(f"{t}{self.id} - {self.name} ({self.containerType}, {self.getFileSizeFormated()}, {self.dateCreated.strftime(dateFormat) }/{self.dateLastModified.strftime(dateFormat)}) [{len(self.containers)}]  >{pContID}")
         if self.containers is None:
             print(f"{t}\tself.containers is None")
 
@@ -217,19 +221,26 @@ class SingleFileContainer(FileSystemContainer):
         # get other useful info of the file (size, date of creation ...)
         self.size = None
         self.fileExtension = get_file_extension(self.path)
-        self.dateCreated = datetime.datetime.fromtimestamp(os.path.getctime(self.path))
-        self.dateLastModified = datetime.datetime.fromtimestamp(os.path.getmtime(self.path))
-        self.encoding = detect_encoding(self.path)[0]
+
+        if os.path.exists(self.path):
+            self.dateCreated = datetime.datetime.fromtimestamp(os.path.getctime(self.path))
+            self.dateLastModified = datetime.datetime.fromtimestamp(os.path.getmtime(self.path))
+            self.encoding = detect_encoding(self.path)[0]
+        else:
+            print(f"\tfile of container '{self.name}' was not found.")
+            self.dateCreated = None
+            self.dateLastModified = None
+            self.encoding = None
 
         self.crawler = None
         self.type = None
 
-        print(f"file {self.rel_path} has encoding: {self.encoding}")
-
-        try:
-            self.crawler = FileSystemCrawlerFactory.createCrawler(self.fileExtension, self)
-        except ValueError as e:
-            print(e)
+        if os.path.exists(self.path):
+            try:
+                self.crawler = FileSystemCrawlerFactory.createCrawler(self.fileExtension, self)
+            except ValueError as e:
+                print(e)
+#        print(f"file {self.rel_path} has encoding: {self.encoding}")
 
     def createTree(self, *args):
         return []
@@ -262,8 +273,14 @@ class DirectoryContainer(FileSystemContainer):
 
         # get other useful of the file (size, date of creation ...)
         self.size = None
-        self.dateCreated = datetime.datetime.fromtimestamp(os.path.getctime(self.path))
-        self.dateLastModified = datetime.datetime.fromtimestamp(os.path.getmtime(self.path))
+        if os.path.exists(self.path):
+            self.dateCreated = datetime.datetime.fromtimestamp(os.path.getctime(self.path))
+            self.dateLastModified = datetime.datetime.fromtimestamp(os.path.getmtime(self.path))
+        else:
+            print(f"\tdirectory represented by container '{self.name}' was not found.")
+            self.dateCreated = None
+            self.dateLastModified = None
+
         if cascade:
             self.containers = self.createTree(self.path, project_manager)
 
@@ -296,8 +313,14 @@ class ArchiveFileContainer(FileSystemContainer):
         # get other useful of the file (size, date of creation ...)
         self.size = None
         self.fileExtension = get_file_extension(self.path)
-        self.dateCreated = datetime.datetime.fromtimestamp(os.path.getctime(self.path))
-        self.dateLastModified = datetime.datetime.fromtimestamp(os.path.getmtime(self.path))
+
+        if os.path.exists(self.path):
+            self.dateCreated = datetime.datetime.fromtimestamp(os.path.getctime(self.path))
+            self.dateLastModified = datetime.datetime.fromtimestamp(os.path.getmtime(self.path))
+        else:
+            print(f"\tplaceholder directory of archive container '{self.name}' was not found.")
+            self.dateCreated = None
+            self.dateLastModified = None
 
         # if os.path.exists(kwargs.get("path")) and os.path.isdir(kwargs.get("path")):
         #     # if the directory exists on the storage the archive is already unpacked
