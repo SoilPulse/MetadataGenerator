@@ -15,6 +15,9 @@ CREATE TABLE `containers` (
   `parent_id_local` int(11) DEFAULT NULL,
   `project_id` int(11) NOT NULL,
   `relative_path` varchar(255) DEFAULT NULL,
+  `date_created` datetime DEFAULT NULL,
+  `date_last_modified` datetime DEFAULT NULL,
+  `encoding` varchar(127) DEFAULT NULL,
   `content` varchar(2047) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `parent_id` (`parent_id_local`),
@@ -25,7 +28,6 @@ CREATE TABLE `containers` (
 
 CREATE TABLE `datasets` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_local` int(11) NOT NULL,
   `name` varchar(255) NOT NULL,
   `project_id` int(11) NOT NULL,
   `container_ids` varchar(1023) DEFAULT NULL,
@@ -88,4 +90,4 @@ CREATE TABLE `user_projects` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 
--- 2024-08-07 07:44:13
+-- 2024-08-13 13:14:57
