@@ -100,10 +100,10 @@ class FileSystemContainer(ContainerHandler):
 
     @classmethod
     def getSpecializedSubclassType(cls, **kwargs):
+        # if the container is loaded from the DB the 'type' attribute is already the specialized one
         if kwargs.get("type") is not None:
-            # if the original container type is loaded from the DB
             return kwargs["type"]
-
+        # otherwise it gets specialized here
         path = kwargs.get("path")
         if os.path.isfile(path):
             if is_file_archive(path):
@@ -128,7 +128,7 @@ class FileSystemContainer(ContainerHandler):
         self.size = None
         self.dateCreated = datetime.datetime.fromtimestamp(os.path.getctime(self.path))
         self.dateLastModified = datetime.datetime.fromtimestamp(os.path.getmtime(self.path))
-        self.fileExtension = get_file_extension(self.path)
+
         self.containers = []
 
     def showContents(self, depth=0, ind=". "):
@@ -176,11 +176,11 @@ class FileSystemContainer(ContainerHandler):
         return tree
 
 
-    def getSerializationDictionary(self):
-        dict = super().getSerializationDictionary()
-        for db_key, attr_key in self.serializationDict.items():
-            dict.update({db_key: str(getattr(self, attr_key))})
-        return dict
+    # def getSerializationDictionary(self):
+    #     dict = super().getSerializationDictionary()
+    #     for db_key, attr_key in self.serializationDict.items():
+    #         dict.update({db_key: str(getattr(self, attr_key))})
+    #     return dict
 
     def listOwnFiles(self, collection):
         collection.append(self.path)
@@ -216,6 +216,7 @@ class SingleFileContainer(FileSystemContainer):
         self.mimeType = self.getMimeType()
         # get other useful info of the file (size, date of creation ...)
         self.size = None
+        self.fileExtension = get_file_extension(self.path)
         self.dateCreated = datetime.datetime.fromtimestamp(os.path.getctime(self.path))
         self.dateLastModified = datetime.datetime.fromtimestamp(os.path.getmtime(self.path))
         self.encoding = detect_encoding(self.path)[0]
@@ -294,6 +295,7 @@ class ArchiveFileContainer(FileSystemContainer):
         self.mimeType = self.getMimeType()
         # get other useful of the file (size, date of creation ...)
         self.size = None
+        self.fileExtension = get_file_extension(self.path)
         self.dateCreated = datetime.datetime.fromtimestamp(os.path.getctime(self.path))
         self.dateLastModified = datetime.datetime.fromtimestamp(os.path.getmtime(self.path))
 

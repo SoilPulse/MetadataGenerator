@@ -8,7 +8,7 @@ import shutil
 
 from .metadata_scheme import MetadataStructureMap
 from .db_access import DBconnector
-from .exceptions import DOIdataRetrievalException, LocalFileManipulationError, ContainerStructureError, DatabaseEntryError, NameNotUniqueError, DatabaseFetchError
+from .exceptions import DOIdataRetrievalException, LocalFileManipulationError, ContainerStructureError, DatabaseEntryError, NameNotUniqueError, DatabaseFetchError, DeserializationError
 
 # general variables
 project_files_dir_name = "project_files"
@@ -91,11 +91,12 @@ class ProjectManager:
                 print(f"\n\nERROR LOADING PROJECT")
                 print(e.message)
                 self.initialized = False
+            except DeserializationError as e:
+                # this could happen quite easily while using files to store ...
+                print(f"\n\nERROR LOADING PROJECT")
+                print(e.message)
+                self.initialized = False
             else:
-                # # dedicated directory where files can be stored
-                # if self.temp_dir is not None:
-                #     if not os.path.isdir(self.temp_dir):
-                #         os.mkdir(self.temp_dir)
                 self.initialized = True
         return
 
@@ -688,15 +689,18 @@ class ContainerHandler:
                 cont.showContents(depth)
 
     def updateDBrecord(self, db_connection, cascade=True):
-        db_connection.updateContainerRecord(self)
-
-        if cascade:
-            for cont in self.containers:
-                cont.updateDBrecord(db_connection)
+        db_connection.updateContainerRecord(self, cascade)
         return
 
     def getSerializationDictionary(self):
+        # general properties of all containers
         dict = {"id": self.id, "type": self.containerType, "name": self.name, "parent_id_local": self.parentContainer.id if self.parentContainer is not None else None}
+
+        # type-specific properties
+        for key, attr_name in self.serializationDict.items():
+            dict.update({key: str(getattr(self, attr_name))})
+
+        # and recursion for the sub-containers
         sub_conts = {}
         for cont in self.containers:
             sub_conts.update({cont.id: cont.getSerializationDictionary()})

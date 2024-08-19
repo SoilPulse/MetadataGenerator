@@ -10,7 +10,7 @@ from soilpulse.resource_managers.xml import *
 from soilpulse.resource_managers.json import *
 from soilpulse.data_publishers import *
 from soilpulse.metadata_scheme import *
-from soilpulse.db_access import EntityKeywordsDB, DBconnector
+from soilpulse.db_access import EntityKeywordsDB, DBconnector, MySQLConnector, NullConnector
 
 def establish_new_project(dbcon, user_id, **example):
     """
@@ -87,27 +87,35 @@ def load_existing_project(dbcon, user_id, project_id):
             f"Publisher of requested DOI record related files 'is not supported.\nCurrently implemented publishers: {[', '.join([k for k in PublisherFactory.publishers.keys()])]}")
 
     else:
-        print(f"project files root: {project.temp_dir}")
-        # show project details
-        print(str(project))
-        # show the whole container tree
-        project.showContainerTree()
+        if project.initialized:
+            # print(f"project files root: {project.temp_dir}")
+            # show project details
+            print(str(project))
+            # show the whole container tree
+            project.showContainerTree()
 
-        #show paths of files and related containers
-        project.showFilesStructure()
-        # # change Resource name ... testing
-        # project.name = "Jonas' dissertation"
-        # project.updateDBrecord()
+            #show paths of files and related containers
+            project.showFilesStructure()
+            # # change Resource name ... testing
+            # project.name = "Jonas' dissertation"
+            # project.updateDBrecord()
 
-    return project
+    return
 
 
 if __name__ == "__main__":
     # user identifier that will be later managed by some login framework in streamlit
-    # it's needed for loading ProjectManagers from database - user can access only own resources
+    # it's needed for loading ProjectManagers from database - user can access only own projects
     user_id = 1
     # database connection to load/save projects and their structure
     dbcon = DBconnector.get_connector(project_files_root)
+
+    # dbcon = MySQLConnector(project_files_root)
+    #
+    # dbcon = NullConnector(project_files_root)
+
+    # checkout user - needed for proper manipulation of project if MySQL server is not reachable
+    user_id = dbcon.checkoutUser(user_id)
     # show current saved resources of user
     dbcon.printUserInfo(user_id)
 
@@ -125,9 +133,8 @@ if __name__ == "__main__":
     # project2 = establish_new_project(dbcon, user_id, **example_3)
 
 
-    load_existing_project(dbcon, user_id, 5)
-
-
+    load_existing_project(dbcon, user_id, 1)
+    load_existing_project(dbcon, user_id, 2)
 
 
     # print("all containers:\n{}".format('\n'.join([str(c) for c in ContainerHandlerFactory.containers.values()])))

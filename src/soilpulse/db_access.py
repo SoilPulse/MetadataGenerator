@@ -11,7 +11,7 @@ import os
 import re
 import shutil
 
-from .exceptions import DatabaseFetchError, DatabaseEntryError, NameNotUniqueError
+from .exceptions import DatabaseFetchError, DatabaseEntryError, NameNotUniqueError, DeserializationError, ContainerStructureError
 
 
 def generate_project_unique_name(existing_names, name):
@@ -81,7 +81,10 @@ class DBconnector:
     def establishProjectRecord(self, user_id, project, unique_names=True):
         pass
 
-    def updateProjectRecord(self, project):
+    def updateProjectRecord(self, project, cascade=False):
+        pass
+
+    def updateContainerRecord(self, container, cascade=False):
         pass
 
     def loadProject(self, project):
@@ -372,33 +375,60 @@ class MySQLConnector(DBconnector):
         thecursor.close()
 
         if len(results) > 0:
-            for cont_args in results:
-                ## general properties common for all container types
-                # replace the global id from DB by project scope 'id_local'
-                del(cont_args["id"])
-                cont_args.update({"id": cont_args.pop("id_local")})
-                # delete properties that are being handled different ways
-                del (cont_args["parent_id_local"])
-                del (cont_args["project_id"])
+            for container_data in results:
+                # missing type attribute is critical ... or doesn't have to be if handled properly some other way
+                if container_data.get("type") is None:
+                    raise DeserializationError(f"Container type is not specified for container ID {container_data.get('id_local')}.\n"
+                                               f"This container and its sub-containers will not be included in the project/dataset tree")
+                elif container_data.get("type") not in project.containerFactory.containerTypes.keys():
+                    raise DeserializationError(
+                        f"Container type '{container_data.get('type')}' is not recognized by container factory.\n"
+                        f"Container ID {container_data.get('id_local')} and its sub-containers will not be included in the project/dataset tree")
 
-                ## type-specific attributes handling
-                # replace relative path stored in DB by absolute path needed for proper container creation in factory
-                rel_path = cont_args.pop("relative_path")
-                # the "NULL" value from DB is returned as string "None" ...
-                rel_path = None if rel_path == "None" else rel_path
-
-                if rel_path is None:
-                    abs_path = None
                 else:
-                    abs_path = os.path.join(project.temp_dir, rel_path)
+                    ## general properties common for all container types
+                    container_type = container_data.get("type")
+                    container_id = container_data.pop("id_local")
 
-                cont_args.update({"path": abs_path})
-                cont_type = cont_args.get("type")
+                    # replace the global id from DB by project scope 'id_local'
+                    del(container_data["id"])
+                    container_data.update({"id": container_id})
+                    # delete properties that are being handled different ways
+                    del (container_data["parent_id_local"])
+                    del (container_data["project_id"])
 
-                newCont = project.containerFactory.createHandler(cont_type, project, parent_container, cascade=False, **cont_args)
+                    ## relative/absolute file path handling ... this could be done in more elegant and general way I'm sure
+                    # replace relative path stored in files by absolute path needed for proper container creation in factory
+                    rel_path = container_data.get("relative_path")
+                    # the "NULL" value from DB is returned as string "None" ...
+                    rel_path = None if rel_path == "None" else rel_path
 
-                out_container_list.append(newCont)
-                newCont.containers = self.loadChildContainers(project, newCont)
+                    if rel_path is None:
+                        abs_path = None
+                    else:
+                        abs_path = os.path.join(project.temp_dir, rel_path)
+                    container_data.update({"path": abs_path})
+
+                    ## type-specific attributes handling
+                    # get the attributes for particular container subclass from the factory
+                    attr_dict = project.containerFactory.containerTypes.get(container_type).serializationDict
+
+                    missing_keys = []
+                    for key, attr_name in attr_dict.items():
+                        if key not in container_data.keys():
+                            missing_keys.append(key)
+                        else:
+                            container_data.update({attr_name: container_data.get(key)})
+                    if len(missing_keys) > 0:
+                        raise DeserializationError(
+                            f"Needed attribute{'s' if len(missing_keys) > 1 else ''} {', '.join([k for k in missing_keys])} "
+                            f"{'was' if len(missing_keys) == 1 else 'were'} not found on deserialization of Container ID {container_id}.\n"
+                            f"This container and its sub-containers will not be included in the project/dataset tree")
+
+                    newCont = project.containerFactory.createHandler(container_type, project, parent_container, cascade=False, **container_data)
+
+                    out_container_list.append(newCont)
+                    newCont.containers = self.loadChildContainers(project, newCont)
 
             thecursor.close()
         return out_container_list
@@ -625,16 +655,16 @@ class NullConnector(DBconnector):
         with open(os.path.join(project.temp_dir, self.project_attr_filename), "w") as f:
             project_attr = {"name": project.name, "doi": project.getDOI(), "temp_dir": project.temp_dir,
                          "keep_files": (1 if project.keepFiles else 0)}
-            json.dump(project_attr, f)
+            json.dump(project_attr, f, ensure_ascii=False, indent=4)
 
         if cascade:
             print(f"\tsaving containers ...")
             with open(os.path.join(project.temp_dir, self.containers_attr_filename), "w") as f:
-                json.dump(project.getContainersSerialization(), f)
+                json.dump(project.getContainersSerialization(), f, ensure_ascii=False, indent=4)
 
         return
 
-    def loadProject(self, project):
+    def loadProject(self, project, cascade=True):
         if project.id in self.getAllTempProjectIDs():
             project_json = os.path.join(self.project_files_root, self.dirname_prefix+str(project.id), self.project_attr_filename)
             with open(project_json, "r") as f:
@@ -647,17 +677,87 @@ class NullConnector(DBconnector):
                     project.keepFiles = False
                 else:
                     project.keepFiles = True
-            return project
         else:
             raise DatabaseFetchError(f"Project ID {project.id} does not exist within local temporary projects."
                  f"\nAvailable project IDs are: {', '.join([str(pid) for pid in self.getAllTempProjectIDs()])}")
+
+        if cascade:
+            containers_attr_filepath = os.path.join(project.temp_dir, self.containers_attr_filename)
+            with open(containers_attr_filepath, "r") as f:
+                containers_serialized = json.load(f)
+
+                project.containerTree = self.loadChildContainers(project, containers_serialized, parent_container=None)
+
+        return project
+
+    def loadChildContainers(self, project, containers_serialized, parent_container=None):
+        out_container_list = []
+
+        for container_id, container_data in containers_serialized.items():
+            # missing type attribute is critical ... or doesn't have to be if handled properly some other way
+            if container_data.get("type") is None:
+                raise DeserializationError(f"Container type is not specified for container ID {container_id}.\n"
+                           f"This container and its sub-containers will not be included in the project/dataset tree")
+            elif container_data.get("type") not in project.containerFactory.containerTypes.keys():
+                raise DeserializationError(f"Container type '{container_data.get('type')}' is not recognized by container factory.\n"
+                           f"Container ID {container_id} and its sub-containers will not be included in the project/dataset tree")
+
+            else:
+                ## general properties common for all container types
+                container_type = container_data.get("type")
+                try:
+                    id = int(container_id)
+                except ValueError as e:
+                    raise DeserializationError(f"Container ID is not a valid integer: {container_id}.\n"
+                           f"This container and its sub-containers will not be included in the project/dataset tree")
+                cont_args = {"id": id, "type": container_data.get("type"), "name": container_data.get("name")}
+                cont_args.update({"parentContainer": parent_container})
+
+                ## relative/absolute file path handling ... this could be done in more elegant and general way I'm sure
+                # replace relative path stored in files by absolute path needed for proper container creation in factory
+                rel_path = container_data.get("relative_path")
+                if rel_path is None:
+                    abs_path = None
+                else:
+                    abs_path = os.path.join(project.temp_dir, rel_path)
+                cont_args.update({"path": abs_path})
+
+                ## type-specific attributes handling
+                # get the attributes for particular container subclass from the factory
+                attr_dict = project.containerFactory.containerTypes.get(container_type).serializationDict
+
+                missing_keys = []
+                for key, attr_name in attr_dict.items():
+                    if key not in container_data.keys():
+                        missing_keys.append(key)
+                    else:
+                        cont_args.update({attr_name: container_data.get(key)})
+                if len(missing_keys) > 0:
+                    raise DeserializationError(
+                        f"Needed attribute{'s' if len(missing_keys)>1 else ''} {', '.join([k for k in missing_keys])} "
+                        f"{'was' if len(missing_keys)==1 else 'were'} not found on deserialization of Container ID {container_id}.\n"
+                        f"This container and its sub-containers will not be included in the project/dataset tree")
+
+                try:
+                    newCont = project.containerFactory.createHandler(container_type, project, parent_container, cascade=False, **cont_args)
+                except ContainerStructureError as e:
+                    print(f"Container ID {container_data.get('id')} with name {container_data.get('name')} was not created!")
+                    print(e.message)
+                else:
+                    out_container_list.append(newCont)
+                    if container_data.get("containers"):
+                        if len(container_data.get("containers")) > 0:
+                            newCont.containers = self.loadChildContainers(project, container_data.get("containers"), newCont)
+
+        return out_container_list
 
     def deleteProject(self, project, delete_dir):
         if os.path.exists(project.temp_dir):
             os.rmdir(project.temp_dir)
 
-    def updateContainerRecord(self, container):
+    def updateContainerRecord(self, container, cascade=False):
         pass
+
     def updateDatasetRecord(self, dataset):
         pass
 
