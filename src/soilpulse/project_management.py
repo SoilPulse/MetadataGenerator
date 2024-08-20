@@ -411,9 +411,9 @@ class ProjectManager:
             except:
                 raise
         else:
-            self.containerFactory.getContainerByID(cid)
-    def getContainersByParentID(self, pid):
+            return self.containerFactory.getContainerByID(cid)
 
+    def getContainersByParentID(self, pid):
         return self.getContainerByID(pid).containers
 
     def newDataset(self, name):
