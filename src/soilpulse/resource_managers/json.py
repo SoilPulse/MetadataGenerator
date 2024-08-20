@@ -15,16 +15,20 @@ class JSONContainer(ContainerHandler):
     containerFormat = "JSON"
     keywordsDBname = "keywords_json"
 
-    DBfields = {"path": ["text", 255], "content": ["text", 2047]}
+    # dictionary of DB fields needed to save this subclass instance attributes
+    DBfields = {"relative_path": ["text", 255], "content": ["text", 2047]}
+    # dictionary of attribute names to be used for DB save/update - current values need to be obtained at right time before saving
+    serializationDict = {"relative_path": "rel_path", "content": "content"}
 
     def __init__(self, project_manager, parent_container, **kwargs):
         super(JSONContainer, self).__init__(project_manager, parent_container, **kwargs)
         # the JSON content
         self.content = kwargs["content"]
         self.path = kwargs["path"]
+        self.rel_path = self.path.replace(project_manager.temp_dir, "") if self.path is not None else None
+
         self.crawler = JSONcrawler(self)
 
-        self.serializationDict = {"path": self.path, "content": str(self.content)}
 
     def showContents(self, depth = 0, ind = ". "):
         """
@@ -102,10 +106,14 @@ class JSONContainer(ContainerHandler):
         return
 
     def saveAsFile(self, dir, filename):
-
         fullpath = os.path.join(dir, filename)
+        with open(fullpath, 'w+', encoding='utf-8') as f:
+            json.dump(self.content, f, ensure_ascii=False, indent=4)
+
         self.path = fullpath
+        self.rel_path = fullpath.replace(self.project.temp_dir, "").strip("\\")
         self.project.containersOfPaths.update({self.path: self.id})
+        print(f"File '{self.rel_path}' successfuly saved.")
         return fullpath
 
     def getCrawled(self):
