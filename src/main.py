@@ -10,9 +10,9 @@ from soilpulse.resource_managers.xml import *
 from soilpulse.resource_managers.json import *
 from soilpulse.data_publishers import *
 from soilpulse.metadata_scheme import *
-from soilpulse.db_access import EntityKeywordsDB, DBconnector
+from soilpulse.db_access import EntityKeywordsDB, DBconnector, MySQLConnector, NullConnector
 
-def establish_new_project(user_id, **example):
+def establish_new_project(dbcon, user_id, **example):
     """
     use case function
     """
@@ -20,11 +20,11 @@ def establish_new_project(user_id, **example):
     print("CREATE NEW PROJECT")
     print("\n".join([f"{k}: {v}" for k, v in example.items()]))
     print(150 * "#"+"\n")
-    example.update({"user_id": user_id})
+    # example.update({"user_id": user_id})
 
     # create ResourceManager instance for new resource:
     try:
-        project = ProjectManager(**example)
+        project = ProjectManager(dbcon, user_id, **example)
 
     except DatabaseEntryError as e:
         # this exception is thrown when trying to add new ResourceManager with existing name into the database (for same user)
@@ -61,7 +61,7 @@ def establish_new_project(user_id, **example):
 
     return project
 
-def load_existing_project(user_id, project_id):
+def load_existing_project(dbcon, user_id, project_id):
     """
     use case function
     """
@@ -71,10 +71,11 @@ def load_existing_project(user_id, project_id):
     print(f"user_id: {user_id}\nproject_id: {project_id}")
     print(150 * "#"+"\n")
 
-    example = {"user_id": user_id, "id" : project_id}
+    # example = {"user_id": user_id, "id": project_id}
+    example = {"id": project_id}
     # create ProjectManager instance for loaded resource:
     try:
-        project = ProjectManager(**example)
+        project = ProjectManager(dbcon, user_id, **example)
 
     except DatabaseEntryError as e:
         # this exception is thrown whne trying to add new ProjectManager with same name into the database (for same user)
@@ -86,26 +87,36 @@ def load_existing_project(user_id, project_id):
             f"Publisher of requested DOI record related files 'is not supported.\nCurrently implemented publishers: {[', '.join([k for k in PublisherFactory.publishers.keys()])]}")
 
     else:
+        if project.initialized:
+            # print(f"project files root: {project.temp_dir}")
+            # show project details
+            print(str(project))
+            # show the whole container tree
+            project.showContainerTree()
 
-        # show the whole container tree
-        project.showContainerTree()
+            #show paths of files and related containers
+            project.showFilesStructure()
+            # # change Resource name ... testing
+            # project.name = "Jonas' dissertation"
+            # project.updateDBrecord()
 
-        #show paths of files and related containers
-        project.showFilesStructure()
-        # # change Resource name ... testing
-        # project.name = "Jonas' dissertation"
-        # project.updateDBrecord()
-
-    return project
+    return
 
 
 if __name__ == "__main__":
     # user identifier that will be later managed by some login framework in streamlit
-    # it's needed for loading ProjectManagers from database - user can access only own resources
+    # it's needed for loading ProjectManagers from database - user can access only own projects
     user_id = 1
-    # database connection to load/save
-    dbcon = DBconnector()
-    # show current saver resources of user
+    # database connection to load/save projects and their structure
+    dbcon = DBconnector.get_connector(project_files_root)
+
+    # dbcon = MySQLConnector(project_files_root)
+    #
+    # dbcon = NullConnector(project_files_root)
+
+    # checkout user - needed for proper manipulation of project if MySQL server is not reachable
+    user_id = dbcon.checkoutUser(user_id)
+    # show current saved resources of user
     dbcon.printUserInfo(user_id)
 
     # example DOI records that can be used
@@ -113,15 +124,19 @@ if __name__ == "__main__":
     example_2 = {"name": "", "doi": "10.5281/zenodo.6654150"}
     example_3 = {"name": "Michael Schmuker's neuromorphic_classifiers", "doi": "10.5281/zenodo.18726"}  # more lightweight repo
     example_4 = {"name": "Ries et al.", "doi": "10.6094/unifr/151460"}
+    example_5 = {"name": "NFDItest", "doi": "10.5281/zenodo.8345022"}
+
 
     # do the use case
-    # project1 = establish_new_project(user_id, **example_1)
-    # project2 = establish_new_project(user_id, **example_3)
+    # project1 = establish_new_project(dbcon, user_id, **example_1)
+    # project1.keepFiles = False
+    # load_id = project1.id
+    # del project1
+    # project2 = establish_new_project(dbcon, user_id, **example_3)
 
 
-    load_existing_project(user_id, 1)
-
-
+    load_existing_project(dbcon, user_id, 1)
+    load_existing_project(dbcon, user_id, 2)
 
 
     # print("all containers:\n{}".format('\n'.join([str(c) for c in ContainerHandlerFactory.containers.values()])))
@@ -156,6 +171,3 @@ if __name__ == "__main__":
     # print("max counts: {}".format(em.checkMaxCounts()))EF.showSearchExpressions()
 
     # EF.showSearchExpressions()
-
-
-    print("\ndone.")
