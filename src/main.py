@@ -41,23 +41,15 @@ def establish_new_project(dbcon, user_id, **example):
             project.downloadPublishedFiles()
         except DOIdataRetrievalException as e:
             print(f"Files of DOI record couldn't be downloaded due to DOI data response error.\n{e.message}")
+        else:
+            # setting of files 'licensing' - this property should be available through GUI
+            project.keepFiles = True
 
-        # setting of files 'licensing' - this property should be available through GUI
-        project.keepFiles = True
+            # show the whole container tree
+            project.showContainerTree()
 
-        # show the whole container tree
-        project.showContainerTree()
 
-        # new empty dataset is created and added to the ResourceManager
-        newDataset = project.newDataset("Dataset test 1")
-        # add some containers from the ResourceManager - will be done through the GUI
-        newDataset.addContainers(project.getContainerByID([1, 2, 6]))
-
-        # # show the dataset's container tree
-        # newDataset.showContainerTree()
-        # newDataset.getCrawled()
-
-        project.updateDBrecord()
+            project.updateDBrecord()
 
     return project
 
@@ -92,7 +84,18 @@ def load_existing_project(dbcon, user_id, project_id):
             # show project details
             print(str(project))
             # show the whole container tree
-            project.showContainerTree()
+            # project.showContainerTree()
+
+
+            # CREATE AND WORK WITH DATASET
+            # new empty dataset is created and added to the ResourceManager
+            newDataset = project.newDataset("Dataset test 1")
+            # add some containers from the ResourceManager - will be done through the GUI
+            newDataset.addContainers(project.getContainerByID([1, 2, 6]))
+
+            # # show the dataset's container tree
+            # newDataset.showContainerTree()
+            # newDataset.getCrawled()
 
             #show paths of files and related containers
             project.showFilesStructure()
@@ -104,6 +107,12 @@ def load_existing_project(dbcon, user_id, project_id):
 
 
 if __name__ == "__main__":
+    mysqlconn = MySQLConnector()
+    neededFields = ContainerHandlerFactory().getAllNeededDBfields()
+    if mysqlconn.checkContainersTableStructure(neededFields):
+        print(" => SoilPulse DB has all needed fields in containers table.")
+
+
     # user identifier that will be later managed by some login framework in streamlit
     # it's needed for loading ProjectManagers from database - user can access only own projects
     user_id = 1
@@ -133,10 +142,11 @@ if __name__ == "__main__":
     # load_id = project1.id
     # del project1
     # project2 = establish_new_project(dbcon, user_id, **example_3)
+    # project2 = establish_new_project(dbcon, user_id, **example_4)
 
 
-    load_existing_project(dbcon, user_id, 1)
-    load_existing_project(dbcon, user_id, 2)
+    # load_existing_project(dbcon, user_id, 1)
+    # load_existing_project(dbcon, user_id, 2)
 
 
     # print("all containers:\n{}".format('\n'.join([str(c) for c in ContainerHandlerFactory.containers.values()])))

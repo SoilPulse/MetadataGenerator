@@ -16,12 +16,12 @@ class JSONContainer(ContainerHandler):
     keywordsDBname = "keywords_json"
 
     # dictionary of DB fields needed to save this subclass instance attributes
-    DBfields = {"relative_path": ["text", 255], "content": ["text", 2047]}
+    DBfields = {"relative_path": "text", "content": ["text", 2047]}
     # dictionary of attribute names to be used for DB save/update - current values need to be obtained at right time before saving
     serializationDict = {"relative_path": "rel_path", "content": "content"}
 
     def __init__(self, project_manager, parent_container, **kwargs):
-        super(JSONContainer, self).__init__(project_manager, parent_container, **kwargs)
+        super().__init__(project_manager, parent_container, **kwargs)
         # the JSON content
         self.content = kwargs["content"]
         self.path = kwargs["path"]

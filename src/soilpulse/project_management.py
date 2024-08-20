@@ -665,6 +665,8 @@ class ContainerHandler:
         self.metadataElements = []
         # the crawler assigned to the container
         self.crawler = None
+        # dictionary of assigned concept URIs {"vocabulary": vocabulary provider, "uri": URI of the concept}
+        self.concepts = {}
 
 
     def __str__(self):
