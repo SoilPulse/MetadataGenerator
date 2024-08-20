@@ -3,7 +3,6 @@
 @author: Jan Devátý, Jonas Lenz
 """
 
-
 from soilpulse.project_management import ProjectManager, DatabaseEntryError
 import soilpulse.resource_managers.filesystem
 import soilpulse.resource_managers.mysql
@@ -79,44 +78,7 @@ def establish_new_project(dbcon, user_id, **example):
         # newDataset.showContainerTree()
         # newDataset.getCrawled()
 
-        project.updateDBrecord()
-
-    return project
-
-def load_existing_project(user_id, project_id):
-    """
-    use case function
-    """
-
-    print("\n\n" + 150 * "#")
-    print("LOAD EXISTING PROJECT")
-    print(f"user_id: {user_id}\nproject_id: {project_id}")
-    print(150 * "#"+"\n")
-
-    example = {"user_id": user_id, "id" : project_id}
-    # create ProjectManager instance for loaded resource:
-    try:
-        project = ProjectManager(**example)
-
-    except DatabaseEntryError as e:
-        # this exception is thrown whne trying to add new ProjectManager with same name into the database (for same user)
-        # pass the error message to the user ... some pop-up window with the message
-        print(e.message)
-        pass
-    except NotImplementedError:
-        print(
-            f"Publisher of requested DOI record related files 'is not supported.\nCurrently implemented publishers: {[', '.join([k for k in PublisherFactory.publishers.keys()])]}")
-
-    else:
-
-        # show the whole container tree
-        project.showContainerTree()
-
-        #show paths of files and related containers
-        project.showFilesStructure()
-        # # change Resource name ... testing
-        # project.name = "Jonas' dissertation"
-        # project.updateDBrecord()
+#        project.updateDBrecord()
 
     return project
 
@@ -128,7 +90,7 @@ example_3 = {"name": "Michael Schmuker's neuromorphic_classifiers", "doi": "10.5
 example_4 = {"name": "Ries et al.", "doi": "10.6094/unifr/151460"}
 
 
-def test_create_project(**example1):
+def test_create_project():
 
     # user identifier that will be later managed by some login framework in streamlit
     # it's needed for loading ProjectManagers from database - user can access only own resources
@@ -139,20 +101,14 @@ def test_create_project(**example1):
     assert project1.doi == "10.5281/zenodo.6654150"
 
 
-def notest_create_project2(example4):
+
+def test_create_project3():
     
     # user identifier that will be later managed by some login framework in streamlit
     # it's needed for loading ProjectManagers from database - user can access only own resources
     user_id = 1
 
-    project1 = establish_new_project(user_id, **example_1)
+    project1 = establish_new_project(user_id, **example_3)
     
-    assert project1.doi == "10.6094/unifr/151460"
-
-def notest_load_project(example1):
-
-    user_id = 1
-    project1 = load_existing_project(user_id, 2)
-    
-    assert project1.doi == "10.5281/zenodo.6654150"
+    assert project1.doi == "10.5281/zenodo.18726"
 

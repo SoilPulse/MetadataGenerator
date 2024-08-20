@@ -68,7 +68,7 @@ class ProjectManager:
         self.containerFactory = ContainerHandlerFactory()
 
         if kwargs.get("id") is None:
-            # Create a new project record in the database
+            # Try to create a new project record in the database
             try:
                 self.id, self.temp_dir = self.dbconnection.establishProjectRecord(user_id, self)
             except DatabaseEntryError as e:

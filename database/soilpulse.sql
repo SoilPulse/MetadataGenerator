@@ -19,7 +19,7 @@ CREATE TABLE `containers` (
   `date_created` datetime DEFAULT NULL,
   `date_last_modified` datetime DEFAULT NULL,
   `encoding` varchar(127) DEFAULT NULL,
-  `content` varchar(2047) DEFAULT NULL,
+  `content` varchar(12047) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `parent_id` (`parent_id_local`),
   KEY `project_id` (`project_id`),
@@ -85,7 +85,8 @@ CREATE TABLE `users` (
 
 TRUNCATE `users`;
 INSERT INTO `users` (`id`, `username`, `first_name`, `last_name`) VALUES
-(1,	'DemoUser',	'Demo',	'User');
+(1, 'DemoUser', 'Demo', 'User');
+
 
 DROP TABLE IF EXISTS `user_projects`;
 CREATE TABLE `user_projects` (
