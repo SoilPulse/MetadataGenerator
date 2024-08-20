@@ -17,6 +17,7 @@ import shutil
 
 from ..project_management import ContainerHandler, ContainerHandlerFactory, Pointer, Crawler
 from ..db_access import EntityKeywordsDB
+from .data_structures import TableContainer, ColumnContainer
 # just for the standalone functions - will be changed
 # from ..resource_management import *
 import gzip
@@ -94,7 +95,7 @@ class FileSystemContainer(ContainerHandler):
     keywordsDBname = "keywords_filesystem"
 
     # dictionary of DB fields needed to save this subclass instance attributes
-    DBfields = {"relative_path": ["text", 255]}
+    DBfields = {"relative_path": "text"}
     # dictionary of attribute names to be used for DB save/update - current values need to be obtained at right time before saving
     serializationDict = {"relative_path": "rel_path"}
 
@@ -119,7 +120,7 @@ class FileSystemContainer(ContainerHandler):
 
 
     def __init__(self, project_manager, parent_container, **kwargs):
-        super(FileSystemContainer, self).__init__(project_manager, parent_container, **kwargs)
+        super().__init__(project_manager, parent_container, **kwargs)
         # file path relative to project temp directory
         self.path = kwargs["path"]
         self.rel_path = self.path.replace(project_manager.temp_dir+os.path.sep, "")
@@ -203,10 +204,10 @@ class SingleFileContainer(FileSystemContainer):
     containerFormat = "File system single file"
 
     # dictionary of DB fields needed to save this subclass instance attributes
-    DBfields = {"relative_path": ["text", 255],
-                "date_created": ["datetime", None],
-                "date_last_modified": ["datetime", None],
-                "encoding": ["text", 127]}
+    DBfields = {"relative_path": "text",
+                "date_created": "datetime",
+                "date_last_modified": "datetime",
+                "encoding": "text"}
     # dictionary of attribute names to be used for DB save/update - current values need to be obtained at right time before saving
     serializationDict = {"relative_path": "rel_path",
                          "date_created": "dateCreated",
@@ -214,7 +215,7 @@ class SingleFileContainer(FileSystemContainer):
                          "encoding": "encoding"}
 
     def __init__(self, project_manager, parent_container, **kwargs):
-        super(SingleFileContainer, self).__init__(project_manager, parent_container, **kwargs)
+        super().__init__(project_manager, parent_container, **kwargs)
 
         # get mime type of the file
         self.mimeType = self.getMimeType()
@@ -269,7 +270,7 @@ class DirectoryContainer(FileSystemContainer):
     containerFormat = "File system directory"
 
     def __init__(self, project_manager, parent_container, cascade=True, **kwargs):
-        super(DirectoryContainer, self).__init__(project_manager, parent_container, **kwargs)
+        super().__init__(project_manager, parent_container, **kwargs)
 
         # get other useful of the file (size, date of creation ...)
         self.size = None
@@ -299,15 +300,15 @@ class ArchiveFileContainer(FileSystemContainer):
     containerFormat = "File system archive file"
 
     # dictionary of DB fields needed to save this subclass instance attributes
-    DBfields = {"relative_path": ["text", 255],
-                "date_created": ["datetime", None],
-                "date_last_modified": ["datetime", None]}
+    DBfields = {"relative_path": "text",
+                "date_created": "datetime",
+                "date_last_modified": None}
     # dictionary of attribute names to be used for DB save/update - current values need to be obtained at right time before saving
     serializationDict = {"relative_path": "rel_path",
                          "date_created": "dateCreated",
                          "date_last_modified": "dateLastModified"}
     def __init__(self, project_manager, parent_container, cascade=True, **kwargs):
-        super(ArchiveFileContainer, self).__init__(project_manager, parent_container, **kwargs)
+        super().__init__(project_manager, parent_container, **kwargs)
         # get mime type of the file
         self.mimeType = self.getMimeType()
         # get other useful of the file (size, date of creation ...)

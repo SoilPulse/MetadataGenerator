@@ -4,14 +4,14 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="0d8e6823-2450-4805-9015-a6f4ccc5becb" name="Changes" comment="Rename directories and files to reflect change of the ResourceManager to ProjectManager">
+    <list default="true" id="0d8e6823-2450-4805-9015-a6f4ccc5becb" name="Changes" comment="Loading and saving works both in MySQL and JSONs.w">
+      <change afterPath="$PROJECT_DIR$/src/soilpulse/resource_managers/data_structures.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/soilpulse/db_access.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/soilpulse/db_access.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/soilpulse/project_management.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/soilpulse/project_management.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/soilpulse/resource_managers/filesystem.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/soilpulse/resource_managers/filesystem.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/soilpulse/resource_managers/json.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/soilpulse/resource_managers/json.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/soilpulse/resource_managers/mysql.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/soilpulse/resource_managers/mysql.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/soilpulse/resource_managers/xml.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/soilpulse/resource_managers/xml.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -32,7 +32,7 @@
   <component name="Git.Settings">
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
-        <entry key="$PROJECT_DIR$" value="main" />
+        <entry key="$PROJECT_DIR$" value="save_and_load_file_containers" />
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -61,6 +61,7 @@
   <component name="PropertiesComponent">{
   &quot;keyToString&quot;: {
     &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
+    &quot;Git.Branch.Popup.ShowAllRemotes&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
@@ -80,6 +81,7 @@
 }</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="D:\Dokumenty\SoilPulse\MetadataGenerator\src\soilpulse\resource_managers" />
       <recent name="D:\Dokumenty\SoilPulse\MetadataGenerator\src\soilpulse" />
     </key>
   </component>
@@ -150,49 +152,13 @@
       <workItem from="1721594570359" duration="1345000" />
       <workItem from="1721885076863" duration="1801000" />
       <workItem from="1722234118272" duration="3586000" />
-      <workItem from="1722587389612" duration="27357000" />
-    </task>
-    <task id="LOCAL-00001" summary="Establish basic elements structure and entities">
-      <created>1702907681115</created>
-      <option name="number" value="00001" />
-      <option name="presentableId" value="LOCAL-00001" />
-      <option name="project" value="LOCAL" />
-      <updated>1702907681115</updated>
-    </task>
-    <task id="LOCAL-00002" summary="Establish basic elements structure and entities">
-      <created>1702911805862</created>
-      <option name="number" value="00002" />
-      <option name="presentableId" value="LOCAL-00002" />
-      <option name="project" value="LOCAL" />
-      <updated>1702911805862</updated>
-    </task>
-    <task id="LOCAL-00003" summary="Establish relationships module">
-      <created>1702911939553</created>
-      <option name="number" value="00003" />
-      <option name="presentableId" value="LOCAL-00003" />
-      <option name="project" value="LOCAL" />
-      <updated>1702911939553</updated>
-    </task>
-    <task id="LOCAL-00004" summary="change the resource path to instance property">
-      <created>1702912104122</created>
-      <option name="number" value="00004" />
-      <option name="presentableId" value="LOCAL-00004" />
-      <option name="project" value="LOCAL" />
-      <updated>1702912104122</updated>
-    </task>
-    <task id="LOCAL-00005" summary="Add more metadata element types">
-      <created>1703010928235</created>
-      <option name="number" value="00005" />
-      <option name="presentableId" value="LOCAL-00005" />
-      <option name="project" value="LOCAL" />
-      <updated>1703010928235</updated>
-    </task>
-    <task id="LOCAL-00006" summary="Create first shot of resource management classes structure">
-      <created>1703018435756</created>
-      <option name="number" value="00006" />
-      <option name="presentableId" value="LOCAL-00006" />
-      <option name="project" value="LOCAL" />
-      <updated>1703018435756</updated>
+      <workItem from="1722587389612" duration="29092000" />
+      <workItem from="1723005134664" duration="64381000" />
+      <workItem from="1723568456978" duration="598000" />
+      <workItem from="1723710434137" duration="6032000" />
+      <workItem from="1723726676377" duration="594000" />
+      <workItem from="1723729189962" duration="18617000" />
+      <workItem from="1724043304146" duration="29082000" />
     </task>
     <task id="LOCAL-00007" summary="Changes in metadata scheme, introduction of entity manager. Can't make it work because of import problems ... so untested">
       <created>1704841823359</created>
@@ -453,7 +419,91 @@
       <option name="project" value="LOCAL" />
       <updated>1722333073444</updated>
     </task>
-    <option name="localTasksCounter" value="44" />
+    <task id="LOCAL-00044" summary="All operations with file paths changed to relative ... uff&#10;&#10;And some additional minor adjustment to DB saving">
+      <created>1722976617906</created>
+      <option name="number" value="00044" />
+      <option name="presentableId" value="LOCAL-00044" />
+      <option name="project" value="LOCAL" />
+      <updated>1722976617906</updated>
+    </task>
+    <task id="LOCAL-00045" summary="projects.keep_files default value assigned to 1">
+      <created>1723016738270</created>
+      <option name="number" value="00045" />
+      <option name="presentableId" value="LOCAL-00045" />
+      <option name="project" value="LOCAL" />
+      <updated>1723016738270</updated>
+    </task>
+    <task id="LOCAL-00046" summary="trying to make loading work with files being deleted after previous session">
+      <created>1723017826355</created>
+      <option name="number" value="00046" />
+      <option name="presentableId" value="LOCAL-00046" />
+      <option name="project" value="LOCAL" />
+      <updated>1723017826355</updated>
+    </task>
+    <task id="LOCAL-00047" summary="pro-forma commit of the databases">
+      <created>1723017903078</created>
+      <option name="number" value="00047" />
+      <option name="presentableId" value="LOCAL-00047" />
+      <option name="project" value="LOCAL" />
+      <updated>1723017903078</updated>
+    </task>
+    <task id="LOCAL-00048" summary="(re)assign DOI to Project instance on load from DB&#10;Correction of None relative path handling on load from DB">
+      <created>1723192176384</created>
+      <option name="number" value="00048" />
+      <option name="presentableId" value="LOCAL-00048" />
+      <option name="project" value="LOCAL" />
+      <updated>1723192176384</updated>
+    </task>
+    <task id="LOCAL-00049" summary="More adjustments to saving and loading of containers.&#10;DOI and publisher metadata JSONs are saved as file to Project.temp_dir as soon as they're obtained in the setDOI() method">
+      <created>1723206008061</created>
+      <option name="number" value="00049" />
+      <option name="presentableId" value="LOCAL-00049" />
+      <option name="project" value="LOCAL" />
+      <updated>1723206008061</updated>
+    </task>
+    <task id="LOCAL-00050" summary="Adjustment to downloaded files management - not to delete ALL files when deleting a Project instance with .keepFiles=False but only the downloaded files - generated files (like the DOI and publisher metadata) will not be deleted">
+      <created>1723211402337</created>
+      <option name="number" value="00050" />
+      <option name="presentableId" value="LOCAL-00050" />
+      <option name="project" value="LOCAL" />
+      <updated>1723211402337</updated>
+    </task>
+    <task id="LOCAL-00051" summary="More development and mistakes correction in project loadig and saving.&#10;Saving and loading made modular to allow for alternative ways of saving the project structure. NullConnector introduced as alternative for MySQL database - not everything solved yet though (containers structure and datasets not saved yet)">
+      <created>1723547450770</created>
+      <option name="number" value="00051" />
+      <option name="presentableId" value="LOCAL-00051" />
+      <option name="project" value="LOCAL" />
+      <updated>1723547450770</updated>
+    </task>
+    <task id="LOCAL-00052" summary="More development and mistakes correction in project loadig and saving.&#10;Saving and loading made modular to allow for alternative ways of saving the project structure. NullConnector introduced as alternative for MySQL database - not everything solved yet though (containers structure and datasets not saved yet)">
+      <created>1723547468537</created>
+      <option name="number" value="00052" />
+      <option name="presentableId" value="LOCAL-00052" />
+      <option name="project" value="LOCAL" />
+      <updated>1723547468537</updated>
+    </task>
+    <task id="LOCAL-00053" summary="Saving containers structure to JSON by NullConnector works ... loading not yet, MySQLConnector needs to be updated accordingly">
+      <created>1723717798037</created>
+      <option name="number" value="00053" />
+      <option name="presentableId" value="LOCAL-00053" />
+      <option name="project" value="LOCAL" />
+      <updated>1723717798038</updated>
+    </task>
+    <task id="LOCAL-00054" summary="Saving containers to MySQL and filesystem works now. some minor adjustments regarding creating the projects directories.&#10;NullConnector loading containers from json still not implemented">
+      <created>1723798948154</created>
+      <option name="number" value="00054" />
+      <option name="presentableId" value="LOCAL-00054" />
+      <option name="project" value="LOCAL" />
+      <updated>1723798948154</updated>
+    </task>
+    <task id="LOCAL-00055" summary="Loading and saving works both in MySQL and JSONs.w">
+      <created>1724055841999</created>
+      <option name="number" value="00055" />
+      <option name="presentableId" value="LOCAL-00055" />
+      <option name="project" value="LOCAL" />
+      <updated>1724055841999</updated>
+    </task>
+    <option name="localTasksCounter" value="56" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -508,17 +558,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="ResourceManagement loading work in prograss.&#10;Structure main.py as a frontend workflow simulation" />
-    <MESSAGE value="More MetadataEntity subclesses added ... working on clearing up the BonaRes scheme transfer" />
-    <MESSAGE value="Working loading files from json from Zenodo, unpacking zip, recognizing all the files (downloaded and unzipped) into containers tree" />
-    <MESSAGE value="Methods docstrings and comments added" />
-    <MESSAGE value="Minor changes in ResourceManager, metadata_scheme.py and FileSystemContainer.showContents()" />
-    <MESSAGE value="Working modular Publisher approach. New publisher can be added by adding subclass in data_publishers.py" />
-    <MESSAGE value="new JSON container introduced and used for storing DOI record metadata (and will be used for storing any JSON data)" />
-    <MESSAGE value="more fun with the JSON container (method for inner structure printing - will be used as a template for different processing)&#10;adjustements to showContents method of containerHandler" />
-    <MESSAGE value="more adjustments of the 'json' container&#10;&#10;getMetadataFromPublisher method removed from ResourceManagement as it is now method of the Publisher class" />
-    <MESSAGE value="adjustments to the management of file content&#10;json structure recognizing working properly&#10;ValueNotInDomainError exception added" />
-    <MESSAGE value="more adjustments to the scheme" />
     <MESSAGE value="Separate loading file information from publisher and downloading the files&#10;Create new Dataset through ResourceManager, add containers from RM to Dataset" />
     <MESSAGE value="First shot on treating the downloaded zip file name so it's not an incorrect dirname" />
     <MESSAGE value="Source files management changed - SourceFile class introduced to hold information about the original downloaded/uploaded file (for better management of the temporary files storage)&#10;&#10;First working crawling for CSV files - the file is read, individual tables are delineated and processed separately: the headers are recognized and the table is converted into pandas daraframe" />
@@ -533,10 +572,21 @@
     <MESSAGE value="Loading and saving of project and its datasets and container structure works!&#10;The in-memory container tree is reconstructed after loading from DB." />
     <MESSAGE value="Saving of ContainerHandler subclasses' attributes generalized - subclass specific attributes are obtained from instance attribute 'serializationDict'" />
     <MESSAGE value="Minor changes in string formating and comments" />
-    <option name="LAST_COMMIT_MESSAGE" value="Minor changes in string formating and comments" />
+    <MESSAGE value="All operations with file paths changed to relative ... uff&#10;&#10;And some additional minor adjustment to DB saving" />
+    <MESSAGE value="projects.keep_files default value assigned to 1" />
+    <MESSAGE value="trying to make loading work with files being deleted after previous session" />
+    <MESSAGE value="pro-forma commit of the databases" />
+    <MESSAGE value="(re)assign DOI to Project instance on load from DB&#10;Correction of None relative path handling on load from DB" />
+    <MESSAGE value="More adjustments to saving and loading of containers.&#10;DOI and publisher metadata JSONs are saved as file to Project.temp_dir as soon as they're obtained in the setDOI() method" />
+    <MESSAGE value="Adjustment to downloaded files management - not to delete ALL files when deleting a Project instance with .keepFiles=False but only the downloaded files - generated files (like the DOI and publisher metadata) will not be deleted" />
+    <MESSAGE value="More development and mistakes correction in project loadig and saving.&#10;Saving and loading made modular to allow for alternative ways of saving the project structure. NullConnector introduced as alternative for MySQL database - not everything solved yet though (containers structure and datasets not saved yet)" />
+    <MESSAGE value="Saving containers structure to JSON by NullConnector works ... loading not yet, MySQLConnector needs to be updated accordingly" />
+    <MESSAGE value="Saving containers to MySQL and filesystem works now. some minor adjustments regarding creating the projects directories.&#10;NullConnector loading containers from json still not implemented" />
+    <MESSAGE value="Loading and saving works both in MySQL and JSONs.w" />
+    <option name="LAST_COMMIT_MESSAGE" value="Loading and saving works both in MySQL and JSONs.w" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/MetadataGenerator$main.coverage" NAME="main Coverage Results" MODIFIED="1722976043840" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
+    <SUITE FILE_PATH="coverage/MetadataGenerator$main.coverage" NAME="main Coverage Results" MODIFIED="1724149237478" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
     <SUITE FILE_PATH="coverage/MetadataGenerator$metadatascheme.coverage" NAME="metadatascheme Coverage Results" MODIFIED="1704839673854" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/soilpulse" />
   </component>
 </project>

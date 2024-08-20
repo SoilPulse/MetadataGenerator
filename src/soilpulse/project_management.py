@@ -558,6 +558,13 @@ class ContainerHandlerFactory:
         print("Container type '{}' registered".format(key))
         return
 
+    @classmethod
+    def getAllNeededDBfields(cls):
+        needed_fields = []
+        for key, typeClass in cls.containerTypes.items():
+            for fieldname in typeClass.DBfields.keys():
+                needed_fields.append(fieldname)
+        return needed_fields
 
     def __init__(self):
 
@@ -658,6 +665,8 @@ class ContainerHandler:
         self.metadataElements = []
         # the crawler assigned to the container
         self.crawler = None
+        # dictionary of assigned concept URIs {"vocabulary": vocabulary provider, "uri": URI of the concept}
+        self.concepts = {}
 
 
     def __str__(self):
