@@ -29,7 +29,7 @@ def test_initDB():
     cursor.close()
 
     # wait for DB to be set up
-#    time.sleep(5)
+    time.sleep(5)
 
     results = get_tables_of_DB()
 
