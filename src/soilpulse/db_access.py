@@ -126,9 +126,12 @@ class MySQLConnector(DBconnector):
     userTableName = "`users`"
     containersTableName = "`containers`"
     datasetsTableName = "`datasets`"
+    conceptsTableName = "`_concepts`"
+    unitsTableName = "`_units`"
+    methodsTableName = "`_methods`"
 
 
-    def __init__(self, project_files_root):
+    def __init__(self, project_files_root = None):
         super().__init__(project_files_root)
         print("\nconnecting to MySQL ...")
 
@@ -153,6 +156,25 @@ class MySQLConnector(DBconnector):
 
     def __del__(self):
         pass
+
+    def checkContainersTableStructure(self, needed_fields):
+        thecursor = self.db_connection.cursor()
+        query = f"SHOW COLUMNS FROM {self.containersTableName} FROM {self.db_name};"
+        thecursor.execute(query)
+        results = thecursor.fetchall()
+        thecursor.close()
+
+        existing_fields = [res[0] for res in results] if len(results) > 0 else []
+
+        print(f"fields in SoilPulse DB:\n{', '.join([str(f) for f in existing_fields])}")
+
+        missing_fields = [field for field in needed_fields if field not in existing_fields]
+
+        if len(missing_fields) > 0:
+            print(f"missing fields in SoilPulse DB:\n{', '.join([str(f) for f in missing_fields])}")
+            return False
+        else:
+            return True
 
     def getUserNameByID(self, id):
         thecursor = self.db_connection.cursor()
