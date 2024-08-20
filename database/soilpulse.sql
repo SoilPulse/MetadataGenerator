@@ -1,4 +1,4 @@
--- Adminer 4.8.1 MySQL 10.4.28-MariaDB dump
+-- Adminer 4.8.1 MySQL 10.4.32-MariaDB dump
 
 SET NAMES utf8;
 SET time_zone = '+00:00';
@@ -7,6 +7,7 @@ SET sql_mode = 'NO_AUTO_VALUE_ON_ZERO';
 
 USE `soilpulse`;
 
+DROP TABLE IF EXISTS `containers`;
 CREATE TABLE `containers` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `id_local` int(11) NOT NULL,
@@ -18,7 +19,7 @@ CREATE TABLE `containers` (
   `date_created` datetime DEFAULT NULL,
   `date_last_modified` datetime DEFAULT NULL,
   `encoding` varchar(127) DEFAULT NULL,
-  `content` varchar(2047) DEFAULT NULL,
+  `content` varchar(12047) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `parent_id` (`parent_id_local`),
   KEY `project_id` (`project_id`),
@@ -26,6 +27,7 @@ CREATE TABLE `containers` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 
+DROP TABLE IF EXISTS `datasets`;
 CREATE TABLE `datasets` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
@@ -37,6 +39,7 @@ CREATE TABLE `datasets` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 
+DROP TABLE IF EXISTS `entities`;
 CREATE TABLE `entities` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `type_id` int(11) NOT NULL,
@@ -49,6 +52,7 @@ CREATE TABLE `entities` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci COMMENT='stores instances of metadata entities belonging to a certain mapping';
 
 
+DROP TABLE IF EXISTS `mappings`;
 CREATE TABLE `mappings` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(255) DEFAULT NULL,
@@ -59,6 +63,7 @@ CREATE TABLE `mappings` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci COMMENT='stores relations between metadata entity mappings and resources';
 
 
+DROP TABLE IF EXISTS `projects`;
 CREATE TABLE `projects` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
@@ -69,6 +74,7 @@ CREATE TABLE `projects` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci COMMENT='stores information about resources';
 
 
+DROP TABLE IF EXISTS `users`;
 CREATE TABLE `users` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `username` varchar(50) NOT NULL,
@@ -77,9 +83,12 @@ CREATE TABLE `users` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
+TRUNCATE `users`;
 INSERT INTO `users` (`id`, `username`, `first_name`, `last_name`) VALUES
-(1,	'DemoUser',	'Demo',	'User');
+(1, 'DemoUser', 'Demo', 'User');
 
+
+DROP TABLE IF EXISTS `user_projects`;
 CREATE TABLE `user_projects` (
   `user_id` int(11) NOT NULL,
   `project_id` int(11) NOT NULL,
@@ -90,4 +99,40 @@ CREATE TABLE `user_projects` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 
--- 2024-08-13 13:14:57
+DROP TABLE IF EXISTS `_concepts`;
+CREATE TABLE `_concepts` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `container_id` int(11) NOT NULL,
+  `vocabulary` varchar(50) NOT NULL,
+  `uri` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `container_id` (`container_id`),
+  CONSTRAINT `_concepts_ibfk_1` FOREIGN KEY (`container_id`) REFERENCES `containers` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+
+DROP TABLE IF EXISTS `_methods`;
+CREATE TABLE `_methods` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `container_id` int(11) NOT NULL,
+  `vocabulary` varchar(50) NOT NULL,
+  `uri` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `container_id` (`container_id`),
+  CONSTRAINT `_methods_ibfk_1` FOREIGN KEY (`container_id`) REFERENCES `containers` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+
+DROP TABLE IF EXISTS `_units`;
+CREATE TABLE `_units` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `container_id` int(11) NOT NULL,
+  `vocabulary` varchar(50) NOT NULL,
+  `uri` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `container_id` (`container_id`),
+  CONSTRAINT `_units_ibfk_1` FOREIGN KEY (`container_id`) REFERENCES `containers` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+
+-- 2024-08-20 09:06:58

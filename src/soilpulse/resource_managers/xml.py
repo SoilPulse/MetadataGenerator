@@ -16,7 +16,7 @@ class XMLContainer(ContainerHandler):
     serializationDict = {}
 
     def __init__(self, id, name):
-        super(XMLContainer, self).__init__(id, name)
+        super().__init__(id, name)
         self.crawler = XMLcrawler(self)
 
 
