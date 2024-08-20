@@ -234,6 +234,8 @@ class MySQLConnector(DBconnector):
 
         if thecursor.rowcount > 0:
             for nextID in results:
+                if nextID[0] is None:
+                    return 1
                 return nextID[0]
 
     def establishProjectRecord(self, user_id, project, unique_names=True):

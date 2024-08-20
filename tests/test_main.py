@@ -20,7 +20,7 @@ example_1 = {"name": "Jonas Lenz's dissertation package", "doi": "10.5281/zenodo
 example_2 = {"name": "", "doi": "10.5281/zenodo.6654150"}
 example_3 = {"name": "Michael Schmuker's neuromorphic_classifiers", "doi": "10.5281/zenodo.18726"}  # more lightweight repo
 example_4 = {"name": "Ries et al.", "doi": "10.6094/unifr/151460"}
-
+example_5 = {"name": "NFDItest", "doi": "10.5281/zenodo.8345022"}
 
 
 def test_RA_invalid():
@@ -83,32 +83,20 @@ def establish_new_project(dbcon, user_id, **example):
     return project
 
 
-# example DOI records that can be used
-example_1 = {"name": "Jonas Lenz's dissertation package", "doi": "10.5281/zenodo.6654150"}
-example_2 = {"name": "", "doi": "10.5281/zenodo.6654150"}
-example_3 = {"name": "Michael Schmuker's neuromorphic_classifiers", "doi": "10.5281/zenodo.18726"}  # more lightweight repo
-example_4 = {"name": "Ries et al.", "doi": "10.6094/unifr/151460"}
+
+@pytest.mark.parametrize("doi,expected", [(example_2["doi"], "DataCite")])
+def test_RA_valid(doi, expected):
+    assert ProjectManager.getRegistrationAgencyOfDOI(doi) == expected
 
 
-def test_create_project():
+@pytest.mark.parametrize("example", [(example_5)])
+def test_create_project(example):
 
     # user identifier that will be later managed by some login framework in streamlit
     # it's needed for loading ProjectManagers from database - user can access only own resources
     user_id = 1
-    dbcon = DBconnector.get_connector(project_files_root=".")
-    project1 = establish_new_project(dbcon, user_id, **example_1)
+    dbcon = DBconnector.get_connector(project_files_root="./project_files/")
+    project = establish_new_project(dbcon, user_id, **example)
 
-    assert project1.doi == "10.5281/zenodo.6654150"
-
-
-
-def test_create_project3():
-    
-    # user identifier that will be later managed by some login framework in streamlit
-    # it's needed for loading ProjectManagers from database - user can access only own resources
-    user_id = 1
-
-    project1 = establish_new_project(user_id, **example_3)
-    
-    assert project1.doi == "10.5281/zenodo.18726"
+    assert project.doi == example["doi"]
 
