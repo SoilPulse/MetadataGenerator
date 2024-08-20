@@ -83,7 +83,6 @@ def establish_new_project(dbcon, user_id, **example):
     return project
 
 
-
 @pytest.mark.parametrize("doi,expected", [(example_2["doi"], "DataCite")])
 def test_RA_valid(doi, expected):
     assert ProjectManager.getRegistrationAgencyOfDOI(doi) == expected
@@ -99,4 +98,3 @@ def test_create_project(example):
     project = establish_new_project(dbcon, user_id, **example)
 
     assert project.doi == example["doi"]
-
