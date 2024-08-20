@@ -1,5 +1,6 @@
 # SoilPulse metadata
 catalogue/
+project_files/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

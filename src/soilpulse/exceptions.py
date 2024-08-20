@@ -42,7 +42,7 @@ class DatabaseFetchError(Exception):
     This exception is raised when there's something wrong with data retrieval from SoilPulse database
     """
     def __init__(self, message):
-        self.message = "SoilPulse database doesn't contain requested entry:\n" + message
+        self.message = "SoilPulse couldn't fetch requested entry:\n" + message
 
 class DatabaseEntryError(Exception):
 
@@ -53,3 +53,9 @@ class NameNotUniqueError(Exception):
     def __init__(self, message):
         self.message = "Provided name is not unique:\n" + message
 
+class DeserializationError(Exception):
+    """
+    This exception is raised when there's something wrong with data being read from a serialization
+    """
+    def __init__(self, message):
+        self.message = "Error appeared while trying to deserialize JSON-saved data:\n" + message

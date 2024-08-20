@@ -8,25 +8,30 @@ import shutil
 
 from .metadata_scheme import MetadataStructureMap
 from .db_access import DBconnector
-from .exceptions import DOIdataRetrievalException, LocalFileManipulationError, ContainerStructureError, DatabaseEntryError, NameNotUniqueError, DatabaseFetchError
+from .exceptions import DOIdataRetrievalException, LocalFileManipulationError, ContainerStructureError, DatabaseEntryError, NameNotUniqueError, DatabaseFetchError, DeserializationError
 
 # general variables
-general_path_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 project_files_dir_name = "project_files"
+project_files_root = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), project_files_dir_name)
 
-def get_temp_dir_path(id):
-    return os.path.join(general_path_root, project_files_dir_name, id)
+doi_metadata_key = "DOI metadata"
+publisher_metadata_key = "Publisher metadata"
 
+if not os.path.exists(project_files_root):
+    os.mkdir(project_files_root)
 
 class ProjectManager:
     """
-    Takes care of all files related to datasets composition.
+    Top level manager of metadata mining project.
+    Gathers all source files either from remote sources (download from URL) or local sources (upload from local computer).
+
 
     """
 
-    def __init__(self, user_id, **kwargs):
+    def __init__(self, db_connection, user_id, **kwargs):
+        self.initialized = False
         # on initialization load Project from DB or establish a new one
-        self.dbconnection = DBconnector()
+        self.dbconnection = db_connection
         self.ownerID = user_id
         self.name = kwargs.get("name")
 
@@ -43,6 +48,8 @@ class ProjectManager:
         self.publisher = None
         # list of files that were published with the resource - publicly available through url
         self.publishedFiles = []
+        # list of files that were downloaded
+        self.downloadedFiles = []
         # uploaded files directly from the users computer
         self.uploadedFiles = []
         # the tree structure of included files and other container types
@@ -52,6 +59,8 @@ class ProjectManager:
         # language of the project
         self.language = None
 
+        # dedicated directory for file saving
+        self.temp_dir = None
         # for now - some kind of licences definition and appropriate actions should be implemented
         self.keepFiles = False
 
@@ -59,21 +68,18 @@ class ProjectManager:
         self.containerFactory = ContainerHandlerFactory()
 
         if kwargs.get("id") is None:
-            # Create a new project record in the database
+            # Try to create a new project record in the database
             try:
-                self.id = self.dbconnection.establishProjectRecord(user_id, self)
+                self.id, self.temp_dir = self.dbconnection.establishProjectRecord(user_id, self)
             except DatabaseEntryError as e:
                 print("Failed to establish new Project record in the SoilPulse database.")
                 raise
             except NameNotUniqueError:
                 print(f"Project with name \"{kwargs.get('name')}\" already exists. Use unique names for your projects!")
-
-            # dedicated directory where files can be stored
-            self.tempDir = os.path.join(general_path_root, project_files_dir_name, str(self.id))
-            if not os.path.exists(os.path.join(general_path_root, project_files_dir_name)):
-                os.mkdir(os.path.join(general_path_root, project_files_dir_name))
-
-            self.setDOI(kwargs.get("doi"))
+            else:
+                self.keepFiles = True
+                self.initialized = True
+                self.setDOI(kwargs.get("doi"))
 
         else:
             # Load the existing project properties from the database
@@ -82,50 +88,54 @@ class ProjectManager:
                 self.dbconnection.loadProject(self)
             except DatabaseFetchError as e:
                 # this should never happen as the ID will be obtained by query from the DB ...
-                print(f"\n\nERROR LOADING PROJECT {kwargs.get('id')}")
+                print(f"\n\nERROR LOADING PROJECT")
                 print(e.message)
-                sys.exit()
-                pass
+                self.initialized = False
+            except DeserializationError as e:
+                # this could happen quite easily while using files to store ...
+                print(f"\n\nERROR LOADING PROJECT")
+                print(e.message)
+                self.initialized = False
+            else:
+                self.initialized = True
         return
 
 
     def __del__(self):
-        if hasattr(self, "keepFiles"):
-            if not self.keepFiles:
-                print(f"\n\nDeleting project files because we can't keep them :-(")
-                failed = self.deleteAllProjectFiles()
-                if len(failed) > 0:
-                    print(f"following files couldn't be deleted:")
-                    for f in failed:
-                        print(f"\t{f}")
+        if self.initialized:
+            if hasattr(self, "keepFiles"):
+                if not self.keepFiles:
+                    print(f"\n\nDeleting project files because we can't keep them :-(")
+                    failed = self.deleteDownloadedFiles()
+                    if len(failed) > 0:
+                        print(f"following files couldn't be deleted:")
+                        for f in failed:
+                            print(f"\t{f}")
 
     def __str__(self):
-        out = f"\nProject #{self.id} {70 * '='}\n"
+        out = f"\n=== Project #{self.id} {70 * '='}\n"
         out += f"name: {self.name}\n"
-        out += f"local directory: {self.tempDir}\n"
+        out += f"local directory: {self.temp_dir}\n"
         out += f"keep stored files: {'yes' if self.keepFiles else 'no'}\n"
-        out += f"space occupied: {get_formated_file_size(self.tempDir)}\n"
-        out += f"DOI: {self.__doi}\n" if self.__doi is not None else f"no DOI assigned\n"
+        out += f"space occupied: {get_formated_file_size(self.temp_dir)}\n"
+        out += f"DOI: {self.doi}\n" if self.doi is not None else f"no DOI assigned\n"
         out += f"{90 * '='}\n"
         return out
 
     def updateDBrecord(self, cascade=True):
         print(f"Saving project \"{self.name}\" with ID {self.id} ... ")
 
-        self.dbconnection.updateProjectRecord(self)
-
-        if cascade:
-            print(f"\tsaving containers ...")
-            # update all containers' DB record
-            for cont in self.containerTree:
-                cont.updateDBrecord(self.dbconnection)
-
-            # update all datasets' DB record
-            for dataset in self.datasets:
-                dataset.updateDBrecord(self.dbconnection)
+        self.dbconnection.updateProjectRecord(self, cascade)
 
         print(f" ... successful.")
         return
+
+    def getContainersSerialization(self):
+        cont_dict = {}
+        for cont in self.containerTree:
+            cont_dict.update({cont.id: cont.getSerializationDictionary()})
+        # print(f"collected serialization dictionary of all projects containers:\n{cont_dict}")
+        return cont_dict
 
     def loadDBrecord(self, cascade=True):
 
@@ -158,14 +168,19 @@ class ProjectManager:
             # populate the metadata properties
             self.DOImetadata = self.getDOImetadata(doi)
             # append the DOI metadata JSON container to the ProjectManagers containers
-            self.containerTree.append(self.containerFactory.createHandler("json", name="DOI metadata", project_manager=self, parent_container=None, content=self.DOImetadata, path=None))
+            DOIcont = self.containerFactory.createHandler("json", name=doi_metadata_key, project_manager=self, parent_container=None, content=self.DOImetadata, path=None)
+            self.containerTree.append(DOIcont)
+            DOIcont.saveAsFile(self.temp_dir, doi_metadata_key.replace(" ", "_")+".json")
 
             # populate publisher with Publisher class instance
             self.publisher = self.getPublisher(self.DOImetadata)
             self.publisherMetadata = self.getPublisherMetadata()
 
             # append the publisher metadata JSON container to the ProjectManagers containers
-            self.containerTree.append(self.containerFactory.createHandler("json", name=f"Publisher metadata", project_manager=self, parent_container=None, content=self.publisherMetadata, path=None))
+            publisherCont = self.containerFactory.createHandler("json", name=publisher_metadata_key, project_manager=self, parent_container=None, content=self.publisherMetadata, path=None)
+            self.containerTree.append(publisherCont)
+            publisherCont.saveAsFile(self.temp_dir, publisher_metadata_key.replace(" ", "_")+".json")
+
             # get downloadable files information from publisher
             self.publishedFiles = self.publisher.getFileInfo()
         else:
@@ -194,6 +209,28 @@ class ProjectManager:
             raise LocalFileManipulationError(f"Failed to delete following files:\n{flist}")
         else:
             print("All files successfully deleted.")
+        return failed
+
+    def deleteDownloadedFiles(self):
+        failed = []
+        for f in self.downloadedFiles:
+            if os.path.isfile(f):
+                try:
+                    os.remove(f)
+                except PermissionError as e:
+                    failed.append(f)
+                    print(f)
+            if os.path.isdir(f):
+                try:
+                    os.rmdir(f)
+                except PermissionError as e:
+                    failed.append(f)
+                    print(f)
+        if len(failed) > 0:
+            flist = "\n".join([f for f in failed])
+            raise LocalFileManipulationError(f"Failed to delete following files:\n{flist}")
+        else:
+            print("All downloaded files successfully deleted.")
         return failed
 
     def getPublisher(self, DOI_metadata):
@@ -310,8 +347,6 @@ class ProjectManager:
                 # create the target directory if not exists
                 print("downloading remote files to local storage ...")
 
-                if not os.path.isdir(self.tempDir):
-                    os.mkdir(self.tempDir)
                 fileList = []
                 if not list:
                     for sourceFile in self.publishedFiles:
@@ -319,7 +354,7 @@ class ProjectManager:
                         # any file name manipulation can be performed here
                         filename = sourceFile.filename.replace("\\/<[^>]*>?", "_")
 
-                        local_path = os.path.join(self.tempDir, filename)
+                        local_path = os.path.join(self.temp_dir, filename)
 
                         try:
                             response = requests.get(url+"/content")
@@ -356,6 +391,7 @@ class ProjectManager:
                                 return False
 
                 print(" ... successful\n")
+                self.downloadedFiles.extend(fileList)
                 return fileList
         else:
             raise DOIdataRetrievalException("List of files from DOI record was not retrieved correctly.")
@@ -365,6 +401,7 @@ class ProjectManager:
         """
         handles all needed steps to upload files from a session (unpack archives if necessary) and create file structure tree
         """
+
         return
 
     def getContainerByID(self, cid):
@@ -376,8 +413,8 @@ class ProjectManager:
         else:
             return self.containerFactory.getContainerByID(cid)
 
-    def getContainerByParentID(self, pid):
-        return
+    def getContainersByParentID(self, pid):
+        return self.getContainerByID(pid).containers
 
     def newDataset(self, name):
         """
@@ -427,7 +464,7 @@ class ProjectManager:
         print(f"{self.name}\nfile paths and related container IDs:")
         print(80 * "-")
         for path, contID in self.containersOfPaths.items():
-            print(f"\t{path}  -->  {contID}")
+            print(f"{path}\t[{contID}]")
 
 class Dataset:
     """
@@ -505,11 +542,11 @@ class SourceFile:
 
 class ContainerHandlerFactory:
     """
-    ContainerHandler object instances factory, global singleton - the only way to create container handlers
-    Keeps track of all the ContainerHandler class and all subclass' instances created
+    ContainerHandler object instances factory, the only way to create container handlers
+    Each Project has one to keep track of all the ContainerHandler class and all subclass' instances created
     """
 
-    # directory of registered containers types classes
+    # directory of registered container types subclasses
     containerTypes = {}
 
     @classmethod
@@ -518,9 +555,16 @@ class ContainerHandlerFactory:
         Registers ContainerHandler subclasses in the factory
         """
         cls.containerTypes[key] = containerTypeClass
-        print("DatasetHandler '{}' registered".format(key))
+        print("Container type '{}' registered".format(key))
         return
 
+    @classmethod
+    def getAllNeededDBfields(cls):
+        needed_fields = []
+        for key, typeClass in cls.containerTypes.items():
+            for fieldname in typeClass.DBfields.keys():
+                needed_fields.append(fieldname)
+        return needed_fields
 
     def __init__(self):
 
@@ -593,6 +637,11 @@ class ContainerHandler:
     containerFormat = None
     keywordsDBname = None
 
+    # dictionary of DB fields needed to save this subclass instance attributes
+    DBfields = {}
+    # dictionary of attribute names to be used for DB save/update - current values need to be obtained at right time before saving
+    serializationDict = {}
+
     @classmethod
     def getSpecializedSubclassType(cls, **kwargs):
         """
@@ -616,8 +665,6 @@ class ContainerHandler:
         self.metadataElements = []
         # the crawler assigned to the container
         self.crawler = None
-        # dictionary of attribute serialization
-        self.serializationDict = {}
 
 
     def __str__(self):
@@ -649,12 +696,23 @@ class ContainerHandler:
                 cont.showContents(depth)
 
     def updateDBrecord(self, db_connection, cascade=True):
-        db_connection.updateContainerRecord(self)
-
-        if cascade:
-            for cont in self.containers:
-                cont.updateDBrecord(db_connection)
+        db_connection.updateContainerRecord(self, cascade)
         return
+
+    def getSerializationDictionary(self):
+        # general properties of all containers
+        dict = {"id": self.id, "type": self.containerType, "name": self.name, "parent_id_local": self.parentContainer.id if self.parentContainer is not None else None}
+
+        # type-specific properties
+        for key, attr_name in self.serializationDict.items():
+            dict.update({key: str(getattr(self, attr_name))})
+
+        # and recursion for the sub-containers
+        sub_conts = {}
+        for cont in self.containers:
+            sub_conts.update({cont.id: cont.getSerializationDictionary()})
+        dict.update({"containers": sub_conts})
+        return dict
 
     def collectContainerIDsToList(self, output=[]):
         output.append(self.id)
@@ -766,7 +824,7 @@ class Publisher():
 
 class Pointer:
     """
-    Points to an exact location in a dataset and defines a way to extract the value of a particular matedata entity instance.
+    Points to an exact location in a resource and defines a way to extract the value of a particular metadata entity instance.
     Concrete implementations defined in subclasses.
     """
     pass
