@@ -558,6 +558,13 @@ class ContainerHandlerFactory:
         print("Container type '{}' registered".format(key))
         return
 
+    @classmethod
+    def getAllNeededDBfields(cls):
+        needed_fields = []
+        for key, typeClass in cls.containerTypes.items():
+            for fieldname in typeClass.DBfields.keys():
+                needed_fields.append(fieldname)
+        return needed_fields
 
     def __init__(self):
 
