@@ -12,6 +12,8 @@ class MySQLContainer(ContainerHandler):
 
     # dictionary of DB fields needed to save this subclass instance attributes
     DBfields = {}
+    # dictionary of attribute names to be used for DB save/update - current values need to be obtained at right time before saving
+    serializationDict = {}
 
     def __init__(self, id, name):
         super(MySQLContainer, self).__init__(id, name)
@@ -20,7 +22,6 @@ class MySQLContainer(ContainerHandler):
         self.foreignKeys = []
         self.crawler = MySQLcrawler(self)
 
-        self.serializationDict = {}
 
     def showContents(self):
         pass
