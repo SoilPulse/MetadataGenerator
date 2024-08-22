@@ -57,7 +57,7 @@ def establish_new_project(dbcon, user_id, **example):
         # newDataset.showContainerTree()
         # newDataset.getCrawled()
 
-        project.updateDBrecord()
+        project.updateDBrecord(dbcon)
 
     return project
 
@@ -100,7 +100,7 @@ def load_existing_project(dbcon, user_id, project_id):
             # project.name = "Jonas' dissertation"
             # project.updateDBrecord()
 
-    return
+    return project
 
 
 if __name__ == "__main__":
@@ -135,8 +135,8 @@ if __name__ == "__main__":
     # project2 = establish_new_project(dbcon, user_id, **example_3)
 
 
-    load_existing_project(dbcon, user_id, 1)
-    load_existing_project(dbcon, user_id, 2)
+    lproject1 = load_existing_project(dbcon, user_id, 1)
+    lproject2 = load_existing_project(dbcon, user_id, 2)
 
 
     # print("all containers:\n{}".format('\n'.join([str(c) for c in ContainerHandlerFactory.containers.values()])))

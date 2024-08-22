@@ -78,7 +78,7 @@ def establish_new_project(dbcon, user_id, **example):
         # newDataset.showContainerTree()
         # newDataset.getCrawled()
 
-#        project.updateDBrecord()
+        project.updateDBrecord(dbcon)
 
     return project
 

@@ -122,10 +122,10 @@ class ProjectManager:
         out += f"{90 * '='}\n"
         return out
 
-    def updateDBrecord(self, cascade=True):
+    def updateDBrecord(self, db_connection, cascade=True):
         print(f"Saving project \"{self.name}\" with ID {self.id} ... ")
 
-        self.dbconnection.updateProjectRecord(self, cascade)
+        db_connection.updateProjectRecord(self, cascade)
 
         print(f" ... successful.")
         return
