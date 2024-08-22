@@ -79,7 +79,6 @@ def establish_new_project(dbcon, user_id, **example):
         # newDataset.getCrawled()
 
         project.updateDBrecord(dbcon)
-
     return project
 
 
