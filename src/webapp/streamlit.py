@@ -11,9 +11,9 @@ It pickles to cache metadata.
 
 import streamlit as st
 import streamlit_tree_select
+import streamlit_helper as sf
 
 import SoilPulse_middle as sp
-import streamlit_helper as sf
 
 st.set_page_config(layout="wide")
 
@@ -47,12 +47,20 @@ def set_session(clear = False):
     if "container" not in st.session_state or clear:
         st.session_state.container = None
 
+    if "con" not in st.session_state or clear:
+        st.session_state.con = sp._get_DB_connection()
+
     # get projectlist of User
-    if "DBprojectlist" not in st.session_state or clear:
-        st.session_state.DBprojectlist = sp._getprojects(st.session_state.user_id)
+    if "DBprojectlist" not in st.session_state:
+        st.session_state.DBprojectlist = sp._getprojects(
+            user_id=st.session_state.user_id,
+            con=st.session_state.con)
+    if "DBprojectlist" in st.session_state and clear:
+        del st.session_state.DBprojectlist
     if clear:
         del st.session_state.user_id
         st.rerun()
+
 
 set_session()
 
@@ -70,7 +78,8 @@ with c2:
 # welcome
 with st.sidebar:
     st.title("Welcome to SoilPulse!")
-    if not st.session_state.DBprojectlist:
+
+    if 'server' not in dir(st.session_state.con):
         st.warning("Can not connect to SoilPulse Database! You still can work locally.")
 
 # local warning
@@ -92,7 +101,8 @@ with st.sidebar:
             st.session_state.localproject = sp._add_local_project(
                 new_name,
                 new_doi,
-                st.session_state.user_id)
+                st.session_state.user_id,
+                con = st.session_state.con)
 
 # Load Project from DB
 with st.sidebar:
@@ -108,7 +118,8 @@ with st.sidebar:
                 if st.button("load project"):
                     st.session_state.localproject = sp._load_project(
                         user_id=st.session_state.user_id,
-                        project_id=DB_project_id
+                        project_id=DB_project_id,
+                        con = st.session_state.con
                         )
 
 
@@ -177,10 +188,17 @@ with c1:
 
 with c2:
     if st.session_state.localproject:
-        if st.button("Apply all changes on "+st.session_state.localproject.name+" to local DB"):
-            DB_project_id = sp._update_local_db(project=st.session_state.localproject,
-                                user_id=st.session_state.user_id)
-            st.session_state.DBprojectlist = sp._getprojects(st.session_state.user_id)
+        save = st.button("Apply all changes on "+st.session_state.localproject.name+" to local DB")
+        if save:
+            DB_project_id = sp._update_local_db(
+                project=st.session_state.localproject,
+                user_id=st.session_state.user_id,
+                con=st.session_state.con)
+            st.session_state.DBprojectlist = sp._getprojects(
+                        user_id=st.session_state.user_id,
+                        con=st.session_state.con)
+            save = False
+            st.rerun()
 
         if st.button("Reset all changes to "+st.session_state.localproject.name):
             st.session_state.localproject = sp._load_project(
