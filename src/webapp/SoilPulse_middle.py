@@ -47,6 +47,7 @@ def _add_local_project(new_name, new_doi, user_id, con):
         project.downloadPublishedFiles()
         project.keepFiles = True
 #        st.write("Created temporary Project. Please upload to persist your changes.")
+        _update_local_db(project, user_id, con)
         return project
     except Exception as e:
         raise e

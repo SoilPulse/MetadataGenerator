@@ -69,7 +69,7 @@ set_session()
 ###########################################
 # Frontend imlementation
 
-c1, c2 = st.columns((8, 3), gap="large")
+c1, c2 = st.columns((8, 2), gap="large")
 
 with c2:
     logout = st.button("Logout and restart session.")
@@ -77,61 +77,64 @@ with c2:
         logout = False
         set_session(clear=True)
 
-# welcome
-with st.sidebar:
-    st.title("Welcome to SoilPulse!")
-
-    if 'server' not in dir(st.session_state.con):
-        st.warning("Can not connect to SoilPulse Database! You still can work locally.")
-
-# local warning
-with st.sidebar:
-    if st.session_state.localproject and st.session_state.localproject.id == 'local':
-        st.warning("You are on a local project and will loose all progress until uploading to DB!")
-
-
-# dialog to create new project
-with st.sidebar:
-    with st.expander("New project"):
-        new_name = st.text_input("Project Name")
-        new_doi = st.text_input("Project DOI")
-        if st.button(
-            "Add Project",
-            disabled=new_doi == "" or
-            new_name == ""
-        ):
-            st.session_state.localproject = sp._add_local_project(
-                new_name,
-                new_doi,
-                st.session_state.user_id,
-                con = st.session_state.con)
-
-# Load Project from DB
-with st.sidebar:
-    if not st.session_state.DBprojectlist:
-        DB_project_id = None
-    else:
-        with st.expander("Load Project from DB", expanded = False):
-            DB_project_id = sf._select_project(
-                projectlist = st.session_state.DBprojectlist
-                )
-            # load project from DB
-            if DB_project_id:
-                if st.button("load project"):
-                    st.session_state.localproject = sp._load_project(
-                        user_id=st.session_state.user_id,
-                        project_id=DB_project_id,
-                        con = st.session_state.con
-                        )
-
-
-# show tree of Project and select container
 if not st.session_state.localproject:
+    # welcome
     with c1:
-        st.warning("Please create a new project or load one from DB.")
+        st.title("Welcome to SoilPulse!")
+        st.write("Please create a new project or load one from DB.")
+
+        if 'server' not in dir(st.session_state.con):
+            st.warning("Can not connect to the global SoilPulse Database! You still can work locally.")
+
+        cpr1, cpr2 = st.columns(2, gap = 'large')
+
+        # dialog to create new project
+        with cpr1:
+            st.title("New project")
+            new_name = st.text_input("Project Name")
+            new_doi = st.text_input("Project DOI")
+            if st.button(
+                "Add Project",
+                disabled=new_doi == "" or
+                new_name == ""
+            ):
+                st.session_state.localproject = sp._add_local_project(
+                    new_name,
+                    new_doi,
+                    st.session_state.user_id,
+                    con = st.session_state.con)
+                st.rerun()
+
+
+        # Load Project from DB
+        with cpr2:
+            if not st.session_state.DBprojectlist:
+                DB_project_id = None
+            else:
+                st.title("Load Project from DB")
+                DB_project_id = sf._select_project(
+                    projectlist = st.session_state.DBprojectlist
+                    )
+                # load project from DB
+                if DB_project_id:
+                    if st.button("load project"):
+                        st.session_state.localproject = sp._load_project(
+                            user_id=st.session_state.user_id,
+                            project_id=DB_project_id,
+                            con = st.session_state.con
+                            )
+                        st.rerun()
+    st.stop()
+
+# if localproject is selected
 else:
+    with st.sidebar:
+        st.title('You are on the project **"'
+                 + st.session_state.localproject.name +
+                 '"**')
 
     with st.sidebar:
+        st.write('Here are the elements found in your project tree. You can select one and modify it.')
         selected = streamlit_tree_select.tree_select(
             sp._create_tree_from_project(st.session_state.localproject),
             no_cascade=True,
@@ -163,7 +166,7 @@ with c1:
                 container_id = st.session_state.selected[0]
                 )
 
-            with st.expander("Container Settings"):
+            with st.expander("Container Settings", expanded = True):
                 #st.header("")
                 st.session_state.container = sf._mod_container_content(container)
 
@@ -190,6 +193,10 @@ with c1:
 
 with c2:
     if st.session_state.localproject:
+        if st.button("Switch to another project."):
+            st.session_state.localproject = None
+            st.rerun()
+
         save = st.button("Apply all changes on "+st.session_state.localproject.name+" to local DB")
         if save:
             DB_project_id = sp._update_local_db(
