@@ -143,6 +143,10 @@ else:
             )
 
             # use session state as work around for single container selection
+        if len(selected["checked"]) != len(st.session_state.selected):
+            rerun = True
+        else:
+            rerun = False
         if len(selected["checked"]) > 1:
             st.session_state.selected = [x for x in selected["checked"] if x != st.session_state.selected[0]][0:1]
             st.session_state.expanded = selected["expanded"]
@@ -153,7 +157,8 @@ else:
         else:
             st.session_state.selected = selected["checked"]
             st.session_state.expanded = selected["expanded"]
-
+        if rerun:
+            st.rerun()
 
 # Container edit
 with c1:
