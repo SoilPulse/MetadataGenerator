@@ -47,8 +47,10 @@ def set_session(clear = False):
     if "container" not in st.session_state or clear:
         st.session_state.container = None
 
-    if "con" not in st.session_state or clear:
+    if "con" not in st.session_state:
         st.session_state.con = sp._get_DB_connection()
+    if "con" in st.session_state and clear:
+        del st.session_state.con
 
     # get projectlist of User
     if "DBprojectlist" not in st.session_state:
