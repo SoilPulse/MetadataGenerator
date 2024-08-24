@@ -14,6 +14,7 @@ from soilpulse.db_access import EntityKeywordsDB, DBconnector
 
 import pytest
 from pathlib import Path
+import os
 
 project_files_dir_name = "project_files"
 project_files_root = Path(os.path.join(Path.home(), project_files_dir_name))
