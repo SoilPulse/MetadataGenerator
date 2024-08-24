@@ -123,7 +123,7 @@ class ProjectManager:
         return out
 
     def updateDBrecord(self, cascade=True):
-        print(f"Saving project \"{self.name}\" with ID {self.id} ... ")
+        print(f"\nSaving project \"{self.name}\" with ID {self.id} ... ")
 
         self.dbconnection.updateProjectRecord(self, cascade)
 
@@ -513,8 +513,8 @@ class Dataset:
         """
         Induces printing contents of the whole container tree
         """
-        print(80 * "=")
-        print(f"dataset\n'{self.name}'\ncontainer tree: ")
+        print(f"\n==== {self.name} " + 70 * "=")
+        print(f"container tree: ")
         print(80 * "-")
         for container in self.containers:
             container.showContents(0)
@@ -525,7 +525,9 @@ class Dataset:
         self.metadataMap.checkConsistency()
 
     def getCrawled(self):
+
         for container in self.containers:
+            container.showContents()
             container.getCrawled()
 
 class SourceFile:
@@ -591,7 +593,10 @@ class ContainerHandlerFactory:
                 if kwargs["id"] not in self.containers.keys():
                     self.lastContainerID = max(kwargs["id"], self.lastContainerID)
                 else:
-                    print(f"ContainerHandler's dict: \n{self.containers}")
+                    print(f"Container IDs produced so far:")
+                    for id, cont in self.containers.items():
+                        print(f"{id} - {cont.name}")
+                        # print(f"{id} - {cont.name} ({cont.type})")
                     raise ContainerStructureError(f"This container factory has already produced container "\
                                                 f"with ID {kwargs['id']} (name: '{self.containers.get(kwargs['id']).name}')")
 
@@ -654,7 +659,7 @@ class ContainerHandler:
         # unique ID in the project scope
         self.id = kwargs["id"]
         # container name (filename/database name/table name ...)
-        self.name = kwargs["name"]
+        self.name = kwargs.get("name")
         # reference to the ProjectManager that the container belongs to
         self.project = project
         # parent container instance (if not root container)
@@ -670,11 +675,10 @@ class ContainerHandler:
 
 
     def __str__(self):
-        out = f"|  # {self.id}  |  {type(self).__name__}\n|  {self.name}  |  parent: "
+        out = f"\n|  # {self.id}  |  {type(self).__name__}\n|  {self.name}  |  parent: "
         out += f"{self.parentContainer.id}\n" if self.parentContainer is not None else f"project\n"
         if hasattr(self, "path"):
             out += f"|  {self.path}"
-        out += "\n"
         return out
 
 
@@ -701,19 +705,24 @@ class ContainerHandler:
         db_connection.updateContainerRecord(self, cascade)
         return
 
-    def getSerializationDictionary(self):
+    def getSerializationDictionary(self, cascade=True):
         # general properties of all containers
-        dict = {"id": self.id, "type": self.containerType, "name": self.name, "parent_id_local": self.parentContainer.id if self.parentContainer is not None else None}
+        dict = {"id": self.id,
+                "type": self.containerType,
+                "name": self.name,
+                "parent_id_local": self.parentContainer.id if self.parentContainer is not None else None,
+                "crawler_type": self.crawer.crawlerType if self.crawler is not None else None}
 
         # type-specific properties
         for key, attr_name in self.serializationDict.items():
             dict.update({key: str(getattr(self, attr_name))})
 
         # and recursion for the sub-containers
-        sub_conts = {}
-        for cont in self.containers:
-            sub_conts.update({cont.id: cont.getSerializationDictionary()})
-        dict.update({"containers": sub_conts})
+        if cascade:
+            sub_conts = {}
+            for cont in self.containers:
+                sub_conts.update({cont.id: cont.getSerializationDictionary()})
+            dict.update({"containers": sub_conts})
         return dict
 
     def collectContainerIDsToList(self, output=[]):
@@ -855,7 +864,6 @@ class Crawler:
 
     def __init__(self, container):
         self.container = container
-        self.crawlerType = type(self).crawlerType
         pass
 
 

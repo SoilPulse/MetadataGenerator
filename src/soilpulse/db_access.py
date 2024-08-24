@@ -353,6 +353,8 @@ class MySQLConnector(DBconnector):
         if cascade:
             for cont in project.containerTree:
                 self.updateContainerRecord(cont, cascade)
+            for dats in project.datasets:
+                self.updateDatasetRecord(dats)
         return
 
     def loadProject(self, project, cascade=True):
@@ -400,6 +402,7 @@ class MySQLConnector(DBconnector):
 
         if len(results) > 0:
             for container_data in results:
+                # print(container_data)
                 # missing type attribute is critical ... or doesn't have to be if handled properly some other way
                 if container_data.get("type") is None:
                     raise DeserializationError(f"Container type is not specified for container ID {container_data.get('id_local')}.\n"
@@ -439,10 +442,12 @@ class MySQLConnector(DBconnector):
 
                     missing_keys = []
                     for key, attr_name in attr_dict.items():
+                        # print(f"{key} - {attr_name}: {container_data.get(key)}")
                         if key not in container_data.keys():
                             missing_keys.append(key)
                         else:
                             container_data.update({attr_name: container_data.get(key)})
+                    print()
                     if len(missing_keys) > 0:
                         raise DeserializationError(
                             f"Needed attribute{'s' if len(missing_keys) > 1 else ''} {', '.join([k for k in missing_keys])} "
@@ -452,6 +457,8 @@ class MySQLConnector(DBconnector):
                     newCont = project.containerFactory.createHandler(container_type, project, parent_container, cascade=False, **container_data)
 
                     out_container_list.append(newCont)
+                    print(str(newCont))
+
                     newCont.containers = self.loadChildContainers(project, newCont)
 
             thecursor.close()
@@ -520,7 +527,10 @@ class MySQLConnector(DBconnector):
         thecursor = self.db_connection.cursor()
 
         # set the general core of properties to be stored
-        arglist = {"type": container.containerType, "name": container.name, "parent_id_local": container.parentContainer.id if container.parentContainer is not None else None}
+        arglist = {"type": container.containerType,
+                   "name": container.name,
+                   "parent_id_local": container.parentContainer.id if container.parentContainer is not None else None,
+                   "crawler_type": container.crawler.crawlerType if container.crawler is not None else None}
 
         # add container subclass specific properties to be stored
         for db_key, attr_key in container.serializationDict.items():
@@ -769,6 +779,7 @@ class NullConnector(DBconnector):
                     print(e.message)
                 else:
                     out_container_list.append(newCont)
+                    print(str(newCont))
                     if container_data.get("containers"):
                         if len(container_data.get("containers")) > 0:
                             newCont.containers = self.loadChildContainers(project, container_data.get("containers"), newCont)

@@ -44,14 +44,14 @@ def establish_new_project(dbcon, user_id, **example):
         else:
             # setting of files 'licensing' - this property should be available through GUI
             project.keepFiles = True
-
             # show the whole container tree
             project.showContainerTree()
 
 
             project.updateDBrecord()
 
-    return project
+        return project
+    return
 
 def load_existing_project(dbcon, user_id, project_id):
     """
@@ -86,38 +86,35 @@ def load_existing_project(dbcon, user_id, project_id):
             # show the whole container tree
             # project.showContainerTree()
 
+            #show paths of files and related containers
+            project.showFilesStructure()
+            # change Resource name ... testing
+            project.name = "Jonas' dissertation"
+
 
             # CREATE AND WORK WITH DATASET
             # new empty dataset is created and added to the ResourceManager
-            newDataset = project.newDataset("Dataset test 1")
+            newDataset = project.newDataset("TUBAF Rainfall simulations")
             # add some containers from the ResourceManager - will be done through the GUI
-            newDataset.addContainers(project.getContainerByID([1, 2, 6]))
+            newDataset.addContainers(project.getContainerByID([177, 178, 161]))
 
+
+            newDataset.getCrawled()
             # # show the dataset's container tree
-            # newDataset.showContainerTree()
-            # newDataset.getCrawled()
+            newDataset.showContainerTree()
 
-            #show paths of files and related containers
-            project.showFilesStructure()
-            # # change Resource name ... testing
-            # project.name = "Jonas' dissertation"
-            # project.updateDBrecord()
+            project.updateDBrecord()
 
     return
 
 
 if __name__ == "__main__":
-    mysqlconn = MySQLConnector()
-    neededFields = ContainerHandlerFactory().getAllNeededDBfields()
-    if mysqlconn.checkContainersTableStructure(neededFields):
-        print(" => SoilPulse DB has all needed fields in containers table.")
-
-
     # user identifier that will be later managed by some login framework in streamlit
     # it's needed for loading ProjectManagers from database - user can access only own projects
     user_id = 1
     # database connection to load/save projects and their structure
     dbcon = DBconnector.get_connector(project_files_root)
+
 
     # dbcon = MySQLConnector(project_files_root)
     #
@@ -145,7 +142,7 @@ if __name__ == "__main__":
     # project2 = establish_new_project(dbcon, user_id, **example_4)
 
 
-    # load_existing_project(dbcon, user_id, 1)
+    load_existing_project(dbcon, user_id, 1)
     # load_existing_project(dbcon, user_id, 2)
 
 

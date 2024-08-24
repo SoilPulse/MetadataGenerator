@@ -12,6 +12,11 @@ from collections import Counter
 import chardet
 import pandas as pd
 import shutil
+
+import pandas.errors
+from frictionless import validate
+from frictionless.resources import TableResource
+from io import StringIO
 # import magic
 
 
@@ -127,14 +132,17 @@ class FileSystemContainer(ContainerHandler):
         self.project.containersOfPaths.update({self.rel_path: self.id})
         # get other useful properties of the file (size, date of creation ...)
         self.size = None
-        if os.path.exists(self.path):
-            self.dateCreated = datetime.datetime.fromtimestamp(os.path.getctime(self.path))
-            self.dateLastModified = datetime.datetime.fromtimestamp(os.path.getmtime(self.path))
+
+        if kwargs.get("date_created") is None:
+            self.dateCreated = datetime.datetime.fromtimestamp(os.path.getctime(self.path)) if os.path.exists(self.path) else None
         else:
-            print(f"\tos.path item of container '{self.name}' was not found.")
-            self.dateCreated = None
-            self.dateLastModified = None
-        self.containers = []
+            self.dateCreated = kwargs.get("date_created")
+
+        if kwargs.get("date_last_modified") is None:
+            self.dateLastModified = datetime.datetime.fromtimestamp(os.path.getmtime(self.path)) if os.path.exists(self.path) else None
+        else:
+            self.dateLastModified = kwargs.get("date_last_modified")
+
 
     def showContents(self, depth=0, ind=". "):
         """
@@ -146,7 +154,10 @@ class FileSystemContainer(ContainerHandler):
         t = ind * depth
         dateFormat = "%d.%m.%Y"
         pContID = self.parentContainer.id if self.parentContainer is not None else "root"
-        print(f"{t}{self.id} - {self.name} ({self.containerType}, {self.getFileSizeFormated()}, {self.dateCreated.strftime(dateFormat) }/{self.dateLastModified.strftime(dateFormat)}) [{len(self.containers)}]  >{pContID}")
+        try:
+            print(f"{t}{self.id} - {self.name} ({self.containerType}, {self.getFileSizeFormated()}, {self.dateCreated.strftime(dateFormat) }/{self.dateLastModified.strftime(dateFormat)}) [{len(self.containers)}]  >{pContID}")
+        except AttributeError as e:
+            print(f"{t}{self.id} - {self.name}")
         if self.containers is None:
             print(f"{t}\tself.containers is None")
 
@@ -223,20 +234,15 @@ class SingleFileContainer(FileSystemContainer):
         self.size = None
         self.fileExtension = get_file_extension(self.path)
 
-        if os.path.exists(self.path):
-            self.dateCreated = datetime.datetime.fromtimestamp(os.path.getctime(self.path))
-            self.dateLastModified = datetime.datetime.fromtimestamp(os.path.getmtime(self.path))
-            self.encoding = detect_encoding(self.path)[0]
+        if kwargs.get("encoding") is None:
+            self.encoding = detect_encoding(self.path)[0] if os.path.exists(self.path) else None
         else:
+            self.encoding = kwargs.get("encoding")
+
+        if not os.path.exists(self.path):
             print(f"\tfile of container '{self.name}' was not found.")
-            self.dateCreated = None
-            self.dateLastModified = None
-            self.encoding = None
 
-        self.crawler = None
-        self.type = None
-
-        if os.path.exists(self.path):
+        else:
             try:
                 self.crawler = FileSystemCrawlerFactory.createCrawler(self.fileExtension, self)
             except ValueError as e:
@@ -251,7 +257,7 @@ class SingleFileContainer(FileSystemContainer):
         return
 
 
-    def getCrawled(self):
+    def getCrawled(self, cascade=True):
         """
         Executes the routines for scanning, recognizing and extracting metadata (and maybe data)
         """
@@ -260,8 +266,10 @@ class SingleFileContainer(FileSystemContainer):
             if tables:
                 print(f"tables:\n{tables}")
                 print("\n\n")
+                self.containers = tables
         for container in self.containers:
             container.getCrawled()
+        return
 
 ContainerHandlerFactory.registerContainerType(SingleFileContainer, SingleFileContainer.containerType)
 
@@ -272,15 +280,10 @@ class DirectoryContainer(FileSystemContainer):
     def __init__(self, project_manager, parent_container, cascade=True, **kwargs):
         super().__init__(project_manager, parent_container, **kwargs)
 
-        # get other useful of the file (size, date of creation ...)
         self.size = None
-        if os.path.exists(self.path):
-            self.dateCreated = datetime.datetime.fromtimestamp(os.path.getctime(self.path))
-            self.dateLastModified = datetime.datetime.fromtimestamp(os.path.getmtime(self.path))
-        else:
+
+        if not os.path.exists(self.path):
             print(f"\tdirectory represented by container '{self.name}' was not found.")
-            self.dateCreated = None
-            self.dateLastModified = None
 
         if cascade:
             self.containers = self.createTree(self.path, project_manager)
@@ -315,13 +318,8 @@ class ArchiveFileContainer(FileSystemContainer):
         self.size = None
         self.fileExtension = get_file_extension(self.path)
 
-        if os.path.exists(self.path):
-            self.dateCreated = datetime.datetime.fromtimestamp(os.path.getctime(self.path))
-            self.dateLastModified = datetime.datetime.fromtimestamp(os.path.getmtime(self.path))
-        else:
+        if not os.path.exists(self.path):
             print(f"\tplaceholder directory of archive container '{self.name}' was not found.")
-            self.dateCreated = None
-            self.dateLastModified = None
 
         # if os.path.exists(kwargs.get("path")) and os.path.isdir(kwargs.get("path")):
         #     # if the directory exists on the storage the archive is already unpacked
@@ -587,9 +585,9 @@ class FileSystemCrawlerFactory:
                     # ... like trying csv crawler on txt file
                     # print("\t\ttrying csv crawler on txt file")
                     output_crawler = cls.filetypes['csv'](container, *args)
-                    # if the csv crawl gains any result, use it
-                    if output_crawler.crawl(report=False) is not None:
-                        print(f"\t\tCSV structure was detected in {container.path} and will be treated as such.")
+                    # validate usability of CSV crawler
+                    if output_crawler.validate():
+                        print(f"\tCSV structure was detected in {container.path} and will be treated as such.")
                         return output_crawler
                     # otherwise just use native txt crawler
                     else:
@@ -602,11 +600,7 @@ class FileSystemCrawlerFactory:
             return cls.filetypes['txt'](container, *args)
 
     def __init__(self):
-
-        def __new__(class_, *args, **kwargs):
-            if not isinstance(class_._instance, class_):
-                class_._instance = object.__new__(class_, *args, **kwargs)
-            return class_._instance
+        pass
 
 
 class CSVcrawler(Crawler):
@@ -616,104 +610,103 @@ class CSVcrawler(Crawler):
     crawlerType = "CSV crawler"
     extension = "csv"
     def __init__(self, container):
-        super(CSVcrawler, self).__init__(container)
+        super().__init__(container)
 
         # print(f"\tCSV crawler created for container #{self.container.id} '{self.container.name}' (file '{self.container.path}')")
 
-    def crawl(self, report = True):
+    def validate(self):
+        return validate(self.container.path)
+
+    def crawl(self, report=True):
         """
         Do the crawl - go through the file and detect defined elements
+
+        :return: list of table containers
         """
         print(f"crawling CSV '{self.container.path}' of container #{self.container.id}, encoding '{self.container.encoding}'") if report else None
-        dataframes = self.get_tables_from_csv(3, report)
-        if len(dataframes) > 0:
-            print(f"\tfound {len(dataframes)} understandable table structure{'s' if len(dataframes) > 1 else ''}") if report else None
-            return dataframes
-        else:
+        #
+        tables = self.find_tables(3, report)
+        if len(tables) == 0:
             print(f"\tfound no understandable tables") if report else None
             return None
+        else:
+            print(f"\tfound {len(tables)} understandable table structure{'s' if len(tables) > 1 else ''}") if report else None
+            table_conts = []
+            i = 1
+            for tab in tables:
+                print(tab[0])
+                print(tab[1])
+                cont_args = {"name": f"table_{i}",
+                            "fl_resource": tab[0],
+                             "pd_dataframe": tab[1]}
+                # create new container from found TableResources
+                table_conts.append(self.container.project.containerFactory.createHandler("table", self.container.project,
+                                                                                    self.container, **cont_args))
+                i += 1
+            return table_conts
 
-    def get_tables_from_csv(self, min_lines=3, report = True):
-        # encoding = detect_encoding(self.container.path)
+
+    def find_tables(self, min_lines=3, report = True):
+        """
+        Searches for coherent tables by regular expression.
+        Returns frictionless TableResource objects of all tables found in the file.
+
+        :param min_lines: number of consistent lines needed for table identification
+        :return: list of TableResource objects (even for a single table)
+        """
+
         encoding = self.container.encoding
 
         # read the file into a text
         with open(self.container.path, 'r', encoding=encoding) as file:
-            text = file.read()
-        file_length = len(text)
-        # try detecting delimiters from file content
-        try:
-            cell_sep, line_sep = detect_delimiters(text)
-        except:
-            return []
-        print(f"\tcell delimiter: '{cell_sep}'") if report else None
+            content = file.read()
 
-        # pattern to match CSV-like tables without knowing delimiters
-        pattern = r'(?:(?<!\w)[^\w\s]*(?:\w+\W*(?:\w+\W*)+\w+|\w+(?:\W+\w+)+\w+)\b(?:\W|\Z))'
-        # pattern = r'(?:(?<!\w)[^\w\s]*(?:\w+\W*(?:\w+\W*)+\w+|\w+(?:\W+\w+)+\w+)\b(?:\W|$))(?!\n\s*$)'
-        # pattern = r'(?:(?<!\w)[^\w\s]*(?:\w+\W*(?:\w+\W*)+\w+|\w+(?:\W+\w+)+\w+)\b(?:\W|$))(?=\n|\Z)'
+            # try detecting delimiters from file content
+            try:
+                cell_sep, line_sep = detect_delimiters(content)
+            except:
+                return []
+            print(f"\tcell delimiter: '{cell_sep}'") if report else None
 
-        # find all matches and their start character and length
-        matches = re.finditer(pattern, text)
-        # filter matches based on structure (e.g., number of lines) and store start character and length
-        table_dataframes = []
-        m = 0
-        for match in matches:
-            start_char = match.start()
-            length = match.end() - match.start()
+            # pattern to match CSV-like tables without knowing delimiters
+            pattern = r'(?:(?<!\w)[^\w\s]*(?:\w+\W*(?:\w+\W*)+\w+|\w+(?:\W+\w+)+\w+)\b(?:\W|\Z))'
+            # pattern = r'(?:(?<!\w)[^\w\s]*(?:\w+\W*(?:\w+\W*)+\w+|\w+(?:\W+\w+)+\w+)\b(?:\W|$))(?!\n\s*$)'
+            # pattern = r'(?:(?<!\w)[^\w\s]*(?:\w+\W*(?:\w+\W*)+\w+|\w+(?:\W+\w+)+\w+)\b(?:\W|$))(?=\n|\Z)'
 
-            # print(f"\nmatch {m}")
-            # match_string = text[match.start():match.end()]
-            # print(f"match string:\n{match_string}\nlength {len(match_string)}")
+            # find all matches and their start character and length
+            matches = re.finditer(pattern, content)
+            # filter matches based on structure (e.g., number of lines) and store start character and length
 
-            num_lines = text[match.start():match.end()].count('\n')
-            # print(f"number of lines {num_lines}")
-            if num_lines >= min_lines:
-                print(f"\ttable detected starting at {start_char} with length {length} (of total {file_length} characters in file), containing {num_lines} lines") if report else None
-
-                table_text = text[start_char: start_char + length]
-                lines = table_text.split('\n')
-                rows = [line.split(cell_sep) for line in lines]
-                row_length = len(rows[0])
-                # replace possible empty cells in header
-                unknown_i = 1
-                i = 0
-                for cell in rows[0]:
-                    # print(f"'{cell}'")
-                    if len(cell) == 0:
-                        print(f"\tempty value in header ('{cell}') replaced with generated name 'column_{unknown_i}") if report else None
-                        rows[0][i] = f"column_{unknown_i}"
-                        unknown_i += 1
-                    else:
-                        rows[0][i] = cell.strip('\"\'')
-                    i += 1
-
-                # check if the last row is empty
-                if len(rows[-1]) < row_length:
-                    # print(f"\tthe last row was removed: {rows[-1]}")
-                    rows.pop()
-                # check if the last row is all Nones
-                num_nones = 0
-                for cell in rows[-1]:
-                    if cell is None:
-                        num_nones += 1
-                if num_nones == len(rows[-1]):
-                    rows.pop()
-                    # print(f"\tlast row was all Nones and was removed")
-
-                print(f"\tcolumn headers: {rows[0]}") if report else None
-                print(f"\tnumber of data rows: {len(rows)-1}") if report else None
-
-                # try converting list of lists to pandas dataframe
+            # the file is directly converted to TableResource if only one table is found in the file
+            num_matches = sum(1 for _ in matches)
+            if num_matches == 1:
                 try:
-                    df = pd.DataFrame(rows[1:], columns=rows[0])
-                except :
-                    print(f"File '{self.container.path}' has unknown structure.") if report else None
-                else:
-                    table_dataframes.append(df)
-            m += 1
+                    return [[TableResource(self.container.path, format='csv'), pd.read_csv(self.container.path, encoding=encoding, on_bad_lines='skip')]]
+                except pandas.errors.ParserError as e:
+                    print(
+                        f"Table '{self.container.path}' couldn't be parsed to pands dataframe")
+                    return []
+            else:
+                tables = []
+                m = 0
+                for match in matches:
+                    start_char = match.start()
+                    length = match.end() - match.start()
 
-        return table_dataframes
+                    # split the content based on provided index pairs
+                    segment = content[match.start():match.end()]
+
+                    # create new TableResource from the data segment
+                    resource = TableResource(data=StringIO(segment), format='csv')
+                    # create new DataFrame  from the data segment
+                    try:
+                        dataframe = pd.read_csv(StringIO(segment), encoding=encoding, on_bad_lines='skip')
+                    except pandas.errors.ParserError as e:
+                        print(f"Error while trying to create pandas frame from table {m} of {num_matches} in '{self.container.path}'")
+                        print(e.message)
+                    tables.append([resource, dataframe])
+
+                return tables
 
 FileSystemCrawlerFactory.registerFileType(CSVcrawler)
 
@@ -726,7 +719,7 @@ class PlainTextCrawler(Crawler):
     extension = "txt"
 
     def __init__(self, container):
-        super(PlainTextCrawler, self).__init__(container)
+        super().__init__(container)
         # print(f"\tTXT crawler created for container #{self.container.id} '{self.container.name}' (file '{self.container.path}')")
 
     def crawl(self):
