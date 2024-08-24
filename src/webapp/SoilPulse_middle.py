@@ -14,8 +14,13 @@ import soilpulse.resource_managers.xml
 import soilpulse.resource_managers.json
 from soilpulse.data_publishers import PublisherFactory, DOIdataRetrievalException
 
+from pathlib import Path
+import os
 
-def _get_DB_connection(rootdir="project_files"):
+project_files_dir_name = "project_files"
+project_files_root = Path(os.path.join(Path.home(), project_files_dir_name))
+
+def _get_DB_connection(rootdir=project_files_root):
     return spdb.DBconnector.get_connector(rootdir)
 
 def _getprojects(user_id, con):
