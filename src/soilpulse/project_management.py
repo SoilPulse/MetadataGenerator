@@ -5,6 +5,7 @@ import requests
 import os
 import sys
 import shutil
+from pathlib import Path
 
 from .metadata_scheme import MetadataStructureMap
 from .db_access import DBconnector
@@ -12,7 +13,8 @@ from .exceptions import DOIdataRetrievalException, LocalFileManipulationError, C
 
 # general variables
 project_files_dir_name = "project_files"
-project_files_root = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), project_files_dir_name)
+project_files_root = os.path.join(Path.home(),'soilpulse', project_files_dir_name)
+print(project_files_root)
 
 doi_metadata_key = "DOI metadata"
 publisher_metadata_key = "Publisher metadata"
