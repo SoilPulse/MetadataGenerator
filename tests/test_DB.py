@@ -6,6 +6,7 @@ import os
 project_files_dir_name = "project_files"
 project_files_root = Path(os.path.join(Path.home(), project_files_dir_name))
 print(project_files_root)
+project_files_root.mkdir(parents=True, exist_ok=True)
 
 def test_initDB():
 
