@@ -13,6 +13,13 @@ from soilpulse.data_publishers import PublisherFactory, DOIdataRetrievalExceptio
 from soilpulse.db_access import EntityKeywordsDB, DBconnector
 
 import pytest
+from pathlib import Path
+import os
+
+project_files_dir_name = "project_files"
+project_files_root = Path(os.path.join(Path.home(), project_files_dir_name))
+print(project_files_root)
+project_files_root.mkdir(parents=True, exist_ok=True)
 
 
 # example DOI records that can be used
@@ -111,7 +118,7 @@ def test_create_project(example):
     # user identifier that will be later managed by some login framework in streamlit
     # it's needed for loading ProjectManagers from database - user can access only own resources
     user_id = 1
-    dbcon = DBconnector.get_connector(project_files_root="./project_files/")
+    dbcon = DBconnector.get_connector(project_files_root=project_files_root)
     project = establish_new_project(dbcon, user_id, **example)
     del dbcon
 
@@ -123,7 +130,7 @@ def test_load_project(example):
     # user identifier that will be later managed by some login framework in streamlit
     # it's needed for loading ProjectManagers from database - user can access only own resources
     user_id = 1
-    dbcon = DBconnector.get_connector(project_files_root="./project_files/")
+    dbcon = DBconnector.get_connector(project_files_root=project_files_root)
     project_id = 1
     project = load_existing_project(dbcon, user_id, project_id)
     del dbcon
