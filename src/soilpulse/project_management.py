@@ -12,14 +12,9 @@ from .db_access import DBconnector
 from .exceptions import DOIdataRetrievalException, LocalFileManipulationError, ContainerStructureError, DatabaseEntryError, NameNotUniqueError, DatabaseFetchError, DeserializationError
 
 # general variables
-project_files_dir_name = "project_files"
-project_files_root = Path(os.path.join(Path.home(), project_files_dir_name))
-print(project_files_root)
-
 doi_metadata_key = "DOI metadata"
 publisher_metadata_key = "Publisher metadata"
 
-project_files_root.mkdir(parents=True, exist_ok=True)
 
 class ProjectManager:
     """
