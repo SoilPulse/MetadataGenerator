@@ -239,6 +239,8 @@ class SingleFileContainer(FileSystemContainer):
         else:
             self.encoding = kwargs.get("encoding")
 
+        if kwargs.get("crawler_type"):
+            self.crawler = FileSystemCrawlerFactory.createCrawler(self.fileExtension, self)
         if not os.path.exists(self.path):
             print(f"\tfile of container '{self.name}' was not found.")
 
@@ -264,11 +266,13 @@ class SingleFileContainer(FileSystemContainer):
         if self.crawler:
             tables = self.crawler.crawl()
             if tables:
-                print(f"tables:\n{tables}")
-                print("\n\n")
+                # print(f"tables:\n{tables}")
+                # print("\n\n")
                 self.containers = tables
-        for container in self.containers:
-            container.getCrawled()
+        if cascade:
+            print("now I could crawl some tables ... ")
+            for container in self.containers:
+                container.getCrawled(cascade)
         return
 
 ContainerHandlerFactory.registerContainerType(SingleFileContainer, SingleFileContainer.containerType)
@@ -605,8 +609,9 @@ class FileSystemCrawlerFactory:
 
 class CSVcrawler(Crawler):
     """
-    Crawler for CSV table structures
+    Crawler for CSV files
     """
+
     crawlerType = "CSV crawler"
     extension = "csv"
     def __init__(self, container):
@@ -617,33 +622,42 @@ class CSVcrawler(Crawler):
     def validate(self):
         return validate(self.container.path)
 
-    def crawl(self, report=True):
+    def crawl(self, forceRecrawl=False, report=True):
         """
         Do the crawl - go through the file and detect defined elements
 
         :return: list of table containers
         """
-        print(f"crawling CSV '{self.container.path}' of container #{self.container.id}, encoding '{self.container.encoding}'") if report else None
-        #
-        tables = self.find_tables(3, report)
-        if len(tables) == 0:
-            print(f"\tfound no understandable tables") if report else None
-            return None
+        if not self.container.wasCrawled or (not self.container.wasCrawled and forceRecrawl):
+
+            print(f"crawling CSV '{self.container.path}' of container #{self.container.id}, encoding '{self.container.encoding}'") if report else None
+            #
+            tables = self.find_tables(3, report)
+            if len(tables) == 0:
+                print(f"\tfound no understandable tables") if report else None
+                return None
+            else:
+                print(f"\tfound {len(tables)} understandable table structure{'s' if len(tables) > 1 else ''}") if report else None
+                table_conts = []
+                i = 1
+                for tab in tables:
+                    # print(tab[0])
+                    # print(tab[1])
+                    cont_args = {"name": f"table_{i}",
+                                "fl_resource": tab[0],
+                                 "pd_dataframe": tab[1]}
+                    # create new container from found TableResources
+                    newCont = self.container.project.containerFactory.createHandler("table", self.container.project, self.container, **cont_args)
+                    table_conts.append(newCont)
+
+                    # print(newCont.fl_resource.schema)
+                    i += 1
+                # change flag of parent container
+                self.container.wasCrawled = True
+                return table_conts
         else:
-            print(f"\tfound {len(tables)} understandable table structure{'s' if len(tables) > 1 else ''}") if report else None
-            table_conts = []
-            i = 1
-            for tab in tables:
-                print(tab[0])
-                print(tab[1])
-                cont_args = {"name": f"table_{i}",
-                            "fl_resource": tab[0],
-                             "pd_dataframe": tab[1]}
-                # create new container from found TableResources
-                table_conts.append(self.container.project.containerFactory.createHandler("table", self.container.project,
-                                                                                    self.container, **cont_args))
-                i += 1
-            return table_conts
+            print(f"Container {self.container.id} was already crawled.")
+            return None
 
 
     def find_tables(self, min_lines=3, report = True):
@@ -681,7 +695,11 @@ class CSVcrawler(Crawler):
             num_matches = sum(1 for _ in matches)
             if num_matches == 1:
                 try:
-                    return [[TableResource(self.container.path, format='csv'), pd.read_csv(self.container.path, encoding=encoding, on_bad_lines='skip')]]
+                    fl = TableResource(self.container.path, format='csv', encoding=encoding)
+                    # infer the columns scheme for frictionless resource
+                    fl.infer()
+                    pd = pandas.read_csv(self.container.path, encoding=encoding, on_bad_lines='skip')
+                    return [[fl, pd]]
                 except pandas.errors.ParserError as e:
                     print(
                         f"Table '{self.container.path}' couldn't be parsed to pands dataframe")

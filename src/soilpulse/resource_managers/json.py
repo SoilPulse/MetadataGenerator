@@ -3,6 +3,7 @@
 
 import json
 import os
+import pprint
 
 from ..project_management import ContainerHandler, ContainerHandlerFactory, Pointer, Crawler
 from ..db_access import EntityKeywordsDB
@@ -29,10 +30,10 @@ class JSONContainer(ContainerHandler):
         # load the content to memory from file - loading from saved state
         if self.content is None and self.path is not None:
             if os.path.isfile(self.path):
-                print(self.path)
                 with open(self.path, "r") as f:
-                    print(json.load(f))
-                    self.content = json.load(f)
+                    json_data = json.load(f)
+                    self.content = json_data
+
         # # write the file from contents - initialization state
         # if self.content is not None and self.path is None:
         #     self.saveAsFile(self.path)

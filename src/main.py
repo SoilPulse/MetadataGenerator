@@ -84,10 +84,10 @@ def load_existing_project(dbcon, user_id, project_id):
             # show project details
             print(str(project))
             # show the whole container tree
-            # project.showContainerTree()
+            project.showContainerTree()
 
             #show paths of files and related containers
-            project.showFilesStructure()
+            # project.showFilesStructure()
             # change Resource name ... testing
             project.name = "Jonas' dissertation"
 
@@ -96,14 +96,13 @@ def load_existing_project(dbcon, user_id, project_id):
             # new empty dataset is created and added to the ResourceManager
             newDataset = project.newDataset("TUBAF Rainfall simulations")
             # add some containers from the ResourceManager - will be done through the GUI
-            newDataset.addContainers(project.getContainerByID([177, 178, 161]))
-
+            newDataset.addContainers(project.getContainerByID([175, 176, 161]))
 
             newDataset.getCrawled()
-            # # show the dataset's container tree
-            newDataset.showContainerTree()
+            # show the dataset's content
+            newDataset.showContents(show_containers=True)
 
-            project.updateDBrecord()
+            # project.updateDBrecord()
 
     return
 
@@ -112,25 +111,23 @@ if __name__ == "__main__":
     # user identifier that will be later managed by some login framework in streamlit
     # it's needed for loading ProjectManagers from database - user can access only own projects
     user_id = 1
-    # database connection to load/save projects and their structure
-    dbcon = DBconnector.get_connector(project_files_root)
-
-
-    # dbcon = MySQLConnector(project_files_root)
-    #
-    # dbcon = NullConnector(project_files_root)
-
-    # checkout user - needed for proper manipulation of project if MySQL server is not reachable
-    user_id = dbcon.checkoutUser(user_id)
-    # show current saved resources of user
-    dbcon.printUserInfo(user_id)
-
     # example DOI records that can be used
     example_1 = {"name": "Jonas Lenz's dissertation package", "doi": "10.5281/zenodo.6654150"}
     example_2 = {"name": "", "doi": "10.5281/zenodo.6654150"}
     example_3 = {"name": "Michael Schmuker's neuromorphic_classifiers", "doi": "10.5281/zenodo.18726"}  # more lightweight repo
     example_4 = {"name": "Ries et al.", "doi": "10.6094/unifr/151460"}
     example_5 = {"name": "NFDItest", "doi": "10.5281/zenodo.8345022"}
+
+    # database connection to load/save projects and their structure
+    # dbcon = DBconnector.get_connector(project_files_root)
+    # dbcon = MySQLConnector(project_files_root)
+    dbcon = NullConnector(project_files_root)
+
+
+    # checkout user - needed for proper manipulation of project if MySQL server is not reachable
+    user_id = dbcon.checkoutUser(user_id)
+    # show current saved resources of user
+    dbcon.printUserInfo(user_id)
 
 
     # do the use case

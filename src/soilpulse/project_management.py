@@ -509,16 +509,21 @@ class Dataset:
     def getContainerIDsList(self):
         return [c.id for c in self.containers]
 
+    def showContents(self, show_containers=True):
+        print(f"\n==== {self.name} " + 70 * "=")
+
+        if show_containers:
+            self.showContainerTree()
+        print(80 * "=" + 2 * "\n")
+
     def showContainerTree(self):
         """
         Induces printing contents of the whole container tree
         """
-        print(f"\n==== {self.name} " + 70 * "=")
-        print(f"container tree: ")
-        print(80 * "-")
+        print(f"---- container tree: ----")
         for container in self.containers:
             container.showContents(0)
-        print(80 * "=" + 2 * "\n")
+
 
 
     def checkMetadataStructure(self):
@@ -527,6 +532,7 @@ class Dataset:
     def getCrawled(self):
 
         for container in self.containers:
+            print()
             container.showContents()
             container.getCrawled()
 
@@ -670,6 +676,8 @@ class ContainerHandler:
         self.metadataElements = []
         # the crawler assigned to the container
         self.crawler = None
+        # was crawled flag
+        self.wasCrawled = False
         # dictionary of assigned concept URIs {"vocabulary": vocabulary provider, "uri": URI of the concept}
         self.concepts = {}
 
@@ -711,7 +719,7 @@ class ContainerHandler:
                 "type": self.containerType,
                 "name": self.name,
                 "parent_id_local": self.parentContainer.id if self.parentContainer is not None else None,
-                "crawler_type": self.crawer.crawlerType if self.crawler is not None else None}
+                "crawler_type": self.crawler.crawlerType if self.crawler is not None else None}
 
         # type-specific properties
         for key, attr_name in self.serializationDict.items():
@@ -735,7 +743,7 @@ class ContainerHandler:
     def createTree(self, *args):
         pass
 
-    def getCrawled(self):
+    def getCrawled(self, cascade):
         pass
 
     def assignCrawler(self, crawler):

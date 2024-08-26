@@ -457,7 +457,6 @@ class MySQLConnector(DBconnector):
                     newCont = project.containerFactory.createHandler(container_type, project, parent_container, cascade=False, **container_data)
 
                     out_container_list.append(newCont)
-                    print(str(newCont))
 
                     newCont.containers = self.loadChildContainers(project, newCont)
 
@@ -717,10 +716,14 @@ class NullConnector(DBconnector):
 
         if cascade:
             containers_attr_filepath = os.path.join(project.temp_dir, self.containers_attr_filename)
-            with open(containers_attr_filepath, "r") as f:
-                containers_serialized = json.load(f)
+            if os.path.isfile(containers_attr_filepath):
+                with open(containers_attr_filepath, "r") as f:
+                    containers_serialized = json.load(f)
 
-                project.containerTree = self.loadChildContainers(project, containers_serialized, parent_container=None)
+                    project.containerTree = self.loadChildContainers(project, containers_serialized, parent_container=None)
+            else:
+                raise DatabaseFetchError(f"JSON file with stored containers info '{self.containers_attr_filename}'"
+                                         f" was not found in project's directory '{project.temp_dir}'")
 
         return project
 
@@ -760,6 +763,7 @@ class NullConnector(DBconnector):
                 # get the attributes for particular container subclass from the factory
                 attr_dict = project.containerFactory.containerTypes.get(container_type).serializationDict
 
+                # check for missing attribute keys in the input
                 missing_keys = []
                 for key, attr_name in attr_dict.items():
                     if key not in container_data.keys():
@@ -779,7 +783,7 @@ class NullConnector(DBconnector):
                     print(e.message)
                 else:
                     out_container_list.append(newCont)
-                    print(str(newCont))
+                    # print(str(newCont))
                     if container_data.get("containers"):
                         if len(container_data.get("containers")) > 0:
                             newCont.containers = self.loadChildContainers(project, container_data.get("containers"), newCont)
