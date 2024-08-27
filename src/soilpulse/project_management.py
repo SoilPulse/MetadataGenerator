@@ -679,7 +679,7 @@ class ContainerHandler:
         # was crawled flag
         self.wasCrawled = False
         # dictionary of assigned concept URIs {"vocabulary": vocabulary provider, "uri": URI of the concept}
-        self.concepts = {}
+        self.concepts = kwargs.get("concepts") if kwargs.get("concepts") is not None else {}
 
 
     def __str__(self):

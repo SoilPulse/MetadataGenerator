@@ -14,8 +14,8 @@ import pandas as pd
 import shutil
 
 import pandas.errors
-from frictionless import validate
-from frictionless.resources import TableResource
+from frictionless import validate, formats
+from frictionless.resources import TableResource, Dialect
 from io import StringIO
 # import magic
 
@@ -695,7 +695,16 @@ class CSVcrawler(Crawler):
             num_matches = sum(1 for _ in matches)
             if num_matches == 1:
                 try:
-                    fl = TableResource(self.container.path, format='csv', encoding=encoding)
+                    if cell_sep is not None:
+                        control = formats.CsvControl(
+                            delimiter=cell_sep,  # Single space as the delimiter
+                            # quote_char='"',  # Fields are wrapped in double quotes
+                            skip_initial_space=True  # Ignore multiple spaces between fields
+                        )
+
+                        fl = TableResource(self.container.path, format='csv', encoding=encoding, control=control)
+                    else:
+                        fl = TableResource(self.container.path, format='csv', encoding=encoding)
                     # infer the columns scheme for frictionless resource
                     fl.infer()
                     pd = pandas.read_csv(self.container.path, encoding=encoding, on_bad_lines='skip')
@@ -718,7 +727,7 @@ class CSVcrawler(Crawler):
                     resource = TableResource(data=StringIO(segment), format='csv')
                     # create new DataFrame  from the data segment
                     try:
-                        dataframe = pd.read_csv(StringIO(segment), encoding=encoding, on_bad_lines='skip')
+                        dataframe = pandas.read_csv(StringIO(segment), encoding=encoding, on_bad_lines='skip')
                     except pandas.errors.ParserError as e:
                         print(f"Error while trying to create pandas frame from table {m} of {num_matches} in '{self.container.path}'")
                         print(e.message)

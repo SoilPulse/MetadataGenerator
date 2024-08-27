@@ -102,6 +102,8 @@ def load_existing_project(dbcon, user_id, project_id):
             # show the dataset's content
             newDataset.showContents(show_containers=True)
 
+            # set correct structure of table
+
             # project.updateDBrecord()
 
     return

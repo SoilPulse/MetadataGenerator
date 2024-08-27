@@ -102,8 +102,11 @@ class ColumnContainer(ContainerHandler):
     def __init__(self, project_manager, parent_container, **kwargs):
         super().__init__(project_manager, parent_container, **kwargs)
         self.dataType = kwargs.get("data_type")
-        self.unit = kwargs.get("unit")
-        self.method = kwargs.get("method")
+        # dictionary of assigned units definition {"vocabulary": vocabulary provider, "uri": URI of the concept}
+        self.units = kwargs.get("units") if kwargs.get("units") is not None else {}
+        # dictionary of assigned methods definition {"vocabulary": vocabulary provider, "uri": URI of the concept}
+        self.methods = kwargs.get("methods") if kwargs.get("methods") is not None else {}
+
         pass
 
 ContainerHandlerFactory.registerContainerType(ColumnContainer, ColumnContainer.containerType)
