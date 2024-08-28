@@ -91,12 +91,11 @@ def load_existing_project(dbcon, user_id, project_id):
             # change Resource name ... testing
             project.name = "Jonas' dissertation"
 
-
             # CREATE AND WORK WITH DATASET
             # new empty dataset is created and added to the ResourceManager
             newDataset = project.newDataset("TUBAF Rainfall simulations")
             # add some containers from the ResourceManager - will be done through the GUI
-            newDataset.addContainers(project.getContainerByID([175, 176, 161]))
+            newDataset.addContainers(project.getContainerByID([771, 956, 992]))
 
             newDataset.getCrawled()
             # show the dataset's content

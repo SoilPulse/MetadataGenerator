@@ -66,6 +66,8 @@ class ProjectManager:
 
         # project's own ContainerHandlerFactory to keep track of containers
         self.containerFactory = ContainerHandlerFactory()
+        # the crawlers factory
+        self.crawlerFactory = CrawlerFactory()
 
         if kwargs.get("id") is None:
             # Try to create a new project record in the database
@@ -411,7 +413,8 @@ class ProjectManager:
             except:
                 raise
         else:
-            self.containerFactory.getContainerByID(cid)
+            return self.containerFactory.getContainerByID(cid)
+
     def getContainersByParentID(self, pid):
 
         return self.getContainerByID(pid).containers
@@ -533,7 +536,7 @@ class Dataset:
 
         for container in self.containers:
             print()
-            container.showContents()
+            # container.showContents()
             container.getCrawled()
 
 class SourceFile:
@@ -634,7 +637,7 @@ class ContainerHandlerFactory:
         Returns container of particular ID from inner dictionary
         """
 
-        if cls.containers.get(cid):
+        if cls.containers.get(cid) is not None:
             return cls.containers.get(cid)
         else:
             raise ContainerStructureError(f"Container id = {cid} was never created by this factory!")
@@ -678,9 +681,11 @@ class ContainerHandler:
         self.crawler = None
         # was crawled flag
         self.wasCrawled = False
+        # was analyzed flag
+        self.isAnalyzed = False
+
         # dictionary of assigned concept URIs {"vocabulary": vocabulary provider, "uri": URI of the concept}
         self.concepts = kwargs.get("concepts") if kwargs.get("concepts") is not None else {}
-
 
     def __str__(self):
         out = f"\n|  # {self.id}  |  {type(self).__name__}\n|  {self.name}  |  parent: "
@@ -701,7 +706,8 @@ class ContainerHandler:
         t = ind * depth
         # print attributes of this container
         pContID = self.parentContainer.id if self.parentContainer is not None else "root"
-        print(f"{t}{self.id} - {self.name} ({self.containerType}) [{len(self.containers)}]   >{pContID}")
+        # print(f"{t}{self.id} - {self.name} ({self.containerType}) [{len(self.containers)}] {'{'+self.crawler.crawlerType+'}'}  >{pContID}")
+        print(f"{t}{self.id} - {self.name} ({self.containerType}) [{len(self.containers)}] >{pContID}")
 
         # invoke showContents of sub-containers
         if len(self.containers) > 0:
@@ -743,7 +749,12 @@ class ContainerHandler:
     def createTree(self, *args):
         pass
 
+    def getAnalyzed(self):
+        """Induces further decomposition of the container into logical sub-elements."""
+        pass
+
     def getCrawled(self, cascade):
+        """Induces content search for metadata elements based on appropriate set of search rules and terms."""
         pass
 
     def assignCrawler(self, crawler):
@@ -864,24 +875,111 @@ class Datasetpointer(Pointer):
 
     pass
 
+class CrawlerFactory:
+    """
+    Factory of Crawler class instances
+    """
+
+    # directory of registered publisher types classes
+    crawlerTypes = {}
+    crawlerExtensions = {}
+
+    @classmethod
+    def registerCrawlerType(cls, crawler_class):
+        cls.crawlerTypes[crawler_class.crawlerType] = crawler_class
+        print(f"> Crawler type '{crawler_class.crawlerType}' registered.")
+        return
+
+    @classmethod
+    def createCrawler(cls, general_type, container, *args, **kwargs):
+        """
+        Creates and returns instance of Crawler subclass based on registered types and their specialization procedures
+        """
+        # if 'crawler_type' is in kwargs and is not None - e.a. loading the container from DB
+        if kwargs.get("crawler_type") is not None:
+            specialized_type = kwargs.pop("crawler_type")
+            return cls.crawlerTypes[specialized_type](container, *args, **kwargs)
+
+        # creating new crawler based on container properties
+        else:
+            if general_type is not None:
+                if general_type not in cls.crawlerTypes.keys():
+                    print(cls.crawlerTypes.keys())
+                    types = ",".join(["'" + k + "'" for k in cls.crawlerTypes.keys()])
+                    print(
+                        f"\t{os.path.basename(container.path)} - unsupported Crawler subclass general type '{general_type}' (registered types are: {types}) - 'zero crawler' will be used instead.")
+
+                    return cls.crawlerTypes['zero'](container, *args)
+                else:
+                    # get specialized crawler type
+                    specialized_type = cls.crawlerTypes[general_type].getSpecializedCrawlerType(container, *args, **kwargs)
+                    # check if the requested specialized crawler type is registered in the factory
+                    if specialized_type not in CrawlerFactory.crawlerTypes.keys():
+                        types = ",".join(["'" + k + "'" for k in cls.crawlerTypes.keys()])
+                        print(f"\t{os.path.basename(container.path)} - unsupported Crawler subclass special type "
+                              f"'{specialized_type}' (registered types are: {types}) - 'zero crawler' will be used instead.")
+
+                        return cls.crawlerTypes['zero'](container, *args)
+                    else:
+                        # try if the specialized crawler is valid for given container
+                        tryCrawler = cls.crawlerTypes[specialized_type](container, *args, **kwargs)
+                        if tryCrawler.validate():
+                            return tryCrawler
+                        # or return the general type
+                        else:
+                            fallback_type = cls.crawlerTypes[general_type].getFallbackCrawlerType(container, *args, **kwargs)
+                            return cls.crawlerTypes[fallback_type](*args, **kwargs)
+
+            else:
+                print(f"\tCrawler type was not specified - 'zero crawler' will be used instead.")
+                return cls.crawlerTypes['zero'](container, *args)
+
+    def __init__(self):
+        pass
+
 class Crawler:
     """
     Top level abstract class of the metadata/data crawler
     """
-    crawlerType = None
+    crawlerType = 'zero'
+
+    @classmethod
+    def getSpecializedCrawlerType(cls, container, **kwargs):
+        return cls.crawlerType
+    @classmethod
+    def getFallbackCrawlerType(cls, container, **kwargs):
+        return cls.crawlerType
 
     def __init__(self, container):
         self.container = container
         pass
 
+    def validate(self):
+        """
+        Validates suitability of particular crawler type for given container
+        """
+        return True
+
+    def analyze(self):
+        """
+        Analyzes inner structure of the container
+        :return: list of containers - container tree
+        """
+
+        print(f"No content analysis procedure defined for crawler type '{self.crawlerType}'")
+        self.container.isAnalyzed = True
+        return []
 
     def crawl(self):
         """
-        Parses the source and translate it to metadata elements structure
+        Parses the container content and searches for meatadata elements.
         :return: MetadataStructureMap
         """
+        print(f"No crawling procedure defined for crawler type '{self.crawlerType}'")
+
         return
 
+CrawlerFactory.registerCrawlerType(Crawler)
 
 def get_formated_file_size(path):
     """Return a string of dynamically formatted file size."""

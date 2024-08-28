@@ -20,7 +20,7 @@ from io import StringIO
 # import magic
 
 
-from ..project_management import ContainerHandler, ContainerHandlerFactory, Pointer, Crawler
+from ..project_management import ContainerHandler, ContainerHandlerFactory, Pointer, Crawler, CrawlerFactory
 from ..db_access import EntityKeywordsDB
 from .data_structures import TableContainer, ColumnContainer
 # just for the standalone functions - will be changed
@@ -225,7 +225,7 @@ class SingleFileContainer(FileSystemContainer):
                          "date_last_modified": "dateLastModified",
                          "encoding": "encoding"}
 
-    def __init__(self, project_manager, parent_container, **kwargs):
+    def __init__(self, project_manager, parent_container, cascade=True, **kwargs):
         super().__init__(project_manager, parent_container, **kwargs)
 
         # get mime type of the file
@@ -234,21 +234,29 @@ class SingleFileContainer(FileSystemContainer):
         self.size = None
         self.fileExtension = get_file_extension(self.path)
 
+        # load or detect encoding
         if kwargs.get("encoding") is None:
             self.encoding = detect_encoding(self.path)[0] if os.path.exists(self.path) else None
         else:
             self.encoding = kwargs.get("encoding")
 
-        if kwargs.get("crawler_type"):
-            self.crawler = FileSystemCrawlerFactory.createCrawler(self.fileExtension, self)
+        # get crawler - use loaded type if any or pass the decision to general FileSystemCrawler
+        if kwargs.get("crawler_type") is not None:
+            # print(f"crawler_type: {kwargs.get('crawler_type')}")
+            ctype = kwargs.get("crawler_type")
+        else:
+            ctype = 'filesystem'
+        try:
+            self.crawler = CrawlerFactory.createCrawler(ctype, self)
+        except ValueError as e:
+            print(e)
+        else:
+            if cascade:
+                self.getAnalyzed()
+
         if not os.path.exists(self.path):
             print(f"\tfile of container '{self.name}' was not found.")
 
-        else:
-            try:
-                self.crawler = FileSystemCrawlerFactory.createCrawler(self.fileExtension, self)
-            except ValueError as e:
-                print(e)
 #        print(f"file {self.rel_path} has encoding: {self.encoding}")
 
     def createTree(self, *args):
@@ -258,6 +266,17 @@ class SingleFileContainer(FileSystemContainer):
         # self.mimeType = magic.from_file(self.path)
         return
 
+    def getAnalyzed(self):
+        if self.crawler:
+            tables = self.crawler.analyze()
+            if tables:
+                # print(f"tables:\n{tables}")
+                # print("\n\n")
+                self.containers = tables
+            # print(f"table cont {self.id} containers: {self.containers}")
+
+        for container in self.containers:
+            container.getAnalyzed()
 
     def getCrawled(self, cascade=True):
         """
@@ -268,9 +287,8 @@ class SingleFileContainer(FileSystemContainer):
             if tables:
                 # print(f"tables:\n{tables}")
                 # print("\n\n")
-                self.containers = tables
+                pass
         if cascade:
-            print("now I could crawl some tables ... ")
             for container in self.containers:
                 container.getCrawled(cascade)
         return
@@ -437,11 +455,11 @@ class ArchiveFileContainer(FileSystemContainer):
         project_manager.downloadedFiles.append(self.path)
         return output_tree
 
+
     def getCrawled(self):
         """
         Executes the routines for scanning, recognizing and extracting metadata (and maybe data)
         """
-
         for container in self.containers:
             container.getCrawled()
 
@@ -553,108 +571,148 @@ class FileSystemPointer(Pointer):
 #
 #         return table_dataframes
 
-class FileSystemCrawlerFactory:
-    """
-    File system type crawler factory
-    """
+# class FileSystemCrawlerFactory:
+#     """
+#     File system type crawler factory
+#     """
+#
+#     # directory of registered publisher types classes
+#     filetypes = {}
+#
+#     # the one and only instance
+#     _instance = None
+#
+#     @classmethod
+#     def registerFileType(cls, file_type_crawler_class):
+#         cls.filetypes[file_type_crawler_class.extension] = file_type_crawler_class
+#         print(f"Crawler for file type '{file_type_crawler_class.extension}' registered.")
+#         return
+#
+#     @classmethod
+#     def createCrawler(cls, file_extension, container, *args):
+#         """
+#         Creates and returns instance of ContainerHandler for the file container provided
+#         """
+#
+#         if file_extension:
+#             if file_extension.lower() not in cls.filetypes.keys():
+#                 filetypes = ",".join(["'" + k + "'" for k in cls.filetypes.keys()])
+#                 print(
+#                     f"\t{os.path.basename(container.path)} - unsupported Crawler subclass type '{file_extension.lower()}' (registered types are: {filetypes}) - plain text crawler will be used instead.")
+#
+#                 return cls.filetypes['txt'](container, *args)
+#             else:
+#                 # special handling of different file types can be added here ...
+#                 if container.fileExtension == 'txt':
+#                     # ... like trying csv crawler on txt file
+#                     # print("\t\ttrying csv crawler on txt file")
+#                     output_crawler = cls.filetypes['csv'](container, *args)
+#                     # validate usability of CSV crawler
+#                     if output_crawler.validate():
+#                         print(f"\tCSV structure was detected in {container.path} and will be treated as such.")
+#                         return output_crawler
+#                     # otherwise just use native txt crawler
+#                     else:
+#                         # print("\t\t==> just text")
+#                         return cls.filetypes[file_extension](container, *args)
+#                 else:
+#                     return cls.filetypes[file_extension](container, *args)
+#         else:
+#             print(f"\tFile has no extension - plain text crawler will be used instead.")
+#             return cls.filetypes['txt'](container, *args)
+#
+#     def __init__(self):
+#         pass
 
-    # directory of registered publisher types classes
-    filetypes = {}
-
-    # the one and only instance
-    _instance = None
+class FileSystemCrawler(Crawler):
+    crawlerType = 'filesystem'
 
     @classmethod
-    def registerFileType(cls, file_type_crawler_class):
-        cls.filetypes[file_type_crawler_class.extension] = file_type_crawler_class
-        print(f"Crawler for file type '{file_type_crawler_class.extension}' registered.")
-        return
-
-    @classmethod
-    def createCrawler(cls, file_extension, container, *args):
-        """
-        Creates and returns instance of ContainerHandler for the file container provided
-        """
-
-        if file_extension:
-            if file_extension.lower() not in cls.filetypes.keys():
-                filetypes = ",".join(["'" + k + "'" for k in cls.filetypes.keys()])
-                print(
-                    f"\t{os.path.basename(container.path)} - unsupported Crawler subclass type '{file_extension.lower()}' (registered types are: {filetypes}) - plain text crawler will be used instead.")
-
-                return cls.filetypes['txt'](container, *args)
-            else:
-                # special handling of different file types can be added here ...
-                if container.fileExtension == 'txt':
-                    # ... like trying csv crawler on txt file
-                    # print("\t\ttrying csv crawler on txt file")
-                    output_crawler = cls.filetypes['csv'](container, *args)
-                    # validate usability of CSV crawler
-                    if output_crawler.validate():
-                        print(f"\tCSV structure was detected in {container.path} and will be treated as such.")
-                        return output_crawler
-                    # otherwise just use native txt crawler
-                    else:
-                        # print("\t\t==> just text")
-                        return cls.filetypes[file_extension](container, *args)
-                else:
-                    return cls.filetypes[file_extension](container, *args)
+    def getSpecializedCrawlerType(cls, container, **kwargs):
+        if not hasattr(container, "fileExtension"):
+            print(f"\nContainer without fileExtension attribute was passed to 'filesystem' Crawler.\n"
+                  f"'zero' crawler will be assigned instead.")
+            return "zero"
         else:
-            print(f"\tFile has no extension - plain text crawler will be used instead.")
-            return cls.filetypes['txt'](container, *args)
+            # special handling of different file types can be added here ...
+            if container.fileExtension == 'txt':
+                # ... like trying csv crawler on txt file
+                return "csv"
+            else:
+                return container.fileExtension
 
-    def __init__(self):
-        pass
+    @classmethod
+    def getFallbackCrawlerType(cls, container, **kwargs):
+        if not hasattr(container, "fileExtension"):
+            print(f"\nContainer without fileExtension attribute was passed to 'filesystem' Crawler.\n"
+                  f"'zero' crawler will be assigned instead.")
+            return "zero"
+        else:
+            return container.fileExtension
 
+CrawlerFactory.registerCrawlerType(FileSystemCrawler)
 
 class CSVcrawler(Crawler):
     """
     Crawler for CSV files
     """
 
-    crawlerType = "CSV crawler"
-    extension = "csv"
+    crawlerType = "csv"
+
+    @classmethod
+    def getSpecializedCrawlerType(cls, container, **kwargs):
+        return cls.crawlerType
+    @classmethod
+    def getFallbackCrawlerType(cls, container, **kwargs):
+        return PlainTextCrawler.crawlerType
+
     def __init__(self, container):
         super().__init__(container)
 
-        # print(f"\tCSV crawler created for container #{self.container.id} '{self.container.name}' (file '{self.container.path}')")
 
     def validate(self):
         return validate(self.container.path)
+
+    def analyze(self, report=True):
+        print(
+            f"\nanalyzing CSV '{self.container.path}' of container #{self.container.id}, encoding '{self.container.encoding}'") if report else None
+        #
+        tables = self.find_tables(3, report)
+        if len(tables) == 0:
+            print(f"\tfound no understandable tables") if report else None
+            return None
+        else:
+            print(
+                f"\tfound {len(tables)} understandable table structure{'s' if len(tables) > 1 else ''}") if report else None
+            table_conts = []
+            i = 1
+            for tab in tables:
+                # print(tab[0])
+                # print(tab[1])
+                cont_args = {"name": f"table_{i}",
+                             "fl_resource": tab[0],
+                             "pd_dataframe": tab[1]}
+                # create new container from found TableResources
+                newCont = self.container.project.containerFactory.createHandler("table", self.container.project,
+                                                                                self.container, **cont_args)
+                table_conts.append(newCont)
+
+                # print(newCont.fl_resource.schema)
+                i += 1
+            # change flag of parent container
+            self.container.isAnalyzed = True
+            return table_conts
 
     def crawl(self, forceRecrawl=False, report=True):
         """
         Do the crawl - go through the file and detect defined elements
 
-        :return: list of table containers
+        :return:
         """
         if not self.container.wasCrawled or (not self.container.wasCrawled and forceRecrawl):
-
             print(f"crawling CSV '{self.container.path}' of container #{self.container.id}, encoding '{self.container.encoding}'") if report else None
-            #
-            tables = self.find_tables(3, report)
-            if len(tables) == 0:
-                print(f"\tfound no understandable tables") if report else None
-                return None
-            else:
-                print(f"\tfound {len(tables)} understandable table structure{'s' if len(tables) > 1 else ''}") if report else None
-                table_conts = []
-                i = 1
-                for tab in tables:
-                    # print(tab[0])
-                    # print(tab[1])
-                    cont_args = {"name": f"table_{i}",
-                                "fl_resource": tab[0],
-                                 "pd_dataframe": tab[1]}
-                    # create new container from found TableResources
-                    newCont = self.container.project.containerFactory.createHandler("table", self.container.project, self.container, **cont_args)
-                    table_conts.append(newCont)
+            return {}
 
-                    # print(newCont.fl_resource.schema)
-                    i += 1
-                # change flag of parent container
-                self.container.wasCrawled = True
-                return table_conts
         else:
             print(f"Container {self.container.id} was already crawled.")
             return None
@@ -673,88 +731,98 @@ class CSVcrawler(Crawler):
 
         # read the file into a text
         with open(self.container.path, 'r', encoding=encoding) as file:
-            content = file.read()
-
-            # try detecting delimiters from file content
             try:
-                cell_sep, line_sep = detect_delimiters(content)
-            except:
+                content = file.read()
+            except UnicodeDecodeError as e:
+                print(f"container '{self.container.name}' couldn't be analyzed due to problems with encoding.")
+                print(self.container.path)
                 return []
-            print(f"\tcell delimiter: '{cell_sep}'") if report else None
-
-            # pattern to match CSV-like tables without knowing delimiters
-            pattern = r'(?:(?<!\w)[^\w\s]*(?:\w+\W*(?:\w+\W*)+\w+|\w+(?:\W+\w+)+\w+)\b(?:\W|\Z))'
-            # pattern = r'(?:(?<!\w)[^\w\s]*(?:\w+\W*(?:\w+\W*)+\w+|\w+(?:\W+\w+)+\w+)\b(?:\W|$))(?!\n\s*$)'
-            # pattern = r'(?:(?<!\w)[^\w\s]*(?:\w+\W*(?:\w+\W*)+\w+|\w+(?:\W+\w+)+\w+)\b(?:\W|$))(?=\n|\Z)'
-
-            # find all matches and their start character and length
-            matches = re.finditer(pattern, content)
-            # filter matches based on structure (e.g., number of lines) and store start character and length
-
-            # the file is directly converted to TableResource if only one table is found in the file
-            num_matches = sum(1 for _ in matches)
-            if num_matches == 1:
-                try:
-                    if cell_sep is not None:
-                        control = formats.CsvControl(
-                            delimiter=cell_sep,  # Single space as the delimiter
-                            # quote_char='"',  # Fields are wrapped in double quotes
-                            skip_initial_space=True  # Ignore multiple spaces between fields
-                        )
-
-                        fl = TableResource(self.container.path, format='csv', encoding=encoding, control=control)
-                    else:
-                        fl = TableResource(self.container.path, format='csv', encoding=encoding)
-                    # infer the columns scheme for frictionless resource
-                    fl.infer()
-                    pd = pandas.read_csv(self.container.path, encoding=encoding, on_bad_lines='skip')
-                    return [[fl, pd]]
-                except pandas.errors.ParserError as e:
-                    print(
-                        f"Table '{self.container.path}' couldn't be parsed to pands dataframe")
-                    return []
             else:
-                tables = []
-                m = 0
-                for match in matches:
-                    start_char = match.start()
-                    length = match.end() - match.start()
+                # try detecting delimiters from file content
+                try:
+                    cell_sep, line_sep = detect_delimiters(content)
+                except:
+                    return []
+                print(f"\tcell delimiter: '{cell_sep}'") if report else None
 
-                    # split the content based on provided index pairs
-                    segment = content[match.start():match.end()]
+                # pattern to match CSV-like tables without knowing delimiters
+                pattern = r'(?:(?<!\w)[^\w\s]*(?:\w+\W*(?:\w+\W*)+\w+|\w+(?:\W+\w+)+\w+)\b(?:\W|\Z))'
+                # pattern = r'(?:(?<!\w)[^\w\s]*(?:\w+\W*(?:\w+\W*)+\w+|\w+(?:\W+\w+)+\w+)\b(?:\W|$))(?!\n\s*$)'
+                # pattern = r'(?:(?<!\w)[^\w\s]*(?:\w+\W*(?:\w+\W*)+\w+|\w+(?:\W+\w+)+\w+)\b(?:\W|$))(?=\n|\Z)'
 
-                    # create new TableResource from the data segment
-                    resource = TableResource(data=StringIO(segment), format='csv')
-                    # create new DataFrame  from the data segment
+                # find all matches and their start character and length
+                matches = re.finditer(pattern, content)
+                # filter matches based on structure (e.g., number of lines) and store start character and length
+
+                # the file is directly converted to TableResource if only one table is found in the file
+                num_matches = sum(1 for _ in matches)
+                if num_matches == 1:
                     try:
-                        dataframe = pandas.read_csv(StringIO(segment), encoding=encoding, on_bad_lines='skip')
+                        if cell_sep is not None:
+                            control = formats.CsvControl(
+                                delimiter=cell_sep,  # Single space as the delimiter
+                                # quote_char='"',  # Fields are wrapped in double quotes
+                                skip_initial_space=True  # Ignore multiple spaces between fields
+                            )
+
+                            fl = TableResource(self.container.path, format='csv', encoding=encoding, control=control)
+
+
+                        else:
+                            fl = TableResource(self.container.path, format='csv', encoding=encoding)
+                        # infer the columns scheme for frictionless resource
+                        fl.infer()
+                        pd = pandas.read_csv(self.container.path, encoding=encoding, on_bad_lines='skip')
+                        return [[fl, pd]]
                     except pandas.errors.ParserError as e:
-                        print(f"Error while trying to create pandas frame from table {m} of {num_matches} in '{self.container.path}'")
-                        print(e.message)
-                    tables.append([resource, dataframe])
+                        print(
+                            f"Table '{self.container.path}' couldn't be parsed to pands dataframe")
+                        return []
+                else:
+                    tables = []
+                    m = 0
+                    for match in matches:
+                        start_char = match.start()
+                        length = match.end() - match.start()
 
-                return tables
+                        # split the content based on provided index pairs
+                        segment = content[match.start():match.end()]
 
-FileSystemCrawlerFactory.registerFileType(CSVcrawler)
+                        # create new TableResource from the data segment
+                        resource = TableResource(data=StringIO(segment), format='csv')
+                        # create new DataFrame  from the data segment
+                        try:
+                            dataframe = pandas.read_csv(StringIO(segment), encoding=encoding, on_bad_lines='skip')
+                        except pandas.errors.ParserError as e:
+                            print(f"Error while trying to create pandas frame from table {m} of {num_matches} in '{self.container.path}'")
+                            print(e.message)
+                        tables.append([resource, dataframe])
+
+                    return tables
+CrawlerFactory.registerCrawlerType(CSVcrawler)
+# FileSystemCrawlerFactory.registerFileType(CSVcrawler)
 
 class PlainTextCrawler(Crawler):
     """
     Crawler for plain text files
     Also used as default general crawler if filetype-specific crawler is not registered
     """
-    crawlerType = "plain text crawler"
-    extension = "txt"
+    crawlerType = "txt"
+
+    @classmethod
+    def getSpecializedCrawlerType(cls, container, **kwargs):
+        return cls.crawlerType
+
+    @classmethod
+    def getFallbackCrawlerType(cls, container, **kwargs):
+        return Crawler.crawlerType
 
     def __init__(self, container):
         super().__init__(container)
         # print(f"\tTXT crawler created for container #{self.container.id} '{self.container.name}' (file '{self.container.path}')")
 
-    def crawl(self):
-        """
-        Do the crawl - go through the file and detect defined elements
-        """
-        print("No crawling procedure defined yet for Plain Text crawler")
-        pass
+CrawlerFactory.registerCrawlerType(PlainTextCrawler)
 
-FileSystemCrawlerFactory.registerFileType(PlainTextCrawler)
+
+# FileSystemCrawlerFactory.registerFileType(PlainTextCrawler)
 

@@ -436,6 +436,8 @@ class MySQLConnector(DBconnector):
                         abs_path = os.path.join(project.temp_dir, rel_path)
                     container_data.update({"path": abs_path})
 
+                    ## crawler assignment
+
                     ## type-specific attributes handling
                     # get the attributes for particular container subclass from the factory
                     attr_dict = project.containerFactory.containerTypes.get(container_type).serializationDict
@@ -447,7 +449,6 @@ class MySQLConnector(DBconnector):
                             missing_keys.append(key)
                         else:
                             container_data.update({attr_name: container_data.get(key)})
-                    print()
                     if len(missing_keys) > 0:
                         raise DeserializationError(
                             f"Needed attribute{'s' if len(missing_keys) > 1 else ''} {', '.join([k for k in missing_keys])} "
@@ -885,7 +886,7 @@ class EntityKeywordsDB:
     @classmethod
     def registerKeywordsDB(cls, dbType, dbFilename):
         cls.DBs.update({dbType: os.path.join(cls.dbDir, dbFilename)})
-        print("Keywords database {} registered as '{}'".format(os.path.join(cls.dbDir, dbFilename), dbType))
+        print("* Keywords database {} registered as '{}'".format(os.path.join(cls.dbDir, dbFilename), dbType))
         return
 
     @classmethod

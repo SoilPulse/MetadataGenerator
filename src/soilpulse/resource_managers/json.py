@@ -5,7 +5,7 @@ import json
 import os
 import pprint
 
-from ..project_management import ContainerHandler, ContainerHandlerFactory, Pointer, Crawler
+from ..project_management import ContainerHandler, ContainerHandlerFactory, Pointer, Crawler, CrawlerFactory
 from ..db_access import EntityKeywordsDB
 # just for the standalone functions - will be changed
 # from ..resource_management import *
@@ -40,25 +40,6 @@ class JSONContainer(ContainerHandler):
 
 
         self.crawler = JSONcrawler(self)
-
-
-    def showContents(self, depth = 0, ind = ". "):
-        """
-        Prints basic info about the container and invokes showContents on all of its containers
-
-        :param depth: current depth of showKeyValueStructure recursion
-        :param ind: string used for one level of indentation
-        """
-        t = ind * depth
-
-        print(f"{t}{self.id} - {self.name} ({self.containerType}) [{len(self.containers)}]")
-        # self.showKeyValueStructure(self.content, t, 0)
-        if self.containers:
-            depth += 1
-            for cont in self.containers:
-                cont.showContents(depth)
-        return
-
 
     def showKeyValueStructure(self, json, t = "", depth = 0, depthLimit = 0, ind = ".", sep = ">"):
         """
@@ -149,13 +130,11 @@ class JSONcrawler(Crawler):
     Crawler for file system repositories
     """
 
-    crawlerType = "JSON crawler"
+    crawlerType = "json"
 
     def __init__(self, container):
         self.container = container
         # print(f"\tJSON crawler created for container #{self.container.id} '{self.container.name}' (file '{self.container.path}')")
         pass
 
-    def crawl(self):
-        print("No crawling procedure defined yet for JSON crawler")
-        pass
+CrawlerFactory.registerCrawlerType(JSONcrawler)
