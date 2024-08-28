@@ -13,7 +13,6 @@ import shutil
 
 from .exceptions import DatabaseFetchError, DatabaseEntryError, NameNotUniqueError, DeserializationError, ContainerStructureError
 
-
 def generate_project_unique_name(existing_names, name):
     """
     Generates a unique name for a user's project by appending a number in parentheses if the name already exists.
@@ -436,8 +435,6 @@ class MySQLConnector(DBconnector):
                         abs_path = os.path.join(project.temp_dir, rel_path)
                     container_data.update({"path": abs_path})
 
-                    ## crawler assignment
-
                     ## type-specific attributes handling
                     # get the attributes for particular container subclass from the factory
                     attr_dict = project.containerFactory.containerTypes.get(container_type).serializationDict
@@ -456,6 +453,11 @@ class MySQLConnector(DBconnector):
                             f"This container and its sub-containers will not be included in the project/dataset tree")
 
                     newCont = project.containerFactory.createHandler(container_type, project, parent_container, cascade=False, **container_data)
+
+                    ## crawler assignment
+                    newCont.crawler = None if container_data.get("crawler_type") is None \
+                        else project.crawlerFactory.createCrawler(container_data.get("crawler_type"), newCont)
+
 
                     out_container_list.append(newCont)
 
@@ -782,6 +784,10 @@ class NullConnector(DBconnector):
                 except ContainerStructureError as e:
                     print(f"Container ID {container_data.get('id')} with name {container_data.get('name')} was not created!")
                     print(e.message)
+                    ## crawler assignment
+                    newCont.crawler = None if container_data.get("crawler_type") is None \
+                        else project.crawlerFactory.createCrawler(container_data.get("crawler_type"), newCont)
+
                 else:
                     out_container_list.append(newCont)
                     # print(str(newCont))

@@ -911,7 +911,7 @@ class CrawlerFactory:
                         print(f"\t{os.path.basename(container.path)} - unsupported Crawler subclass special type "
                               f"'{specialized_type}' (registered types are: {types}) - 'zero crawler' will be used instead.")
 
-                        return cls.crawlerTypes['zero'](container, *args)
+                        return cls.crawlerTypes['zero'](container, *args, **kwargs)
                     else:
                         # try if the specialized crawler is valid for given container
                         tryCrawler = cls.crawlerTypes[specialized_type](container, *args, **kwargs)
