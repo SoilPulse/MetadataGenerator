@@ -5,20 +5,16 @@ import requests
 import os
 import sys
 import shutil
+from pathlib import Path
 
 from .metadata_scheme import MetadataStructureMap
 from .db_access import DBconnector
 from .exceptions import DOIdataRetrievalException, LocalFileManipulationError, ContainerStructureError, DatabaseEntryError, NameNotUniqueError, DatabaseFetchError, DeserializationError
 
 # general variables
-project_files_dir_name = "project_files"
-project_files_root = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), project_files_dir_name)
-
 doi_metadata_key = "DOI metadata"
 publisher_metadata_key = "Publisher metadata"
 
-if not os.path.exists(project_files_root):
-    os.mkdir(project_files_root)
 
 class ProjectManager:
     """
@@ -284,9 +280,9 @@ class ProjectManager:
             raise DOIdataRetrievalException("An unknown error occurred while getting registration agency of provided DOI:", e)
         else:
             if 'status' in RAjson[0].keys():
-                if RAjson['status'] == "Invalid DOI":
+                if RAjson[0]['status'] == "Invalid DOI":
                     raise DOIdataRetrievalException(f"Provided DOI '{doi}' is invalid.")
-                if RAjson['status'] == "DOI does not exist":
+                if RAjson[0]['status'] == "DOI does not exist":
                     raise DOIdataRetrievalException(f"Provided DOI '{doi}' is not registered.")
             else:
                 if (meta):
@@ -416,7 +412,6 @@ class ProjectManager:
             return self.containerFactory.getContainerByID(cid)
 
     def getContainersByParentID(self, pid):
-
         return self.getContainerByID(pid).containers
 
     def newDataset(self, name):
@@ -533,10 +528,7 @@ class Dataset:
         self.metadataMap.checkConsistency()
 
     def getCrawled(self):
-
         for container in self.containers:
-            print()
-            # container.showContents()
             container.getCrawled()
 
 class SourceFile:

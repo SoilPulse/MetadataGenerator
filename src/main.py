@@ -12,6 +12,15 @@ from soilpulse.data_publishers import *
 from soilpulse.metadata_scheme import *
 from soilpulse.db_access import EntityKeywordsDB, DBconnector, MySQLConnector, NullConnector
 
+
+from pathlib import Path
+
+project_files_dir_name = "project_files"
+project_files_root = Path('.', project_files_dir_name)
+
+project_files_root.mkdir(parents=True, exist_ok=True)
+
+
 def establish_new_project(dbcon, user_id, **example):
     """
     use case function
