@@ -15,11 +15,11 @@ from soilpulse.db_access import EntityKeywordsDB, DBconnector, MySQLConnector, N
 
 from pathlib import Path
 
+soilpulse_root_dir_name = "SoilPulse"
 project_files_dir_name = "project_files"
-project_files_root = Path('.', project_files_dir_name)
+project_files_root = Path(Path.home(), soilpulse_root_dir_name, project_files_dir_name)
 
 project_files_root.mkdir(parents=True, exist_ok=True)
-
 
 def establish_new_project(dbcon, user_id, **example):
     """
@@ -106,13 +106,20 @@ def load_existing_project(dbcon, user_id, project_id):
             # add some containers from the ResourceManager - will be done through the GUI
             newDataset.addContainers(project.getContainerByID([771, 956, 992]))
 
+            # do whatever the automated crawling is capable of
             newDataset.getCrawled()
+
+            # and do some manual tweaking
+            # like assigning a concept to container
+            project.getContainerByID(776).concepts.append({"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_64a2abf9"})
+            project.getContainerByID(778).concepts.extend([{"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_36811"},
+        {"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_4260"}])
+
             # show the dataset's content
             newDataset.showContents(show_containers=True)
 
-            # set correct structure of table
-
-            # project.updateDBrecord()
+            # update database record
+            project.updateDBrecord()
 
     return
 
@@ -130,8 +137,8 @@ if __name__ == "__main__":
 
     # database connection to load/save projects and their structure
     # dbcon = DBconnector.get_connector(project_files_root)
-    # dbcon = MySQLConnector(project_files_root)
-    dbcon = NullConnector(project_files_root)
+    dbcon = MySQLConnector(project_files_root)
+    # dbcon = NullConnector(project_files_root)
 
 
     # checkout user - needed for proper manipulation of project if MySQL server is not reachable

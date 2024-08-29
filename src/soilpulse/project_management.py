@@ -343,7 +343,7 @@ class ProjectManager:
                 print("The list of published files is empty.\n")
             else:
                 # create the target directory if not exists
-                print("downloading remote files to local storage ...")
+                print("downloading remote files to SoilPulse storage ...")
 
                 fileList = []
                 if not list:
@@ -676,14 +676,15 @@ class ContainerHandler:
         # was analyzed flag
         self.isAnalyzed = False
 
-        # dictionary of assigned concept URIs {"vocabulary": vocabulary provider, "uri": URI of the concept}
-        self.concepts = kwargs.get("concepts") if kwargs.get("concepts") is not None else {}
+        # list of dictionaries of assigned concept URIs [{"vocabulary": vocabulary provider, "uri": URI of the concept}, ...]
+        self.concepts = kwargs.get("concepts") if kwargs.get("concepts") is not None else []
 
     def __str__(self):
         out = f"\n|  # {self.id}  |  {type(self).__name__}\n|  {self.name}  |  parent: "
         out += f"{self.parentContainer.id}\n" if self.parentContainer is not None else f"project\n"
         if hasattr(self, "path"):
             out += f"|  {self.path}"
+
         return out
 
 
@@ -700,7 +701,13 @@ class ContainerHandler:
         pContID = self.parentContainer.id if self.parentContainer is not None else "root"
         # print(f"{t}{self.id} - {self.name} ({self.containerType}) [{len(self.containers)}] {'{'+self.crawler.crawlerType+'}'}  >{pContID}")
         print(f"{t}{self.id} - {self.name} ({self.containerType}) [{len(self.containers)}] >{pContID}")
-
+        if hasattr(self, "concepts"):
+            if len(self.concepts) > 0:
+                print("  "*(depth+1)+f"{', '.join([conc['uri']+' ('+conc['vocabulary']+')' for conc in self.concepts])}")
+        if hasattr(self, "units"):
+            pass
+        if hasattr(self, "methods"):
+            pass
         # invoke showContents of sub-containers
         if len(self.containers) > 0:
             depth += 1
