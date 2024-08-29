@@ -5,3 +5,5 @@ mysql-connector-python
 SPARQLWrapper
 pandas~=2.2.2
 chardet~=5.2.0
+pint
+astropy
