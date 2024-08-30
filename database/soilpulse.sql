@@ -14,6 +14,7 @@ CREATE TABLE `containers` (
   `name` varchar(255) NOT NULL,
   `type` varchar(255) NOT NULL,
   `parent_id_local` int(11) DEFAULT NULL,
+  `crawler_type` varchar(255) NOT NULL,
   `project_id` int(11) NOT NULL,
   `relative_path` varchar(255) DEFAULT NULL,
   `date_created` datetime DEFAULT NULL,
