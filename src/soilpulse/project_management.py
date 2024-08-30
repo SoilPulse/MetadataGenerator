@@ -680,11 +680,16 @@ class ContainerHandler:
         self.concepts = kwargs.get("concepts") if kwargs.get("concepts") is not None else []
 
     def __str__(self):
-        out = f"\n|  # {self.id}  |  {type(self).__name__}\n|  {self.name}  |  parent: "
-        out += f"{self.parentContainer.id}\n" if self.parentContainer is not None else f"project\n"
+        out = f"\n|  # {self.id}  |  name: '{self.name}'  \n|  type: {type(self).__name__}  |  parent: "
+        out += f"{self.parentContainer.id}\n" if self.parentContainer is not None else f"project root\n"
         if hasattr(self, "path"):
-            out += f"|  {self.path}"
-
+            out += f"|  {self.path}\n"
+        if hasattr(self, "concepts"):
+            out += f"|  concepts: {', '.join([conc['uri']+' ('+conc['vocabulary']+')' for conc in self.concepts])}\n"
+        if hasattr(self, "units"):
+            out += f"|  units: {', '.join([unit['uri']+' ('+unit['vocabulary']+')' for unit in self.units])}\n"
+        if hasattr(self, "methods"):
+            out += f"|  concepts: {', '.join([meth['uri']+' ('+meth['vocabulary']+')' for meth in self.methods])}"
         return out
 
 
@@ -729,6 +734,24 @@ class ContainerHandler:
         # type-specific properties
         for key, attr_name in self.serializationDict.items():
             dict.update({key: str(getattr(self, attr_name))})
+
+        # concepts
+        if self.concepts is not None:
+            dict.update({"concepts": self.concepts})
+        else:
+            dict.update({"concepts": []})
+        # units
+        if hasattr(self, "units"):
+            if self.units is not None:
+                dict.update({"units": self.units})
+            else:
+                dict.update({"units": []})
+        # methods
+        if hasattr(self, "methods"):
+            if self.methods is not None:
+                dict.update({"methods": self.methods})
+            else:
+                dict.update({"methods": []})
 
         # and recursion for the sub-containers
         if cascade:

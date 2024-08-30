@@ -599,15 +599,21 @@ class MySQLConnector(DBconnector):
                             f"This container and its sub-containers will not be included in the project/dataset tree")
 
                     newCont = project.containerFactory.createHandler(container_type, project, parent_container, cascade=False, **container_data)
+                    out_container_list.append(newCont)
 
                     ## crawler assignment
                     newCont.crawler = None if container_data.get("crawler_type") is None \
                         else project.crawlerFactory.createCrawler(container_data.get("crawler_type"), newCont)
-                    # concepts loading
+                    # load concepts
                     newCont.concepts = self.loadConceptsOfContainer(newCont)
+                    # load units
+                    if hasattr(newCont, "units"):
+                        newCont.units = self.loadUnitsOfContainer(newCont)
+                    # load methods
+                    if hasattr(newCont, "methods"):
+                        newCont.units = self.loadMethodsOfContainer(newCont)
 
-                    out_container_list.append(newCont)
-
+                    # load subcontainers
                     newCont.containers = self.loadChildContainers(project, newCont)
 
             thecursor.close()
@@ -920,13 +926,26 @@ class NullConnector(DBconnector):
                 except ContainerStructureError as e:
                     print(f"Container ID {container_data.get('id')} with name {container_data.get('name')} was not created!")
                     print(e.message)
+                else:
+                    out_container_list.append(newCont)
+
                     ## crawler assignment
                     newCont.crawler = None if container_data.get("crawler_type") is None \
                         else project.crawlerFactory.createCrawler(container_data.get("crawler_type"), newCont)
 
-                else:
-                    out_container_list.append(newCont)
-                    # print(str(newCont))
+                    # load concepts
+                    if container_data.get("concepts"):
+                        newCont.concepts = container_data.get("concepts")
+                    # load units
+                    if hasattr(newCont, "units") and container_data.get("units"):
+                        newCont.units = container_data.get("units")
+                    # load methods
+                    if hasattr(newCont, "methods") and container_data.get("methods"):
+                        newCont.methods = container_data.get("methods")
+
+                    print(str(newCont))
+
+                    # load subcontainers
                     if container_data.get("containers"):
                         if len(container_data.get("containers")) > 0:
                             newCont.containers = self.loadChildContainers(project, container_data.get("containers"), newCont)

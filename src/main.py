@@ -137,8 +137,8 @@ if __name__ == "__main__":
 
     # database connection to load/save projects and their structure
     # dbcon = DBconnector.get_connector(project_files_root)
-    dbcon = MySQLConnector(project_files_root)
-    # dbcon = NullConnector(project_files_root)
+    # dbcon = MySQLConnector(project_files_root)
+    dbcon = NullConnector(project_files_root)
 
 
     # checkout user - needed for proper manipulation of project if MySQL server is not reachable
