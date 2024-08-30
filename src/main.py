@@ -110,16 +110,23 @@ def load_existing_project(dbcon, user_id, project_id):
             newDataset.getCrawled()
 
             # and do some manual tweaking
-            # like assigning a concept to container
+            # like removing all concepts from container
+            project.getContainerByID(776).removeAllConcepts()
+            project.getContainerByID(778).removeAllConcepts()
 
+            # assigning a concept to container
             project.getContainerByID(776).addConcept({"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_64a2abf9"})
+                # this one is wrong and shoouldn't be there ...
+            project.getContainerByID(778).addConcept({"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_64a2abf9"})
             project.getContainerByID(778).addConcept({"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_36811"})
             project.getContainerByID(778).addConcept({"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_36811"})
             project.getContainerByID(778).addConcept({"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_4260"})
+            project.getContainerByID(778).addConcept({"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_4260"})
 
-            # or remove all concepts
-            # project.getContainerByID(776).removeAllConcepts()
-            # project.getContainerByID(778).removeAllConcepts()
+
+            # removing a concept from container
+                # ... so it's removed
+            project.getContainerByID(778).removeConcept({"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_64a2abf9"})
 
             # show the dataset's content
             newDataset.showContents(show_containers=True)

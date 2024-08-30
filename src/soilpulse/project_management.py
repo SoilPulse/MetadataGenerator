@@ -796,10 +796,34 @@ class ContainerHandler:
             self.concepts.append(concept)
         else:
             for conc in self.concepts:
+                is_there = False
                 if conc["vocabulary"] == concept["vocabulary"] and conc["uri"] == concept["uri"]:
-                    return
-                else:
-                    self.concepts.append(concept)
+                    is_there = True
+            if not is_there:
+                self.concepts.append(concept)
+        return
+
+    def removeConcept(self, concept):
+        """
+        Remove concept from container.
+
+        :param concept: concept to be removed
+        :return: None
+        """
+        if len(self.concepts) == 0:
+            return
+        else:
+            remi = None
+            print(f"removing concept {concept}")
+            for i in range(len(self.concepts)):
+                print(f"i = {i}")
+                print(self.concepts[i])
+                if self.concepts[i]["vocabulary"] == concept["vocabulary"] and self.concepts[i]["uri"] == concept["uri"]:
+                    remi = i
+                    print(f"remi = {remi}")
+            if remi is not None:
+                self.concepts.pop(remi)
+
         return
 
     def removeAllConcepts(self):
