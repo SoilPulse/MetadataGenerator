@@ -943,7 +943,7 @@ class NullConnector(DBconnector):
                     if hasattr(newCont, "methods") and container_data.get("methods"):
                         newCont.methods = container_data.get("methods")
 
-                    print(str(newCont))
+                    # print(str(newCont))
 
                     # load subcontainers
                     if container_data.get("containers"):

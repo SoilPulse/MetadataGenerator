@@ -111,9 +111,15 @@ def load_existing_project(dbcon, user_id, project_id):
 
             # and do some manual tweaking
             # like assigning a concept to container
-            project.getContainerByID(776).concepts.append({"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_64a2abf9"})
-            project.getContainerByID(778).concepts.extend([{"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_36811"},
-        {"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_4260"}])
+
+            project.getContainerByID(776).addConcept({"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_64a2abf9"})
+            project.getContainerByID(778).addConcept({"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_36811"})
+            project.getContainerByID(778).addConcept({"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_36811"})
+            project.getContainerByID(778).addConcept({"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_4260"})
+
+            # or remove all concepts
+            # project.getContainerByID(776).removeAllConcepts()
+            # project.getContainerByID(778).removeAllConcepts()
 
             # show the dataset's content
             newDataset.showContents(show_containers=True)

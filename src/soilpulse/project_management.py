@@ -785,11 +785,35 @@ class ContainerHandler:
     def listOwnFiles(self, collection):
         pass
 
+    def addConcept(self, concept):
+        """
+        Add concept to container while checking for duplicity with already present concepts
+
+        :param concept: concept to be added
+        :return: None
+        """
+        if len(self.concepts) == 0:
+            self.concepts.append(concept)
+        else:
+            for conc in self.concepts:
+                if conc["vocabulary"] == concept["vocabulary"] and conc["uri"] == concept["uri"]:
+                    return
+                else:
+                    self.concepts.append(concept)
+        return
+
+    def removeAllConcepts(self):
+        """
+        Removes all concepts assigned to container
+        :return: None
+        """
+        self.concepts = []
+
     def deleteOwnFiles(self, failed = []):
         """
         Deletes container's own file (if exists) from locale storage and induces deleting own files of subcontainers
 
-        :param failed: list of unsuccessful attemtps and reason for that [undeleted file path, description of error]
+        :param failed: list of unsuccessful attempts and reason for that [undeleted file path, description of error]
         :return: the same list of undeleted files
         """
         # first delete sub-container's files (if any)
