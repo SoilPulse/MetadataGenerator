@@ -2,6 +2,7 @@ requests~=2.32.3
 streamlit~=1.35.0
 streamlit-tree-select
 mysql-connector-python
+frictionless
 SPARQLWrapper
 pandas~=2.2.2
 chardet~=5.2.0
