@@ -816,11 +816,9 @@ class ContainerHandler:
             remi = None
             print(f"removing concept {concept}")
             for i in range(len(self.concepts)):
-                print(f"i = {i}")
                 print(self.concepts[i])
                 if self.concepts[i]["vocabulary"] == concept["vocabulary"] and self.concepts[i]["uri"] == concept["uri"]:
                     remi = i
-                    print(f"remi = {remi}")
             if remi is not None:
                 self.concepts.pop(remi)
 
