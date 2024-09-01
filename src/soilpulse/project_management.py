@@ -46,7 +46,7 @@ class ProjectManager:
         self.publishedFiles = []
         # list of files that were downloaded
         self.downloadedFiles = []
-        # uploaded files directly from the users computer
+        # list of files that were uploaded from session
         self.uploadedFiles = []
         # the tree structure of included files and other container types
         self.containerTree = []
@@ -211,16 +211,18 @@ class ProjectManager:
 
     def deleteDownloadedFiles(self):
         failed = []
-        for f in self.downloadedFiles:
+        for f in self.downloadedFiles[:]:
             if os.path.isfile(f):
                 try:
                     os.remove(f)
+                    self.downloadedFiles.remove(f)
                 except PermissionError as e:
                     failed.append(f)
                     print(f)
             if os.path.isdir(f):
                 try:
                     os.rmdir(f)
+                    self.downloadedFiles.remove(f)
                 except PermissionError as e:
                     failed.append(f)
                     print(f)
@@ -229,6 +231,31 @@ class ProjectManager:
             raise LocalFileManipulationError(f"Failed to delete following files:\n{flist}")
         else:
             print("All downloaded files successfully deleted.")
+        return failed
+
+    def deleteUploadedFiles(self):
+        failed = []
+        for f in self.uploadedFiles[:]:
+            if os.path.isfile(f):
+                try:
+                    os.remove(f)
+                    self.uploadedFiles.remove(f)
+                except PermissionError as e:
+                    failed.append(f)
+                    print(f)
+
+            if os.path.isdir(f):
+                try:
+                    os.rmdir(f)
+                    self.uploadedFiles.remove(f)
+                except PermissionError as e:
+                    failed.append(f)
+                    print(f)
+        if len(failed) > 0:
+            flist = "\n".join([f for f in failed])
+            raise LocalFileManipulationError(f"Failed to delete following files:\n{flist}")
+        else:
+            print("All uploaded files successfully deleted.")
         return failed
 
     def getPublisher(self, DOI_metadata):
@@ -399,6 +426,18 @@ class ProjectManager:
         """
         handles all needed steps to upload files from a session (unpack archives if necessary) and create file structure tree
         """
+        if not isinstance(files, list):
+            files = [files]
+        for file in files:
+            filename = os.path.basename(file)
+            target_file_path = os.path.join(self.temp_dir, filename)
+            shutil.copyfile(file, target_file_path)
+            # create new container from the file with all related actions
+            newContainer = self.containerFactory.createHandler('filesystem', self, None, name=filename,
+                                                               path=target_file_path, cascade=True)
+            self.containerTree.append(newContainer)
+            # add new file path to uploaded files list
+            self.uploadedFiles.append(newContainer.path)
 
         return
 
