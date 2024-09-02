@@ -13,7 +13,6 @@ import shutil
 
 from .exceptions import DatabaseFetchError, DatabaseEntryError, NameNotUniqueError, DeserializationError, ContainerStructureError
 
-
 def generate_project_unique_name(existing_names, name):
     """
     Generates a unique name for a user's project by appending a number in parentheses if the name already exists.
@@ -353,6 +352,8 @@ class MySQLConnector(DBconnector):
         if cascade:
             for cont in project.containerTree:
                 self.updateContainerRecord(cont, cascade)
+            for dats in project.datasets:
+                self.updateDatasetRecord(dats)
         return
 
     def loadProject(self, project, cascade=True):
@@ -400,6 +401,7 @@ class MySQLConnector(DBconnector):
 
         if len(results) > 0:
             for container_data in results:
+                # print(container_data)
                 # missing type attribute is critical ... or doesn't have to be if handled properly some other way
                 if container_data.get("type") is None:
                     raise DeserializationError(f"Container type is not specified for container ID {container_data.get('id_local')}.\n"
@@ -439,6 +441,7 @@ class MySQLConnector(DBconnector):
 
                     missing_keys = []
                     for key, attr_name in attr_dict.items():
+                        # print(f"{key} - {attr_name}: {container_data.get(key)}")
                         if key not in container_data.keys():
                             missing_keys.append(key)
                         else:
@@ -451,7 +454,13 @@ class MySQLConnector(DBconnector):
 
                     newCont = project.containerFactory.createHandler(container_type, project, parent_container, cascade=False, **container_data)
 
+                    ## crawler assignment
+                    newCont.crawler = None if container_data.get("crawler_type") is None \
+                        else project.crawlerFactory.createCrawler(container_data.get("crawler_type"), newCont)
+
+
                     out_container_list.append(newCont)
+
                     newCont.containers = self.loadChildContainers(project, newCont)
 
             thecursor.close()
@@ -520,7 +529,10 @@ class MySQLConnector(DBconnector):
         thecursor = self.db_connection.cursor()
 
         # set the general core of properties to be stored
-        arglist = {"type": container.containerType, "name": container.name, "parent_id_local": container.parentContainer.id if container.parentContainer is not None else None}
+        arglist = {"type": container.containerType,
+                   "name": container.name,
+                   "parent_id_local": container.parentContainer.id if container.parentContainer is not None else None,
+                   "crawler_type": container.crawler.crawlerType if container.crawler is not None else None}
 
         # add container subclass specific properties to be stored
         for db_key, attr_key in container.serializationDict.items():
@@ -707,10 +719,14 @@ class NullConnector(DBconnector):
 
         if cascade:
             containers_attr_filepath = os.path.join(project.temp_dir, self.containers_attr_filename)
-            with open(containers_attr_filepath, "r") as f:
-                containers_serialized = json.load(f)
+            if os.path.isfile(containers_attr_filepath):
+                with open(containers_attr_filepath, "r") as f:
+                    containers_serialized = json.load(f)
 
-                project.containerTree = self.loadChildContainers(project, containers_serialized, parent_container=None)
+                    project.containerTree = self.loadChildContainers(project, containers_serialized, parent_container=None)
+            else:
+                raise DatabaseFetchError(f"JSON file with stored containers info '{self.containers_attr_filename}'"
+                                         f" was not found in project's directory '{project.temp_dir}'")
 
         return project
 
@@ -750,6 +766,7 @@ class NullConnector(DBconnector):
                 # get the attributes for particular container subclass from the factory
                 attr_dict = project.containerFactory.containerTypes.get(container_type).serializationDict
 
+                # check for missing attribute keys in the input
                 missing_keys = []
                 for key, attr_name in attr_dict.items():
                     if key not in container_data.keys():
@@ -767,8 +784,13 @@ class NullConnector(DBconnector):
                 except ContainerStructureError as e:
                     print(f"Container ID {container_data.get('id')} with name {container_data.get('name')} was not created!")
                     print(e.message)
+                    ## crawler assignment
+                    newCont.crawler = None if container_data.get("crawler_type") is None \
+                        else project.crawlerFactory.createCrawler(container_data.get("crawler_type"), newCont)
+
                 else:
                     out_container_list.append(newCont)
+                    # print(str(newCont))
                     if container_data.get("containers"):
                         if len(container_data.get("containers")) > 0:
                             newCont.containers = self.loadChildContainers(project, container_data.get("containers"), newCont)
@@ -870,7 +892,7 @@ class EntityKeywordsDB:
     @classmethod
     def registerKeywordsDB(cls, dbType, dbFilename):
         cls.DBs.update({dbType: os.path.join(cls.dbDir, dbFilename)})
-        print("Keywords database {} registered as '{}'".format(os.path.join(cls.dbDir, dbFilename), dbType))
+        print("* Keywords database {} registered as '{}'".format(os.path.join(cls.dbDir, dbFilename), dbType))
         return
 
     @classmethod
