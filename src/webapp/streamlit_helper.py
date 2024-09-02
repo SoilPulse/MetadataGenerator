@@ -110,19 +110,22 @@ def _mod_container_content(container_org):
                           if not callable(getattr(container_mod, method_name))
                           and not "__" in method_name]
 
+    # using a dict allows to assign streamlit-container names generic (https://stackoverflow.com/questions/5036700/how-can-you-dynamically-create-variables)
+    DictForVisual = {}
     for attribute in attributes:
 ## json error
+        DictForVisual[attribute + "1"], DictForVisual[attribute + "2"] = st.columns(2)
         if attribute == 'scontent':
-            with modc1:
+            with DictForVisual[attribute + "1"]:
                 st.json(getattr(container_mod, attribute))
         else:
-            with modc1:
+            with DictForVisual[attribute + "1"]:
                 setattr(container_mod, attribute, st.text_input(
                         label = attribute,
                         value = str(getattr(container_mod, attribute))
                         )
                     )
-            with modc2:
+            with DictForVisual[attribute + "2"]:
                 test = st.button("Test Changes for "+attribute,
                            disabled = getattr(container_mod, attribute) == getattr(container_org, attribute))
 
