@@ -14,14 +14,13 @@ CREATE TABLE `containers` (
   `name` varchar(255) NOT NULL,
   `type` varchar(255) NOT NULL,
   `parent_id_local` int(11) DEFAULT NULL,
-  `crawler_type` varchar(255) NOT NULL,
-  `data_type` varchar(255) DEFAULT NULL,
   `project_id` int(11) NOT NULL,
   `relative_path` varchar(255) DEFAULT NULL,
   `date_created` datetime DEFAULT NULL,
   `date_last_modified` datetime DEFAULT NULL,
   `encoding` varchar(127) DEFAULT NULL,
-  `content` varchar(62047) DEFAULT NULL,
+  `crawler_type` varchar(127) DEFAULT NULL,
+  `data_type` varchar(127) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `parent_id` (`parent_id_local`),
   KEY `project_id` (`project_id`),
@@ -85,10 +84,8 @@ CREATE TABLE `users` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
-TRUNCATE `users`;
 INSERT INTO `users` (`id`, `username`, `first_name`, `last_name`) VALUES
-(1, 'DemoUser', 'Demo', 'User');
-
+(1,	'DemoUser',	'Demo',	'User');
 
 DROP TABLE IF EXISTS `user_projects`;
 CREATE TABLE `user_projects` (
@@ -137,4 +134,4 @@ CREATE TABLE `_units` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 
--- 2024-08-20 09:06:58
+-- 2024-08-30 12:37:56
