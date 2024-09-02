@@ -19,6 +19,7 @@ import os
 
 project_files_dir_name = "project_files"
 project_files_root = Path(os.path.join(Path.home(), project_files_dir_name))
+project_files_root.mkdir(parents=True, exist_ok=True)
 
 def _get_DB_connection(rootdir=project_files_root):
     return spdb.DBconnector.get_connector(rootdir)
