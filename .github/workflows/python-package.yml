@@ -45,7 +45,11 @@ jobs:
       run: |
         pytest tests/test_DB.py --cov=./ --cov-report=xml
 
-    - name: Test create with pytest
+    - name: Test create project with file upload
+      run: |
+        pytest tests/test_file_upload.py --cov=./ --cov-report=xml
+
+    - name: Test create project with DOI
       run: |
         pytest tests/test_main.py --cov=./ --cov-report=xml
 

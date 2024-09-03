@@ -356,6 +356,152 @@ class MySQLConnector(DBconnector):
                 self.updateDatasetRecord(dats)
         return
 
+    def updateContainerRecord(self, container, cascade=False):
+        thecursor = self.db_connection.cursor()
+
+        # set the general core of properties to be stored
+        arglist = {"type": container.containerType,
+                   "name": container.name,
+                   "parent_id_local": container.parentContainer.id if container.parentContainer is not None else None,
+                   "crawler_type": container.crawler.crawlerType if container.crawler is not None else None}
+
+        # add container subclass specific properties to be stored
+        for db_key, attr_key in container.serializationDict.items():
+            arglist.update({db_key: str(getattr(container, attr_key))})
+
+        # update properties if the container already exists
+        if self.containerRecordExists(container.id, container.project.id):
+            query = f"UPDATE {self.containersTableName} SET "
+            query += ", ".join([f"`{key}` = %s" for key in arglist.keys()])
+            query += " WHERE `id_local` = %s AND project_id = %s"
+
+            values = list(arglist.values())
+            values.extend([container.id, container.project.id])
+
+        # insert new record if not yet in DB
+        else:
+            arglist.update({"id_local": container.id, "project_id": container.project.id})
+
+            query = f"INSERT INTO {self.containersTableName} ("
+            query += ", ".join([f"`{key}`" for key in arglist])
+            query += f") VALUES ("
+            query += ", ".join(["%s" for key in arglist])+")"
+
+            values = list(arglist.values())
+
+        thecursor.execute(query, values)
+        self.db_connection.commit()
+        thecursor.close()
+
+        # update concepts records of container
+        self.updateConceptRecords(container)
+        # update units records of container
+        self.updateUnitRecords(container)
+        # update methods records of container
+        self.updateMethodRecords(container)
+
+        # update subcontainers records if desired
+        if cascade:
+            for cont in container.containers:
+                self.updateContainerRecord(cont, cascade)
+        return
+
+    def updateConceptRecords(self, container):
+        if container.concepts is not None:
+            # get container's global ID for foreign key
+            cont_glob_id = self.getContainerGlobalID(container)
+            # get currently saved concepts of the container from DB
+            saved_concepts = self.loadConceptsOfContainer(container, as_dict=True)
+            if len(container.concepts) > 0:
+
+                # convert the list of current concepts to a dictionary keyed by URI for easier comparison
+                current_concepts_by_uri = {concept['uri']: concept for concept in container.concepts}
+                # set of URIs in the current container state
+                current_uris = set(current_concepts_by_uri.keys())
+                # set of URIs in the saved database state
+                saved_uris = set(concept['uri'] for concept in saved_concepts.values())
+
+                # find URIs that need to be added (in current but not in saved)
+                uris_to_add = current_uris - saved_uris
+
+                # find URIs that need to be deleted (in saved but not in current)
+                uris_to_delete = saved_uris - current_uris
+
+                thecursor = self.db_connection.cursor()
+
+                # insert new record if not yet in DB
+                for uri in uris_to_add:
+                    conc = current_concepts_by_uri[uri]
+                    query = f"INSERT INTO {self.conceptsTableName} (`container_id`, `vocabulary`, `uri`) VALUES "
+                    query += "(%s, %s, %s)"
+
+                    values = [cont_glob_id, conc["vocabulary"], conc["uri"]]
+
+                    thecursor.execute(query, values)
+                    self.db_connection.commit()
+
+                # remove concepts from DB that no longer exist in container
+                for uri in uris_to_delete:
+                    concept_id = next((id_ for id_, concept in saved_concepts.items() if concept['uri'] == uri), None)
+                    if concept_id:
+                        query = f"DELETE FROM {self.conceptsTableName} WHERE `id` = {concept_id}"
+                        thecursor.execute(query)
+                        self.db_connection.commit()
+
+                thecursor.close()
+            # in case there were some concepts stored before but currently the container has none
+            elif len(saved_concepts) > 0:
+                thecursor = self.db_connection.cursor()
+                query = f"DELETE FROM {self.conceptsTableName} WHERE `container_id` = {cont_glob_id}"
+                thecursor.execute(query)
+                self.db_connection.commit()
+                thecursor.close()
+        return
+
+    def updateUnitRecords(self, container):
+        # not all containers have the 'units' attribute
+        if hasattr(container, "units"):
+            if container.units is not None:
+                pass
+        pass
+    def updateMethodRecords(self, container):
+        # not all containers have the 'methods' attribute
+        if hasattr(container, "methods"):
+            if container.methods is not None:
+                pass
+        pass
+
+    def updateDatasetRecord(self, dataset):
+
+        thecursor = self.db_connection.cursor()
+        idListString =  "|".join([str(cid) for cid in dataset.getContainerIDsList()])
+        arglist = {"name": dataset.name, "project_id": dataset.project.id, "container_ids": idListString}
+
+        # update properties if the container already exists
+        if self.containerRecordExists(dataset.name, dataset.project.id):
+            query = f"UPDATE {self.datasetsTableName} SET "
+            query += ", ".join([f"`{key}` = %s" for key in arglist.keys()])
+            query += " WHERE `id_local` = %s AND project_id = %s"
+
+            values = list(arglist.values())
+            values.extend([dataset.id, dataset.project.id])
+
+        # insert new record if not yet in DB
+        else:
+            arglist.update({"name": dataset.name, "project_id": dataset.project.id})
+
+            query = f"INSERT INTO {self.datasetsTableName} ("
+            query += ", ".join([f"`{key}`" for key in arglist])
+            query += f") VALUES ("
+            query += ", ".join(["%s" for key in arglist])+")"
+
+            values = list(arglist.values())
+
+        thecursor.execute(query, values)
+        self.db_connection.commit()
+        thecursor.close()
+        return
+
     def loadProject(self, project, cascade=True):
         """
         Loads database record of Project and all of its contents if cascade == True
@@ -453,14 +599,21 @@ class MySQLConnector(DBconnector):
                             f"This container and its sub-containers will not be included in the project/dataset tree")
 
                     newCont = project.containerFactory.createHandler(container_type, project, parent_container, cascade=False, **container_data)
+                    out_container_list.append(newCont)
 
                     ## crawler assignment
                     newCont.crawler = None if container_data.get("crawler_type") is None \
                         else project.crawlerFactory.createCrawler(container_data.get("crawler_type"), newCont)
+                    # load concepts
+                    newCont.concepts = self.loadConceptsOfContainer(newCont)
+                    # load units
+                    if hasattr(newCont, "units"):
+                        newCont.units = self.loadUnitsOfContainer(newCont)
+                    # load methods
+                    if hasattr(newCont, "methods"):
+                        newCont.units = self.loadMethodsOfContainer(newCont)
 
-
-                    out_container_list.append(newCont)
-
+                    # load subcontainers
                     newCont.containers = self.loadChildContainers(project, newCont)
 
             thecursor.close()
@@ -502,6 +655,67 @@ class MySQLConnector(DBconnector):
         else:
             raise DatabaseEntryError(f"More then one ({count}) occurrence of a local container ID {cont_id} within a Project ID {project_id}.")
 
+    def loadConceptsOfContainer(self, container, as_dict=False):
+        """
+        Collects all concept records from DB belonging to a given container
+
+        :param container: the container instance
+        :param as_dict: list or URI of the concept (or whatever the concept uses as unique identifier)
+        :return:
+        """
+        thecursor = self.db_connection.cursor(dictionary=True)
+        query = f"SELECT * FROM {self.conceptsTableName} " \
+                f"WHERE `container_id` = " \
+                f"(SELECT `id` FROM {self.containersTableName} WHERE `project_id` = %s AND `id_local` = %s)"
+        values = [container.project.id, container.id]
+        thecursor.execute(query, values)
+
+        concepts_list = []
+        concepts_dict = {}
+        results = thecursor.fetchall()
+        for res in results:
+            concepts_list.append({"vocabulary": res["vocabulary"], "uri": res["uri"]})
+            concepts_dict.update({res["id"]:{"vocabulary": res["vocabulary"], "uri": res["uri"]}})
+        if as_dict:
+            return concepts_dict
+        else:
+            return concepts_list
+
+    def loadUnitsOfContainer(self, container, as_dict=False):
+        if as_dict:
+            return {}
+        else:
+            return []
+
+    def loadMethodsOfContainer(self, container, as_dict=False):
+        if as_dict:
+            return {}
+        else:
+            return []
+
+    def getContainerGlobalID(self, container):
+        """
+        Get a global ID (SoilPulse DB scope) of a container
+
+        :param container: the container
+        :return: global ID of the container in SoilPulse DB
+        """
+        thecursor = self.db_connection.cursor()
+        query = f"SELECT `id` FROM {self.containersTableName} " \
+                f"WHERE `project_id` = %s AND `id_local` = %s"
+        values = [container.project.id, container.id]
+        thecursor.execute(query, values)
+
+        results = thecursor.fetchall()
+        if len(results) == 0:
+            return False
+        elif len(results) == 1:
+            return results[0][0]
+        else:
+            raise DatabaseEntryError(
+                f"More then one database entry of a container with local ID {container.id}"
+                f" and project ID {container.project.id}.")
+
     def datasetRecordExists(self, name, project_id):
         """
         Checks if dataset with provided name and Project ID already has database entry
@@ -525,78 +739,6 @@ class MySQLConnector(DBconnector):
             raise DatabaseEntryError(
                 f"More then one ({count}) occurrence of dataset '{name}' within a project ID {project_id}.")
 
-    def updateContainerRecord(self, container, cascade=False):
-        thecursor = self.db_connection.cursor()
-
-        # set the general core of properties to be stored
-        arglist = {"type": container.containerType,
-                   "name": container.name,
-                   "parent_id_local": container.parentContainer.id if container.parentContainer is not None else None,
-                   "crawler_type": container.crawler.crawlerType if container.crawler is not None else None}
-
-        # add container subclass specific properties to be stored
-        for db_key, attr_key in container.serializationDict.items():
-            arglist.update({db_key: str(getattr(container, attr_key))})
-
-        # update properties if the container already exists
-        if self.containerRecordExists(container.id, container.project.id):
-            query = f"UPDATE {self.containersTableName} SET "
-            query += ", ".join([f"`{key}` = %s" for key in arglist.keys()])
-            query += " WHERE `id_local` = %s AND project_id = %s"
-
-            values = list(arglist.values())
-            values.extend([container.id, container.project.id])
-
-        # insert new record if not yet in DB
-        else:
-            arglist.update({"id_local": container.id, "project_id": container.project.id})
-
-            query = f"INSERT INTO {self.containersTableName} ("
-            query += ", ".join([f"`{key}`" for key in arglist])
-            query += f") VALUES ("
-            query += ", ".join(["%s" for key in arglist])+")"
-
-            values = list(arglist.values())
-
-        thecursor.execute(query, values)
-        self.db_connection.commit()
-        thecursor.close()
-
-        if cascade:
-            for cont in container.containers:
-                self.updateContainerRecord(cont, cascade)
-        return
-
-    def updateDatasetRecord(self, dataset):
-
-        thecursor = self.db_connection.cursor()
-        idListString =  "|".join([str(cid) for cid in dataset.getContainerIDsList()])
-        arglist = {"name": dataset.name, "project_id": dataset.project.id, "container_ids": idListString}
-
-        # update properties if the container already exists
-        if self.containerRecordExists(dataset.name, dataset.project.id):
-            query = f"UPDATE {self.datasetsTableName} SET "
-            query += ", ".join([f"`{key}` = %s" for key in arglist.keys()])
-            query += " WHERE `id_local` = %s AND project_id = %s"
-
-            values = list(arglist.values())
-            values.extend([dataset.id, dataset.project.id])
-
-        # insert new record if not yet in DB
-        else:
-            arglist.update({"name": dataset.name, "project_id": dataset.project.id})
-
-            query = f"INSERT INTO {self.datasetsTableName} ("
-            query += ", ".join([f"`{key}`" for key in arglist])
-            query += f") VALUES ("
-            query += ", ".join(["%s" for key in arglist])+")"
-
-            values = list(arglist.values())
-
-        thecursor.execute(query, values)
-        self.db_connection.commit()
-        thecursor.close()
-        return
 
     def loadSearchPatterns(self, entity):
         """
@@ -784,13 +926,26 @@ class NullConnector(DBconnector):
                 except ContainerStructureError as e:
                     print(f"Container ID {container_data.get('id')} with name {container_data.get('name')} was not created!")
                     print(e.message)
+                else:
+                    out_container_list.append(newCont)
+
                     ## crawler assignment
                     newCont.crawler = None if container_data.get("crawler_type") is None \
                         else project.crawlerFactory.createCrawler(container_data.get("crawler_type"), newCont)
 
-                else:
-                    out_container_list.append(newCont)
+                    # load concepts
+                    if container_data.get("concepts"):
+                        newCont.concepts = container_data.get("concepts")
+                    # load units
+                    if hasattr(newCont, "units") and container_data.get("units"):
+                        newCont.units = container_data.get("units")
+                    # load methods
+                    if hasattr(newCont, "methods") and container_data.get("methods"):
+                        newCont.methods = container_data.get("methods")
+
                     # print(str(newCont))
+
+                    # load subcontainers
                     if container_data.get("containers"):
                         if len(container_data.get("containers")) > 0:
                             newCont.containers = self.loadChildContainers(project, container_data.get("containers"), newCont)

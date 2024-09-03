@@ -65,7 +65,8 @@ def is_file_archive(path):
         path_split = path.split(".")
         if len(path_split) > 1:
             extension = path_split[-1]
-            if extension in get_supported_archive_formats() or extension == "gz":
+            more_formats = ["gz", "rar"]
+            if extension in get_shutil_archive_formats() or extension in more_formats:
                 return True
             else:
                 return False
@@ -83,7 +84,7 @@ def get_file_extension(path):
     else:
         return None
 
-def get_supported_archive_formats():
+def get_shutil_archive_formats():
     """
     Return list of currently supported formats of shutil.unpack_archive() method.
     The extensions are stripped of the leading '.' so it can be compared to file extensions gained by .split('.')
@@ -434,6 +435,10 @@ class ArchiveFileContainer(FileSystemContainer):
                 self.rel_path = outDir.replace(project_manager.temp_dir, "").strip("\\/ ")
                 output_tree = self.createTree(outDir, project_manager)
 
+            elif archive_path.endswith(".rar"):
+                print(f"RAR archives not implemented yet '{os.path.basename(archive_path)}' to '{outDir}'")
+                remove_archive = False
+                self.path = archive_path
             else:
                 # all other archive types
                 print(f"Extracting '{os.path.basename(archive_path)}' to '{outDir}'")

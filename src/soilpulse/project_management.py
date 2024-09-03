@@ -46,7 +46,7 @@ class ProjectManager:
         self.publishedFiles = []
         # list of files that were downloaded
         self.downloadedFiles = []
-        # uploaded files directly from the users computer
+        # list of files that were uploaded from session
         self.uploadedFiles = []
         # the tree structure of included files and other container types
         self.containerTree = []
@@ -211,16 +211,18 @@ class ProjectManager:
 
     def deleteDownloadedFiles(self):
         failed = []
-        for f in self.downloadedFiles:
+        for f in self.downloadedFiles[:]:
             if os.path.isfile(f):
                 try:
                     os.remove(f)
+                    self.downloadedFiles.remove(f)
                 except PermissionError as e:
                     failed.append(f)
                     print(f)
             if os.path.isdir(f):
                 try:
                     os.rmdir(f)
+                    self.downloadedFiles.remove(f)
                 except PermissionError as e:
                     failed.append(f)
                     print(f)
@@ -229,6 +231,31 @@ class ProjectManager:
             raise LocalFileManipulationError(f"Failed to delete following files:\n{flist}")
         else:
             print("All downloaded files successfully deleted.")
+        return failed
+
+    def deleteUploadedFiles(self):
+        failed = []
+        for f in self.uploadedFiles[:]:
+            if os.path.isfile(f):
+                try:
+                    os.remove(f)
+                    self.uploadedFiles.remove(f)
+                except PermissionError as e:
+                    failed.append(f)
+                    print(f)
+
+            if os.path.isdir(f):
+                try:
+                    os.rmdir(f)
+                    self.uploadedFiles.remove(f)
+                except PermissionError as e:
+                    failed.append(f)
+                    print(f)
+        if len(failed) > 0:
+            flist = "\n".join([f for f in failed])
+            raise LocalFileManipulationError(f"Failed to delete following files:\n{flist}")
+        else:
+            print("All uploaded files successfully deleted.")
         return failed
 
     def getPublisher(self, DOI_metadata):
@@ -343,7 +370,7 @@ class ProjectManager:
                 print("The list of published files is empty.\n")
             else:
                 # create the target directory if not exists
-                print("downloading remote files to local storage ...")
+                print("downloading remote files to SoilPulse storage ...")
 
                 fileList = []
                 if not list:
@@ -399,6 +426,18 @@ class ProjectManager:
         """
         handles all needed steps to upload files from a session (unpack archives if necessary) and create file structure tree
         """
+        if not isinstance(files, list):
+            files = [files]
+        for file in files:
+            filename = os.path.basename(file)
+            target_file_path = os.path.join(self.temp_dir, filename)
+            shutil.copyfile(file, target_file_path)
+            # create new container from the file with all related actions
+            newContainer = self.containerFactory.createHandler('filesystem', self, None, name=filename,
+                                                               path=target_file_path, cascade=True)
+            self.containerTree.append(newContainer)
+            # add new file path to uploaded files list
+            self.uploadedFiles.append(newContainer.path)
 
         return
 
@@ -676,14 +715,20 @@ class ContainerHandler:
         # was analyzed flag
         self.isAnalyzed = False
 
-        # dictionary of assigned concept URIs {"vocabulary": vocabulary provider, "uri": URI of the concept}
-        self.concepts = kwargs.get("concepts") if kwargs.get("concepts") is not None else {}
+        # list of dictionaries of assigned concept URIs [{"vocabulary": vocabulary provider, "uri": URI of the concept}, ...]
+        self.concepts = kwargs.get("concepts") if kwargs.get("concepts") is not None else []
 
     def __str__(self):
-        out = f"\n|  # {self.id}  |  {type(self).__name__}\n|  {self.name}  |  parent: "
-        out += f"{self.parentContainer.id}\n" if self.parentContainer is not None else f"project\n"
+        out = f"\n|  # {self.id}  |  name: '{self.name}'  \n|  type: {type(self).__name__}  |  parent: "
+        out += f"{self.parentContainer.id}\n" if self.parentContainer is not None else f"project root\n"
         if hasattr(self, "path"):
-            out += f"|  {self.path}"
+            out += f"|  {self.path}\n"
+        if hasattr(self, "concepts"):
+            out += f"|  concepts: {', '.join([conc['uri']+' ('+conc['vocabulary']+')' for conc in self.concepts])}\n"
+        if hasattr(self, "units"):
+            out += f"|  units: {', '.join([unit['uri']+' ('+unit['vocabulary']+')' for unit in self.units])}\n"
+        if hasattr(self, "methods"):
+            out += f"|  concepts: {', '.join([meth['uri']+' ('+meth['vocabulary']+')' for meth in self.methods])}"
         return out
 
 
@@ -700,7 +745,13 @@ class ContainerHandler:
         pContID = self.parentContainer.id if self.parentContainer is not None else "root"
         # print(f"{t}{self.id} - {self.name} ({self.containerType}) [{len(self.containers)}] {'{'+self.crawler.crawlerType+'}'}  >{pContID}")
         print(f"{t}{self.id} - {self.name} ({self.containerType}) [{len(self.containers)}] >{pContID}")
-
+        if hasattr(self, "concepts"):
+            if len(self.concepts) > 0:
+                print("  "*(depth+1)+f"{', '.join([conc['uri']+' ('+conc['vocabulary']+')' for conc in self.concepts])}")
+        if hasattr(self, "units"):
+            pass
+        if hasattr(self, "methods"):
+            pass
         # invoke showContents of sub-containers
         if len(self.containers) > 0:
             depth += 1
@@ -722,6 +773,24 @@ class ContainerHandler:
         # type-specific properties
         for key, attr_name in self.serializationDict.items():
             dict.update({key: str(getattr(self, attr_name))})
+
+        # concepts
+        if self.concepts is not None:
+            dict.update({"concepts": self.concepts})
+        else:
+            dict.update({"concepts": []})
+        # units
+        if hasattr(self, "units"):
+            if self.units is not None:
+                dict.update({"units": self.units})
+            else:
+                dict.update({"units": []})
+        # methods
+        if hasattr(self, "methods"):
+            if self.methods is not None:
+                dict.update({"methods": self.methods})
+            else:
+                dict.update({"methods": []})
 
         # and recursion for the sub-containers
         if cascade:
@@ -755,11 +824,57 @@ class ContainerHandler:
     def listOwnFiles(self, collection):
         pass
 
+    def addConcept(self, concept):
+        """
+        Add concept to container while checking for duplicity with already present concepts
+
+        :param concept: concept to be added
+        :return: None
+        """
+        if len(self.concepts) == 0:
+            self.concepts.append(concept)
+        else:
+            for conc in self.concepts:
+                is_there = False
+                if conc["vocabulary"] == concept["vocabulary"] and conc["uri"] == concept["uri"]:
+                    is_there = True
+            if not is_there:
+                self.concepts.append(concept)
+        return
+
+    def removeConcept(self, concept):
+        """
+        Remove concept from container.
+
+        :param concept: concept to be removed
+        :return: None
+        """
+        if len(self.concepts) == 0:
+            return
+        else:
+            remi = None
+            print(f"removing concept {concept}")
+            for i in range(len(self.concepts)):
+                print(self.concepts[i])
+                if self.concepts[i]["vocabulary"] == concept["vocabulary"] and self.concepts[i]["uri"] == concept["uri"]:
+                    remi = i
+            if remi is not None:
+                self.concepts.pop(remi)
+
+        return
+
+    def removeAllConcepts(self):
+        """
+        Removes all concepts assigned to container
+        :return: None
+        """
+        self.concepts = []
+
     def deleteOwnFiles(self, failed = []):
         """
         Deletes container's own file (if exists) from locale storage and induces deleting own files of subcontainers
 
-        :param failed: list of unsuccessful attemtps and reason for that [undeleted file path, description of error]
+        :param failed: list of unsuccessful attempts and reason for that [undeleted file path, description of error]
         :return: the same list of undeleted files
         """
         # first delete sub-container's files (if any)

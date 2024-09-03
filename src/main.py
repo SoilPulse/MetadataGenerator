@@ -15,11 +15,11 @@ from soilpulse.db_access import EntityKeywordsDB, DBconnector, MySQLConnector, N
 
 from pathlib import Path
 
+soilpulse_root_dir_name = "SoilPulse"
 project_files_dir_name = "project_files"
-project_files_root = Path('.', project_files_dir_name)
+project_files_root = Path(Path.home(), soilpulse_root_dir_name, project_files_dir_name)
 
 project_files_root.mkdir(parents=True, exist_ok=True)
-
 
 def establish_new_project(dbcon, user_id, **example):
     """
@@ -92,13 +92,14 @@ def load_existing_project(dbcon, user_id, project_id):
             # print(f"project files root: {project.temp_dir}")
             # show project details
             print(str(project))
-            # show the whole container tree
-            project.showContainerTree()
 
             #show paths of files and related containers
             # project.showFilesStructure()
             # change Resource name ... testing
             project.name = "Jonas' dissertation"
+
+            # show the whole container tree
+            project.showContainerTree()
 
             # CREATE AND WORK WITH DATASET
             # new empty dataset is created and added to the ResourceManager
@@ -106,16 +107,80 @@ def load_existing_project(dbcon, user_id, project_id):
             # add some containers from the ResourceManager - will be done through the GUI
             newDataset.addContainers(project.getContainerByID([771, 956, 992]))
 
+            # do whatever the automated crawling is capable of
             newDataset.getCrawled()
+
+            # and do some manual tweaking
+            # like removing all concepts from container
+            project.getContainerByID(776).removeAllConcepts()
+            project.getContainerByID(778).removeAllConcepts()
+
+            # assigning a concept to container
+            project.getContainerByID(776).addConcept({"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_64a2abf9"})
+                # this one is wrong and shoouldn't be there ...
+            project.getContainerByID(778).addConcept({"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_64a2abf9"})
+            project.getContainerByID(778).addConcept({"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_36811"})
+            project.getContainerByID(778).addConcept({"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_36811"})
+            project.getContainerByID(778).addConcept({"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_4260"})
+            project.getContainerByID(778).addConcept({"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_4260"})
+
+
+            # removing a concept from container
+                # ... so it's removed
+            project.getContainerByID(778).removeConcept({"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_64a2abf9"})
+
             # show the dataset's content
             newDataset.showContents(show_containers=True)
 
-            # set correct structure of table
-
+            # update database record
             # project.updateDBrecord()
 
     return
 
+def load_project_upload_files(dbcon, user_id, project_id):
+    """
+    use case function
+    """
+
+    print("\n\n" + 150 * "#")
+    print("LOAD EXISTING PROJECT")
+    print(f"user_id: {user_id}\nproject_id: {project_id}")
+    print(150 * "#"+"\n")
+
+    # example = {"user_id": user_id, "id": project_id}
+    example = {"id": project_id}
+    # create ProjectManager instance for loaded resource:
+    try:
+        project = ProjectManager(dbcon, user_id, **example)
+
+    except DatabaseEntryError as e:
+        # this exception is thrown whne trying to add new ProjectManager with same name into the database (for same user)
+        # pass the error message to the user ... some pop-up window with the message
+        print(e.message)
+        pass
+    except NotImplementedError:
+        print(
+            f"Publisher of requested DOI record related files 'is not supported.\nCurrently implemented publishers: {[', '.join([k for k in PublisherFactory.publishers.keys()])]}")
+
+    else:
+        if project.initialized:
+            # print(f"project files root: {project.temp_dir}")
+            # show project details
+            print(str(project))
+
+            project.uploadFilesFromSession(["d:\\downloads\\test_file_3.txt", "d:\\downloads\\test_file_4.csv"])
+            project.uploadFilesFromSession("d:\\downloads\\test_files.rar")
+
+            # show the whole container tree
+            project.showContainerTree()
+
+            # show paths of files and related containers
+            project.showFilesStructure()
+
+            # update database record
+            # project.updateDBrecord()
+
+    return
 
 if __name__ == "__main__":
     # user identifier that will be later managed by some login framework in streamlit
@@ -149,7 +214,8 @@ if __name__ == "__main__":
     # project2 = establish_new_project(dbcon, user_id, **example_4)
 
 
-    load_existing_project(dbcon, user_id, 1)
+    # load_existing_project(dbcon, user_id, 1)
+    load_project_upload_files(dbcon, user_id, 1)
     # load_existing_project(dbcon, user_id, 2)
 
 
