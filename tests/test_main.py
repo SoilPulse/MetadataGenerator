@@ -68,7 +68,7 @@ def test_project_doi_retrieved(example):
 
 
 def test_project_files():
-    if 'server' in project.dbconnection:
+    if 'server' in dir(project.dbconnection):
         assert True
     else:
         assert "_project.json" in os.listdir(project.temp_dir)
@@ -93,7 +93,7 @@ def test_project_files_loaded(example):
 project.updateDBrecord()
 
 def test_project_files_container():
-    if 'server' in project.dbconnection:
+    if 'server' in dir(project.dbconnection):
         assert True
     else:
         assert "_containers.json" in os.listdir(project.temp_dir)
