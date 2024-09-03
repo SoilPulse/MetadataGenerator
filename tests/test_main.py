@@ -73,10 +73,15 @@ project = ProjectManager(dbcon, user_id, **example_5)
 project.keepFiles = False
 
 
-
 ##### Download Files
 project.downloadPublishedFiles()
 
+project.getContainerByID(10).addConcept({"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_64a2abf9"})
+
+##### save project
+project.updateDBrecord()
+
+project.getContainerByID(10).removeAllConcepts()
 
 project.getContainerByID(6).removeAllConcepts()
 # assigning a concept to container
@@ -89,6 +94,9 @@ project.getContainerByID(9).addConcept({"vocabulary": "AGROVOC", "uri": "http://
 # ... so it's removed
 project.getContainerByID(9).removeConcept({"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_64a2abf9"})
 
+
+##### save project
+project.updateDBrecord()
 
 @pytest.mark.parametrize("example", [example_5])
 def test_project_doi_retrieved(example):
@@ -112,10 +120,6 @@ def test_project_container_tree_with_files(example):
 def test_project_files_loaded(example):
     assert example['asserts']['file_in_dir'] in os.listdir(project.temp_dir)
 
-
-
-##### save project
-project.updateDBrecord()
 
 def test_project_files_container():
     if 'server' in dir(project.dbconnection):
@@ -156,6 +160,8 @@ def test_concept_assignment(example):
     assert result == 0
 
 def test_clear_test_project():
+    project.deleteDownloadedFiles()
+    project.deleteUploadedFiles()
     project.deleteAllProjectFiles()
     rmtree(project.temp_dir)
     assert not Path(project.temp_dir).is_dir()
