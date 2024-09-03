@@ -35,6 +35,17 @@ example_5 = {"name": "NFDItest",
                      "containers_files_loaded": 6, # # number of top level containers soilpulse should identify
                      "file_in_dir": "NFDI4Earth_D1.3.12.pdf", # a file of the resource, indicating file download was succesfull
                      "table_container_ID": 6, # The ID of a table container of the Resource
+                     "concepts":
+                         {
+                             "8":[
+                                 {'vocabulary': 'AGROVOC',
+                                  'uri': 'http://aims.fao.org/aos/agrovoc/c_64a2abf9'},
+                                 {'vocabulary': 'AGROVOC',
+                                  'uri': 'http://aims.fao.org/aos/agrovoc/c_4260'}
+                                 ],
+                             "9": [{'vocabulary': 'AGROVOC', 'uri': 'http://aims.fao.org/aos/agrovoc/c_4260'}],
+                             "10":[],
+                         }
                      },
              }
 
@@ -62,6 +73,23 @@ project = ProjectManager(dbcon, user_id, **example_5)
 project.keepFiles = False
 
 
+
+##### Download Files
+project.downloadPublishedFiles()
+
+
+project.getContainerByID(6).removeAllConcepts()
+# assigning a concept to container
+project.getContainerByID(9).addConcept({"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_64a2abf9"})
+# this one is wrong and shoouldn't be there ...
+project.getContainerByID(8).addConcept({"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_64a2abf9"})
+project.getContainerByID(8).addConcept({"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_4260"})
+project.getContainerByID(9).addConcept({"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_4260"})
+# removing a concept from container
+# ... so it's removed
+project.getContainerByID(9).removeConcept({"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_64a2abf9"})
+
+
 @pytest.mark.parametrize("example", [example_5])
 def test_project_doi_retrieved(example):
     assert project.DOImetadata['data']['id'] == example["doi"]
@@ -73,9 +101,6 @@ def test_project_files():
     else:
         assert "_project.json" in os.listdir(project.temp_dir)
 
-
-##### Download Files 
-project.downloadPublishedFiles()
 
 
 @pytest.mark.parametrize("example", [example_5])
@@ -118,8 +143,17 @@ def test_table_container(example):
     if table.containerType == 'table':
         for x in table.containers:
             if not x.containerType == 'column':
-                assert False
-        assert True
+                result = False
+        result = True
+    assert result
+
+@pytest.mark.parametrize("example", [example_5])
+def test_concept_assignment(example):
+    result = 0
+    for x in example['asserts']['concepts']:
+        if not project.getContainerByID(int(x)).concepts == example['asserts']['concepts'][x]:
+            result += 1
+    assert result == 0
 
 def test_clear_test_project():
     project.deleteAllProjectFiles()
