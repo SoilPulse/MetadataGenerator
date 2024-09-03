@@ -4,6 +4,7 @@ requests
 streamlit
 streamlit-tree-select
 mysql-connector-python
+frictionless
 SPARQLWrapper
 pandas
 chardet
