@@ -149,7 +149,7 @@ class ProjectManager:
         - remove old files if there were any
 
         """
-
+        print(f"doi: '{doi}'")
         # if the __doi parameter already had some value
         if self.doi:
             # and the new value differs from the previous one
@@ -158,7 +158,7 @@ class ProjectManager:
                 self.deleteAllProjectFiles()
                 pass
 
-        if doi is not None:
+        if doi is not None and doi != "":
             # set the new DOI
             self.doi = doi
             # populate the registration agency
@@ -308,9 +308,9 @@ class ProjectManager:
         else:
             if 'status' in RAjson[0].keys():
                 if RAjson[0]['status'] == "Invalid DOI":
-                    raise DOIdataRetrievalException(f"Provided DOI '{doi}' is invalid.")
+                    raise DOIdataRetrievalException(f"provided DOI '{doi}' is invalid.")
                 if RAjson[0]['status'] == "DOI does not exist":
-                    raise DOIdataRetrievalException(f"Provided DOI '{doi}' is not registered.")
+                    raise DOIdataRetrievalException(f"provided DOI '{doi}' is not registered.")
             else:
                 if (meta):
                     return RAjson
