@@ -95,15 +95,26 @@ if not st.session_state.localproject:
         with cpr1:
             st.title("New project")
             new_name = st.text_input("Project Name")
-            new_doi = st.text_input("Project DOI")
+            new_doi, new_url = None, None
+            projecttype = st.radio("There is a",
+                                   options = [
+                                       "DOI",
+                                       #"URL",
+                                       "File to upload"],
+                                   horizontal = True)
+            if projecttype == "DOI":
+                new_doi = st.text_input("Project DOI")
+            if projecttype == "URL":
+                st.warning("Not implemented yet, please use file upload.")
+                new_url = st.text_input("Project URL")
             if st.button(
                 "Add Project",
-                disabled=new_doi == "" or
-                new_name == ""
+                disabled=new_name == ""
             ):
                 st.session_state.localproject = sp._add_local_project(
                     new_name,
                     new_doi,
+                    new_url,
                     st.session_state.user_id,
                     con = st.session_state.con)
                 st.rerun()
