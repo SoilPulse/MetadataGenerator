@@ -99,38 +99,50 @@ def _modify_agrovoc_concept(container):
 def _mod_container_content(container_org):
     modc1, modc2 = st.columns(2)
     container_mod = copy.deepcopy(container_org)
-    if container_mod.containerType == 'json':
-        attributes = ['containerType', 'content', 'name']
-    elif container_mod.containerType == 'file':
-        attributes = ['encoding', 'metadataElements', 'name']
-    elif container_mod.containerType == 'directory':
-        attributes = ['parentContainer', 'containers', 'name']
-    else:
+    with modc2:
+        show_all = st.toggle("show all dic")
+    if show_all:
         attributes = [method_name for method_name in dir(container_mod)
-                          if not callable(getattr(container_mod, method_name))
-                          and not "__" in method_name]
+                      if not callable(getattr(container_mod, method_name))
+                      and not "__" in method_name]
+    else:
+        if container_mod.containerType == 'column':
+            attributes = ['concepts', 'methods', 'units']
+        elif container_mod.containerType == 'table':
+            attributes = ['containers']
+        elif container_mod.containerType == 'json':
+            attributes = ['containerType', 'name']
+        elif container_mod.containerType == 'file':
+            attributes = ['name']
+        elif container_mod.containerType == 'directory':
+            attributes = ['parentContainer', 'containers', 'name']
+        else:
+            attributes = [method_name for method_name in dir(container_mod)
+                              if not callable(getattr(container_mod, method_name))
+                              and not "__" in method_name]
 
     # using a dict allows to assign streamlit-container names generic (https://stackoverflow.com/questions/5036700/how-can-you-dynamically-create-variables)
     DictForVisual = {}
     for attribute in attributes:
 ## json error
         DictForVisual[attribute + "1"], DictForVisual[attribute + "2"] = st.columns(2)
-        if attribute == 'scontent':
-            with DictForVisual[attribute + "1"]:
+        with DictForVisual[attribute + "1"]:
+            if attribute == 'scontent':
                 st.json(getattr(container_mod, attribute))
-        else:
-            with DictForVisual[attribute + "1"]:
+            elif attribute == 'containers':
+                children = [x.name for x in getattr(container_mod, attribute)]
+                st.write(children)
+            else:
                 setattr(container_mod, attribute, st.text_input(
                         label = attribute,
                         value = str(getattr(container_mod, attribute))
                         )
                     )
-            with DictForVisual[attribute + "2"]:
-                test = st.button("Test Changes for "+attribute,
-                           disabled = getattr(container_mod, attribute) == getattr(container_org, attribute))
-
-                change = st.button("Save Changes for "+attribute,
-                           disabled = getattr(container_mod, attribute) == getattr(container_org, attribute))
+        with DictForVisual[attribute + "2"]:
+            test = st.button("Test Changes for "+attribute,
+                       disabled = getattr(container_mod, attribute) == getattr(container_org, attribute))
+            change = st.button("Save Changes for "+attribute,
+                       disabled = getattr(container_mod, attribute) == getattr(container_org, attribute))
         if change:
             change = False
             setattr(container_org, attribute, getattr(container_mod, attribute))
