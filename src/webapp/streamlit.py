@@ -38,6 +38,11 @@ if "user_id" not in st.session_state:
 def set_session(clear = False, logout = False):
     if logout:
         clear = True
+
+# workaround to clear file uploader, after treatment of files https://discuss.streamlit.io/t/are-there-any-ways-to-clear-file-uploader-values-without-using-streamlit-form/40903/2
+    if "file_uploader_key" not in st.session_state or clear:
+        st.session_state["file_uploader_key"] = 0
+
     if "selected" not in st.session_state or clear:
         st.session_state.selected = []
     if "expanded" not in st.session_state or clear:
@@ -173,6 +178,10 @@ else:
             st.session_state.expanded = selected["expanded"]
         if rerun:
             st.rerun()
+
+# file upload
+    with st.sidebar:
+        sf._file_upload()
 
 # Container edit
 with c1:
