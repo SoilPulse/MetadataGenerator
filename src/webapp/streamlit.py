@@ -51,7 +51,7 @@ def set_session(clear = False, logout = False):
 
     if "con" not in st.session_state:
         st.session_state.con = sp._get_DB_connection()
-    if "con" in st.session_state and clear:
+    if "con" in st.session_state and logout:
         del st.session_state.con
 
     # get projectlist of User
