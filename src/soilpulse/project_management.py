@@ -5,20 +5,16 @@ import requests
 import os
 import sys
 import shutil
+from pathlib import Path
 
 from .metadata_scheme import MetadataStructureMap
 from .db_access import DBconnector
 from .exceptions import DOIdataRetrievalException, LocalFileManipulationError, ContainerStructureError, DatabaseEntryError, NameNotUniqueError, DatabaseFetchError, DeserializationError
 
 # general variables
-project_files_dir_name = "project_files"
-project_files_root = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), project_files_dir_name)
-
 doi_metadata_key = "DOI metadata"
 publisher_metadata_key = "Publisher metadata"
 
-if not os.path.exists(project_files_root):
-    os.mkdir(project_files_root)
 
 class ProjectManager:
     """
@@ -50,7 +46,7 @@ class ProjectManager:
         self.publishedFiles = []
         # list of files that were downloaded
         self.downloadedFiles = []
-        # uploaded files directly from the users computer
+        # list of files that were uploaded from session
         self.uploadedFiles = []
         # the tree structure of included files and other container types
         self.containerTree = []
@@ -66,6 +62,8 @@ class ProjectManager:
 
         # project's own ContainerHandlerFactory to keep track of containers
         self.containerFactory = ContainerHandlerFactory()
+        # the crawlers factory
+        self.crawlerFactory = CrawlerFactory()
 
         if kwargs.get("id") is None:
             # Try to create a new project record in the database
@@ -123,7 +121,7 @@ class ProjectManager:
         return out
 
     def updateDBrecord(self, cascade=True):
-        print(f"Saving project \"{self.name}\" with ID {self.id} ... ")
+        print(f"\nSaving project \"{self.name}\" with ID {self.id} ... ")
 
         self.dbconnection.updateProjectRecord(self, cascade)
 
@@ -151,7 +149,7 @@ class ProjectManager:
         - remove old files if there were any
 
         """
-
+        print(f"doi: '{doi}'")
         # if the __doi parameter already had some value
         if self.doi:
             # and the new value differs from the previous one
@@ -160,7 +158,7 @@ class ProjectManager:
                 self.deleteAllProjectFiles()
                 pass
 
-        if doi is not None:
+        if doi is not None and doi != "":
             # set the new DOI
             self.doi = doi
             # populate the registration agency
@@ -213,16 +211,18 @@ class ProjectManager:
 
     def deleteDownloadedFiles(self):
         failed = []
-        for f in self.downloadedFiles:
+        for f in self.downloadedFiles[:]:
             if os.path.isfile(f):
                 try:
                     os.remove(f)
+                    self.downloadedFiles.remove(f)
                 except PermissionError as e:
                     failed.append(f)
                     print(f)
             if os.path.isdir(f):
                 try:
                     os.rmdir(f)
+                    self.downloadedFiles.remove(f)
                 except PermissionError as e:
                     failed.append(f)
                     print(f)
@@ -231,6 +231,31 @@ class ProjectManager:
             raise LocalFileManipulationError(f"Failed to delete following files:\n{flist}")
         else:
             print("All downloaded files successfully deleted.")
+        return failed
+
+    def deleteUploadedFiles(self):
+        failed = []
+        for f in self.uploadedFiles[:]:
+            if os.path.isfile(f):
+                try:
+                    os.remove(f)
+                    self.uploadedFiles.remove(f)
+                except PermissionError as e:
+                    failed.append(f)
+                    print(f)
+
+            if os.path.isdir(f):
+                try:
+                    os.rmdir(f)
+                    self.uploadedFiles.remove(f)
+                except PermissionError as e:
+                    failed.append(f)
+                    print(f)
+        if len(failed) > 0:
+            flist = "\n".join([f for f in failed])
+            raise LocalFileManipulationError(f"Failed to delete following files:\n{flist}")
+        else:
+            print("All uploaded files successfully deleted.")
         return failed
 
     def getPublisher(self, DOI_metadata):
@@ -282,10 +307,10 @@ class ProjectManager:
             raise DOIdataRetrievalException("An unknown error occurred while getting registration agency of provided DOI:", e)
         else:
             if 'status' in RAjson[0].keys():
-                if RAjson['status'] == "Invalid DOI":
-                    raise DOIdataRetrievalException(f"Provided DOI '{doi}' is invalid.")
-                if RAjson['status'] == "DOI does not exist":
-                    raise DOIdataRetrievalException(f"Provided DOI '{doi}' is not registered.")
+                if RAjson[0]['status'] == "Invalid DOI":
+                    raise DOIdataRetrievalException(f"provided DOI '{doi}' is invalid.")
+                if RAjson[0]['status'] == "DOI does not exist":
+                    raise DOIdataRetrievalException(f"provided DOI '{doi}' is not registered.")
             else:
                 if (meta):
                     return RAjson
@@ -345,7 +370,7 @@ class ProjectManager:
                 print("The list of published files is empty.\n")
             else:
                 # create the target directory if not exists
-                print("downloading remote files to local storage ...")
+                print("downloading remote files to SoilPulse storage ...")
 
                 fileList = []
                 if not list:
@@ -401,6 +426,18 @@ class ProjectManager:
         """
         handles all needed steps to upload files from a session (unpack archives if necessary) and create file structure tree
         """
+        if not isinstance(files, list):
+            files = [files]
+        for file in files:
+            filename = os.path.basename(file)
+            target_file_path = os.path.join(self.temp_dir, filename)
+            shutil.copyfile(file, target_file_path)
+            # create new container from the file with all related actions
+            newContainer = self.containerFactory.createHandler('filesystem', self, None, name=filename,
+                                                               path=target_file_path, cascade=True)
+            self.containerTree.append(newContainer)
+            # add new file path to uploaded files list
+            self.uploadedFiles.append(newContainer.path)
 
         return
 
@@ -411,9 +448,9 @@ class ProjectManager:
             except:
                 raise
         else:
-            self.containerFactory.getContainerByID(cid)
-    def getContainersByParentID(self, pid):
+            return self.containerFactory.getContainerByID(cid)
 
+    def getContainersByParentID(self, pid):
         return self.getContainerByID(pid).containers
 
     def newDataset(self, name):
@@ -509,16 +546,21 @@ class Dataset:
     def getContainerIDsList(self):
         return [c.id for c in self.containers]
 
+    def showContents(self, show_containers=True):
+        print(f"\n==== {self.name} " + 70 * "=")
+
+        if show_containers:
+            self.showContainerTree()
+        print(80 * "=" + 2 * "\n")
+
     def showContainerTree(self):
         """
         Induces printing contents of the whole container tree
         """
-        print(80 * "=")
-        print(f"dataset\n'{self.name}'\ncontainer tree: ")
-        print(80 * "-")
+        print(f"---- container tree: ----")
         for container in self.containers:
             container.showContents(0)
-        print(80 * "=" + 2 * "\n")
+
 
 
     def checkMetadataStructure(self):
@@ -591,7 +633,10 @@ class ContainerHandlerFactory:
                 if kwargs["id"] not in self.containers.keys():
                     self.lastContainerID = max(kwargs["id"], self.lastContainerID)
                 else:
-                    print(f"ContainerHandler's dict: \n{self.containers}")
+                    print(f"Container IDs produced so far:")
+                    for id, cont in self.containers.items():
+                        print(f"{id} - {cont.name}")
+                        # print(f"{id} - {cont.name} ({cont.type})")
                     raise ContainerStructureError(f"This container factory has already produced container "\
                                                 f"with ID {kwargs['id']} (name: '{self.containers.get(kwargs['id']).name}')")
 
@@ -623,7 +668,7 @@ class ContainerHandlerFactory:
         Returns container of particular ID from inner dictionary
         """
 
-        if cls.containers.get(cid):
+        if cls.containers.get(cid) is not None:
             return cls.containers.get(cid)
         else:
             raise ContainerStructureError(f"Container id = {cid} was never created by this factory!")
@@ -654,7 +699,7 @@ class ContainerHandler:
         # unique ID in the project scope
         self.id = kwargs["id"]
         # container name (filename/database name/table name ...)
-        self.name = kwargs["name"]
+        self.name = kwargs.get("name")
         # reference to the ProjectManager that the container belongs to
         self.project = project
         # parent container instance (if not root container)
@@ -665,16 +710,25 @@ class ContainerHandler:
         self.metadataElements = []
         # the crawler assigned to the container
         self.crawler = None
-        # dictionary of assigned concept URIs {"vocabulary": vocabulary provider, "uri": URI of the concept}
-        self.concepts = {}
+        # was crawled flag
+        self.wasCrawled = False
+        # was analyzed flag
+        self.isAnalyzed = False
 
+        # list of dictionaries of assigned concept URIs [{"vocabulary": vocabulary provider, "uri": URI of the concept}, ...]
+        self.concepts = kwargs.get("concepts") if kwargs.get("concepts") is not None else []
 
     def __str__(self):
-        out = f"|  # {self.id}  |  {type(self).__name__}\n|  {self.name}  |  parent: "
-        out += f"{self.parentContainer.id}\n" if self.parentContainer is not None else f"project\n"
+        out = f"\n|  # {self.id}  |  name: '{self.name}'  \n|  type: {type(self).__name__}  |  parent: "
+        out += f"{self.parentContainer.id}\n" if self.parentContainer is not None else f"project root\n"
         if hasattr(self, "path"):
-            out += f"|  {self.path}"
-        out += "\n"
+            out += f"|  {self.path}\n"
+        if hasattr(self, "concepts"):
+            out += f"|  concepts: {', '.join([conc['uri']+' ('+conc['vocabulary']+')' for conc in self.concepts])}\n"
+        if hasattr(self, "units"):
+            out += f"|  units: {', '.join([unit['uri']+' ('+unit['vocabulary']+')' for unit in self.units])}\n"
+        if hasattr(self, "methods"):
+            out += f"|  concepts: {', '.join([meth['uri']+' ('+meth['vocabulary']+')' for meth in self.methods])}"
         return out
 
 
@@ -689,8 +743,15 @@ class ContainerHandler:
         t = ind * depth
         # print attributes of this container
         pContID = self.parentContainer.id if self.parentContainer is not None else "root"
-        print(f"{t}{self.id} - {self.name} ({self.containerType}) [{len(self.containers)}]   >{pContID}")
-
+        # print(f"{t}{self.id} - {self.name} ({self.containerType}) [{len(self.containers)}] {'{'+self.crawler.crawlerType+'}'}  >{pContID}")
+        print(f"{t}{self.id} - {self.name} ({self.containerType}) [{len(self.containers)}] >{pContID}")
+        if hasattr(self, "concepts"):
+            if len(self.concepts) > 0:
+                print("  "*(depth+1)+f"{', '.join([conc['uri']+' ('+conc['vocabulary']+')' for conc in self.concepts])}")
+        if hasattr(self, "units"):
+            pass
+        if hasattr(self, "methods"):
+            pass
         # invoke showContents of sub-containers
         if len(self.containers) > 0:
             depth += 1
@@ -701,19 +762,42 @@ class ContainerHandler:
         db_connection.updateContainerRecord(self, cascade)
         return
 
-    def getSerializationDictionary(self):
+    def getSerializationDictionary(self, cascade=True):
         # general properties of all containers
-        dict = {"id": self.id, "type": self.containerType, "name": self.name, "parent_id_local": self.parentContainer.id if self.parentContainer is not None else None}
+        dict = {"id": self.id,
+                "type": self.containerType,
+                "name": self.name,
+                "parent_id_local": self.parentContainer.id if self.parentContainer is not None else None,
+                "crawler_type": self.crawler.crawlerType if self.crawler is not None else None}
 
         # type-specific properties
         for key, attr_name in self.serializationDict.items():
             dict.update({key: str(getattr(self, attr_name))})
 
+        # concepts
+        if self.concepts is not None:
+            dict.update({"concepts": self.concepts})
+        else:
+            dict.update({"concepts": []})
+        # units
+        if hasattr(self, "units"):
+            if self.units is not None:
+                dict.update({"units": self.units})
+            else:
+                dict.update({"units": []})
+        # methods
+        if hasattr(self, "methods"):
+            if self.methods is not None:
+                dict.update({"methods": self.methods})
+            else:
+                dict.update({"methods": []})
+
         # and recursion for the sub-containers
-        sub_conts = {}
-        for cont in self.containers:
-            sub_conts.update({cont.id: cont.getSerializationDictionary()})
-        dict.update({"containers": sub_conts})
+        if cascade:
+            sub_conts = {}
+            for cont in self.containers:
+                sub_conts.update({cont.id: cont.getSerializationDictionary()})
+            dict.update({"containers": sub_conts})
         return dict
 
     def collectContainerIDsToList(self, output=[]):
@@ -726,7 +810,12 @@ class ContainerHandler:
     def createTree(self, *args):
         pass
 
-    def getCrawled(self):
+    def getAnalyzed(self):
+        """Induces further decomposition of the container into logical sub-elements."""
+        pass
+
+    def getCrawled(self, cascade):
+        """Induces content search for metadata elements based on appropriate set of search rules and terms."""
         pass
 
     def assignCrawler(self, crawler):
@@ -735,11 +824,57 @@ class ContainerHandler:
     def listOwnFiles(self, collection):
         pass
 
+    def addConcept(self, concept):
+        """
+        Add concept to container while checking for duplicity with already present concepts
+
+        :param concept: concept to be added
+        :return: None
+        """
+        if len(self.concepts) == 0:
+            self.concepts.append(concept)
+        else:
+            for conc in self.concepts:
+                is_there = False
+                if conc["vocabulary"] == concept["vocabulary"] and conc["uri"] == concept["uri"]:
+                    is_there = True
+            if not is_there:
+                self.concepts.append(concept)
+        return
+
+    def removeConcept(self, concept):
+        """
+        Remove concept from container.
+
+        :param concept: concept to be removed
+        :return: None
+        """
+        if len(self.concepts) == 0:
+            return
+        else:
+            remi = None
+            print(f"removing concept {concept}")
+            for i in range(len(self.concepts)):
+                print(self.concepts[i])
+                if self.concepts[i]["vocabulary"] == concept["vocabulary"] and self.concepts[i]["uri"] == concept["uri"]:
+                    remi = i
+            if remi is not None:
+                self.concepts.pop(remi)
+
+        return
+
+    def removeAllConcepts(self):
+        """
+        Removes all concepts assigned to container
+        :return: None
+        """
+        self.concepts = []
+
     def deleteOwnFiles(self, failed = []):
         """
         Deletes container's own file (if exists) from locale storage and induces deleting own files of subcontainers
 
-        :param failed: list of unsuccessful attemtps and reason for that [undeleted file path, description of error]
+        :param failed: list of unsuccessful attempts and reason for that [undeleted file path, description of error]
         :return: the same list of undeleted files
         """
         # first delete sub-container's files (if any)
@@ -847,25 +982,111 @@ class Datasetpointer(Pointer):
 
     pass
 
+class CrawlerFactory:
+    """
+    Factory of Crawler class instances
+    """
+
+    # directory of registered publisher types classes
+    crawlerTypes = {}
+    crawlerExtensions = {}
+
+    @classmethod
+    def registerCrawlerType(cls, crawler_class):
+        cls.crawlerTypes[crawler_class.crawlerType] = crawler_class
+        print(f"> Crawler type '{crawler_class.crawlerType}' registered.")
+        return
+
+    @classmethod
+    def createCrawler(cls, general_type, container, *args, **kwargs):
+        """
+        Creates and returns instance of Crawler subclass based on registered types and their specialization procedures
+        """
+        # if 'crawler_type' is in kwargs and is not None - e.a. loading the container from DB
+        if kwargs.get("crawler_type") is not None:
+            specialized_type = kwargs.pop("crawler_type")
+            return cls.crawlerTypes[specialized_type](container, *args, **kwargs)
+
+        # creating new crawler based on container properties
+        else:
+            if general_type is not None:
+                if general_type not in cls.crawlerTypes.keys():
+                    print(cls.crawlerTypes.keys())
+                    types = ",".join(["'" + k + "'" for k in cls.crawlerTypes.keys()])
+                    print(
+                        f"\t{os.path.basename(container.path)} - unsupported Crawler subclass general type '{general_type}' (registered types are: {types}) - 'zero crawler' will be used instead.")
+
+                    return cls.crawlerTypes['zero'](container, *args)
+                else:
+                    # get specialized crawler type
+                    specialized_type = cls.crawlerTypes[general_type].getSpecializedCrawlerType(container, *args, **kwargs)
+                    # check if the requested specialized crawler type is registered in the factory
+                    if specialized_type not in CrawlerFactory.crawlerTypes.keys():
+                        types = ",".join(["'" + k + "'" for k in cls.crawlerTypes.keys()])
+                        print(f"\t{os.path.basename(container.path)} - unsupported Crawler subclass special type "
+                              f"'{specialized_type}' (registered types are: {types}) - 'zero crawler' will be used instead.")
+
+                        return cls.crawlerTypes['zero'](container, *args, **kwargs)
+                    else:
+                        # try if the specialized crawler is valid for given container
+                        tryCrawler = cls.crawlerTypes[specialized_type](container, *args, **kwargs)
+                        if tryCrawler.validate():
+                            return tryCrawler
+                        # or return the general type
+                        else:
+                            fallback_type = cls.crawlerTypes[general_type].getFallbackCrawlerType(container, *args, **kwargs)
+                            return cls.crawlerTypes[fallback_type](*args, **kwargs)
+
+            else:
+                print(f"\tCrawler type was not specified - 'zero crawler' will be used instead.")
+                return cls.crawlerTypes['zero'](container, *args)
+
+    def __init__(self):
+        pass
+
 class Crawler:
     """
     Top level abstract class of the metadata/data crawler
     """
-    crawlerType = None
+    crawlerType = 'zero'
+
+    @classmethod
+    def getSpecializedCrawlerType(cls, container, **kwargs):
+        return cls.crawlerType
+    @classmethod
+    def getFallbackCrawlerType(cls, container, **kwargs):
+        return cls.crawlerType
 
     def __init__(self, container):
         self.container = container
-        self.crawlerType = type(self).crawlerType
         pass
 
+    def validate(self):
+        """
+        Validates suitability of particular crawler type for given container
+        """
+        return True
+
+    def analyze(self):
+        """
+        Analyzes inner structure of the container
+        :return: list of containers - container tree
+        """
+
+        print(f"No content analysis procedure defined for crawler type '{self.crawlerType}'")
+        self.container.isAnalyzed = True
+        return []
 
     def crawl(self):
         """
-        Parses the source and translate it to metadata elements structure
+        Parses the container content and searches for meatadata elements.
         :return: MetadataStructureMap
         """
+        print(f"No crawling procedure defined for crawler type '{self.crawlerType}'")
+
         return
 
+CrawlerFactory.registerCrawlerType(Crawler)
 
 def get_formated_file_size(path):
     """Return a string of dynamically formatted file size."""

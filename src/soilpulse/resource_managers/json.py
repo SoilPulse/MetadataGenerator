@@ -3,8 +3,9 @@
 
 import json
 import os
+import pprint
 
-from ..project_management import ContainerHandler, ContainerHandlerFactory, Pointer, Crawler
+from ..project_management import ContainerHandler, ContainerHandlerFactory, Pointer, Crawler, CrawlerFactory
 from ..db_access import EntityKeywordsDB
 # just for the standalone functions - will be changed
 # from ..resource_management import *
@@ -16,37 +17,29 @@ class JSONContainer(ContainerHandler):
     keywordsDBname = "keywords_json"
 
     # dictionary of DB fields needed to save this subclass instance attributes
-    DBfields = {"relative_path": "text", "content": ["text", 2047]}
+    DBfields = {"relative_path": "text"}
     # dictionary of attribute names to be used for DB save/update - current values need to be obtained at right time before saving
-    serializationDict = {"relative_path": "rel_path", "content": "content"}
+    serializationDict = {"relative_path": "rel_path"}
 
     def __init__(self, project_manager, parent_container, **kwargs):
         super().__init__(project_manager, parent_container, **kwargs)
-        # the JSON content
-        self.content = kwargs["content"]
-        self.path = kwargs["path"]
+        self.path = kwargs.get("path")
         self.rel_path = self.path.replace(project_manager.temp_dir, "") if self.path is not None else None
 
+        self.content = kwargs.get("content")
+        # load the content to memory from file - loading from saved state
+        if self.content is None and self.path is not None:
+            if os.path.isfile(self.path):
+                with open(self.path, "r") as f:
+                    json_data = json.load(f)
+                    self.content = json_data
+
+        # # write the file from contents - initialization state
+        # if self.content is not None and self.path is None:
+        #     self.saveAsFile(self.path)
+
+
         self.crawler = JSONcrawler(self)
-
-
-    def showContents(self, depth = 0, ind = ". "):
-        """
-        Prints basic info about the container and invokes showContents on all of its containers
-
-        :param depth: current depth of showKeyValueStructure recursion
-        :param ind: string used for one level of indentation
-        """
-        t = ind * depth
-
-        print(f"{t}{self.id} - {self.name} ({self.containerType}) [{len(self.containers)}]")
-        # self.showKeyValueStructure(self.content, t, 0)
-        if self.containers:
-            depth += 1
-            for cont in self.containers:
-                cont.showContents(depth)
-        return
-
 
     def showKeyValueStructure(self, json, t = "", depth = 0, depthLimit = 0, ind = ".", sep = ">"):
         """
@@ -137,13 +130,11 @@ class JSONcrawler(Crawler):
     Crawler for file system repositories
     """
 
-    crawlerType = "JSON crawler"
+    crawlerType = "json"
 
     def __init__(self, container):
         self.container = container
         # print(f"\tJSON crawler created for container #{self.container.id} '{self.container.name}' (file '{self.container.path}')")
         pass
 
-    def crawl(self):
-        print("No crawling procedure defined yet for JSON crawler")
-        pass
+CrawlerFactory.registerCrawlerType(JSONcrawler)
