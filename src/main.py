@@ -110,6 +110,10 @@ def load_existing_project(dbcon, user_id, project_id):
             # add some containers from the ResourceManager - will be done through the GUI
             newDataset.addContainers(project.getContainerByID([771, 956, 992]))
 
+            # upload vocabulary of concepts
+            project.updateConceptsVocabularyFromFile(r"c://Users//jande//SoilPulse//project_files//_concepts2.json")
+            print(f"loaded concept vocabulary: {project.conceptsVocabulary}")
+
             # do whatever the automated crawling is capable of
             newDataset.getCrawled()
 
@@ -132,11 +136,14 @@ def load_existing_project(dbcon, user_id, project_id):
                 # ... so it's removed
             project.getContainerByID(778).removeConcept({"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_64a2abf9"})
 
+            # update vocabulary by concepts collected from containers
+            project.updateConceptsVocabularyFromContents()
+
             # show the dataset's content
             newDataset.showContents(show_containers=True)
 
             # update database record
-            # project.updateDBrecord()
+            project.updateDBrecord()
 
     return
 
@@ -216,12 +223,12 @@ if __name__ == "__main__":
     # del project1
     # project2 = establish_new_project(dbcon, user_id, **example_3)
     # project2 = establish_new_project(dbcon, user_id, **example_4)
-    project3 = establish_new_project(dbcon, user_id, **example_6)
-    project3.uploadFilesFromSession("d:\\downloads\\lenz2022.zip")
-    project3.showContainerTree()
-    project3.updateDBrecord()
+    # project3 = establish_new_project(dbcon, user_id, **example_6)
+    # project3.uploadFilesFromSession("d:\\downloads\\lenz2022.zip")
+    # project3.showContainerTree()
+    # project3.updateDBrecord()
 
-    # load_existing_project(dbcon, user_id, 1)
+    load_existing_project(dbcon, user_id, 1)
     # load_project_upload_files(dbcon, user_id, 1)
     # load_existing_project(dbcon, user_id, 2)
 

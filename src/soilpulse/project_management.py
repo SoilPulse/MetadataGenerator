@@ -5,6 +5,7 @@ import requests
 import os
 import sys
 import shutil
+import json
 from pathlib import Path
 
 from .metadata_scheme import MetadataStructureMap
@@ -54,6 +55,8 @@ class ProjectManager:
         self.containersOfPaths = {}
         # language of the project
         self.language = None
+        # project concepts dictionary
+        self.conceptsVocabulary = []
 
         # dedicated directory for file saving
         self.temp_dir = None
@@ -78,6 +81,7 @@ class ProjectManager:
                 self.keepFiles = True
                 self.initialized = True
                 self.setDOI(kwargs.get("doi"))
+
 
         else:
             # Load the existing project properties from the database
@@ -503,6 +507,66 @@ class ProjectManager:
         for path, contID in self.containersOfPaths.items():
             print(f"{path}\t[{contID}]")
 
+    def collectConcepts(self):
+        """
+        Collects all concepts from containers of the tree
+        """
+        project_concepts = []
+        for cont in self.containerTree:
+            project_concepts.extend(cont.getConcepts([]))
+        return project_concepts
+
+    def updateConceptsVocabularyFromContents(self):
+        self.updateConceptsVocabulary(self.conceptsVocabulary, self.collectConcepts())
+    def updateConceptsVocabularyFromFile(self, input_file):
+        # load the input JSON file
+        with open(input_file, 'r') as f:
+            input_data = json.load(f)
+        self.updateConceptsVocabulary(self.conceptsVocabulary, input_data)
+        # no need to save the vocabulary to file as it is saved when project is saved
+        return
+
+    def exportConceptsToGlobalDictionary(self):
+        # global
+        global_file = os.path.join(self.dbconnection.project_files_root, self.dbconnection.concepts_vocabulary_filename)
+        # load the global JSON file
+        with open(global_file, 'r') as f:
+            target_data = json.load(f)
+        self.updateConceptsVocabulary(target_data, self.conceptsVocabulary)
+        json.dump(global_file, f, ensure_ascii=False, indent=4)
+        pass
+
+    @classmethod
+    def updateConceptsVocabulary(cls, target_vocab, input_data):
+        # create a set of tuples representing existing entries to avoid duplicities
+        existing_concepts_set = set(
+            (concept['string'], c['vocabulary'], c['uri'])
+            for concept in target_vocab[:]
+            for c in concept['concept']
+        )
+
+        # iterate through the input data
+        for new_item in input_data:
+            new_string = new_item['string']
+            new_concepts = new_item['concept']
+
+            # check if the string already exists in the current concepts
+            existing_entry = next((item for item in target_vocab if item['string'] == new_string), None)
+
+            if existing_entry:
+                # if the string exists, check for concept duplicates
+                for new_concept in new_concepts:
+                    new_concept_tuple = (new_string, new_concept['vocabulary'], new_concept['uri'])
+
+                    # add the new concept only if it's not a duplicate
+                    if new_concept_tuple not in existing_concepts_set:
+                        existing_entry['concept'].append(new_concept)
+                        existing_concepts_set.add(new_concept_tuple)
+            else:
+                # if the string does not exist, add the new item
+                target_vocab.append(new_item)
+        return target_vocab
+
 class Dataset:
     """
     Represents a set of data containers that form together a distinct collection of data represented by a MetadataStructureMap.
@@ -853,9 +917,9 @@ class ContainerHandler:
             return
         else:
             remi = None
-            print(f"removing concept {concept}")
+            # print(f"removing concept {concept}")
             for i in range(len(self.concepts)):
-                print(self.concepts[i])
+                # print(self.concepts[i])
                 if self.concepts[i]["vocabulary"] == concept["vocabulary"] and self.concepts[i]["uri"] == concept["uri"]:
                     remi = i
             if remi is not None:
@@ -869,6 +933,13 @@ class ContainerHandler:
         :return: None
         """
         self.concepts = []
+
+    def getConcepts(self, collection):
+        if len(self.concepts) > 0:
+            collection.append({"string": self.name, "concept": self.concepts})
+        for cont in self.containers:
+            cont.getConcepts(collection)
+        return collection
 
     def deleteOwnFiles(self, failed = []):
         """
