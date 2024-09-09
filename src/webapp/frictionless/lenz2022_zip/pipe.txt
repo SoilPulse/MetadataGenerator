@@ -1,0 +1,17 @@
+
+[
+    steps.resource_transform(
+        name='meta',
+        steps=[
+            steps.table_normalize(),
+            ]
+    ),
+    steps.resource_transform(
+        name='ready2',
+        steps=[
+            steps.table_normalize(),
+            steps.field_filter(names=["No","coordinates"]),
+            steps.field_split(name="coordinates", to_names=["lat", "lon"], pattern=" \| "),
+            ]
+    )
+]
