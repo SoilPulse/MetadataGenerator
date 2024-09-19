@@ -1,17 +1,31 @@
 
 [
     steps.resource_transform(
-        name='meta',
-        steps=[
-            steps.table_normalize(),
-            ]
-    ),
-    steps.resource_transform(
         name='ready2',
         steps=[
             steps.table_normalize(),
             steps.field_filter(names=["No","coordinates"]),
             steps.field_split(name="coordinates", to_names=["lat", "lon"], pattern=" \| "),
+            ]
+    ),
+    steps.resource_transform(
+        name='meta',
+        steps=[
+            steps.table_normalize(),
+            steps.table_join(
+                resource='ready2',
+                field_name='No',
+                mode='left'
+                ),
+            ]
+    ),
+    steps.resource_remove(name='ready2'),
+    steps.resource_transform(
+        name='time',
+        steps=[
+            steps.table_normalize(),
+            steps.row_filter(formula="not ( No == '99' and time == 3720 )"),
+            steps.field_update(name="sedconc", descriptor={"type": "boolean"}),
             ]
     )
 ]

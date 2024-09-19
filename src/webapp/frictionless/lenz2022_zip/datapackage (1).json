@@ -4,11 +4,16 @@
       "name": "ready2",
       "type": "table",
       "path": "lenz2022\\database\\ready2.csv",
-      "scheme": "file",
       "format": "csv",
       "mediatype": "text/csv",
       "encoding": "cp1252",
       "dialect": {"csv": {"delimiter": " ", "skipInitialSpace": true}},
+      "dialect": {
+        "csv": {
+          "delimiter": " ",
+          "skipInitialSpace": true
+        }
+      },
       "schema": {
         "fields": [
           {
@@ -49,16 +54,20 @@
           {
             "name": "plotlength",
             "type": "integer",
-            "concept": ["plot design http://aims.fao.org/aos/agrovoc/c_36811",
-                        "length http://aims.fao.org/aos/agrovoc/c_4260"],
-             "unit": "m",
+            "concept": [
+              "plot design http://aims.fao.org/aos/agrovoc/c_36811",
+              "length http://aims.fao.org/aos/agrovoc/c_4260"
+            ],
+            "unit": "m",
             "method": "own:SetByDesign"
           },
           {
             "name": "plotwidth",
             "type": "integer",
-            "concept": ["plot design http://aims.fao.org/aos/agrovoc/c_36811",
-                        "width http://aims.fao.org/aos/agrovoc/c_8387"],
+            "concept": [
+              "plot design http://aims.fao.org/aos/agrovoc/c_36811",
+              "width http://aims.fao.org/aos/agrovoc/c_8387"
+            ],
             "unit": "m",
             "method": "own:SetByDesign"
           },
@@ -255,7 +264,6 @@
       "name": "meta",
       "type": "table",
       "path": "lenz2022\\export\\meta.csv",
-      "scheme": "file",
       "format": "csv",
       "mediatype": "text/csv",
       "encoding": "utf-8",
@@ -266,11 +274,14 @@
             "type": "string",
             "unit": "kg",
             "method": "cumulative soil loss of whole experiment",
-            "concept": "http://aims.fao.org/aos/agrovoc/c_330988"
+            "concept": "http://aims.fao.org/aos/agrovoc/c_8dab65bc"
           },
           {
             "name": "endinfil",
-            "type": "number"
+            "type": "number",
+            "concept": "",
+            "unit": "mm/min",
+            "method": "own:DiffRainfall-Runoffatsteadystate"
           },
           {
             "name": "duration",
@@ -400,8 +411,73 @@
             "name": "crop_original",
             "type": "string"
           }
-        ]
+        ],
+        "primaryKey": "No"
       }
+    },
+    {
+      "name": "time",
+      "type": "table",
+      "path": "lenz2022\\export\\time.csv",
+      "format": "csv",
+      "mediatype": "text/csv",
+      "encoding": "utf-8",
+      "schema": {
+        "fields": [
+          {
+            "name": "No",
+            "type": "string"
+          },
+          {
+            "name": "time",
+            "type": "integer",
+            "concept": "time",
+            "unit": "s",
+            "method": "timedelta, stopwatch"
+          },
+          {
+            "name": "runoffrate",
+            "type": "number"
+          },
+          {
+            "name": "sedconc",
+            "type": "number"
+          },
+          {
+            "name": "rainfall",
+            "type": "number"
+          },
+          {
+            "name": "plotwidth",
+            "type": "integer"
+          },
+          {
+            "name": "plotlength",
+            "type": "integer"
+          },
+          {
+            "name": "overflow",
+            "type": "boolean"
+          }
+        ],
+        "primaryKey": ["No", "time"],
+        "missingValues": [
+          "NA"
+        ]
+      },
+      "foreignKeys": [
+        {
+          "fields": [
+            "No"
+          ],
+          "reference": {
+            "resource": "meta",
+            "fields": [
+              "No"
+            ]
+          }
+        }
+      ]
     }
   ]
 }
