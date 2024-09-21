@@ -109,9 +109,13 @@ if not st.session_state.localproject:
                                    horizontal = True)
             if projecttype == "DOI":
                 new_doi = st.text_input("Project DOI")
+            else:
+                new_doi = None
             if projecttype == "URL":
                 st.warning("Not implemented yet, please use file upload.")
                 new_url = st.text_input("Project URL")
+            else:
+                new_url = None
             if st.button(
                 "Add Project",
                 disabled=new_name == ""
