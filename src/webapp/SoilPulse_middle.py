@@ -51,7 +51,7 @@ def _add_local_project(new_name, new_doi, new_url, user_id, con):
 #        st.write("trying to add project "+new_name)
 #        st.write("Got metadata, trying to get Data. This may take some time...")
         if new_url:
-            project.publishedFiles= [new_url]
+            project.publishedFiles= [ProjectManager.SourceFile(id = 1, filename = "referencedfile", source_url = new_url)]
         project.downloadPublishedFiles()
         project.keepFiles = True
 #        st.write("Created temporary Project. Please upload to persist your changes.")
