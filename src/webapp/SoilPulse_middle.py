@@ -41,8 +41,7 @@ def _load_project(user_id, project_id, con):
 
 def _add_local_project(new_name, new_doi, new_url, user_id, con):
     example = {"name": new_name,
-               "doi": new_doi,
-               "publishedFiles": [new_url]}
+               "doi": new_doi}
 
     #todo - add precheck, if DOI could be valid to not spam doi.org
 
@@ -51,6 +50,8 @@ def _add_local_project(new_name, new_doi, new_url, user_id, con):
         project = ProjectManager(con, user_id, **example)
 #        st.write("trying to add project "+new_name)
 #        st.write("Got metadata, trying to get Data. This may take some time...")
+        if new_url:
+            project.publishedFiles= [new_url]
         project.downloadPublishedFiles()
         project.keepFiles = True
 #        st.write("Created temporary Project. Please upload to persist your changes.")
