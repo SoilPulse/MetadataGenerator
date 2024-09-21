@@ -7,7 +7,7 @@ Created on Sat Jun 29 05:14:24 2024.
 
 from soilpulse import db_access as spdb
 
-from soilpulse.project_management import ProjectManager, DatabaseEntryError
+from soilpulse.project_management import ProjectManager, DatabaseEntryError, SourceFile
 import soilpulse.resource_managers.filesystem
 import soilpulse.resource_managers.mysql
 import soilpulse.resource_managers.xml
@@ -51,7 +51,7 @@ def _add_local_project(new_name, new_doi, new_url, user_id, con):
 #        st.write("trying to add project "+new_name)
 #        st.write("Got metadata, trying to get Data. This may take some time...")
         if new_url:
-            project.publishedFiles= [ProjectManager.SourceFile(id = 1, filename = "referencedfile", source_url = new_url)]
+            project.publishedFiles= [SourceFile(id = 1, filename = "referencedfile", source_url = new_url)]
         project.downloadPublishedFiles()
         project.keepFiles = True
 #        st.write("Created temporary Project. Please upload to persist your changes.")
