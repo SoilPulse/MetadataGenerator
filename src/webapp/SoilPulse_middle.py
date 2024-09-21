@@ -42,7 +42,7 @@ def _load_project(user_id, project_id, con):
 def _add_local_project(new_name, new_doi, new_url, user_id, con):
     example = {"name": new_name,
                "doi": new_doi,
-               "url": new_url}
+               "publishedFiles": [new_url]}
 
     #todo - add precheck, if DOI could be valid to not spam doi.org
 
