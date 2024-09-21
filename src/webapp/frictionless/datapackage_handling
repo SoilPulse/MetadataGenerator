@@ -19,35 +19,41 @@ if 'counter' not in st.session_state:
 
 st.title("frictionless data manipulation")
 
-#st.write(os.getcwd())
-
-
 # expecting data package parsed from SoilPulse
 # manipulate descriptor
-with open("lenz2022_zip/datapackage.json") as file:
+basepath = "lenz2022_zip"
+descriptor_path = basepath + "/datapackage.json"
+pipe_path = basepath + "/pipe.txt"
+zenodo_path = basepath + "/zenodometa.json"
+
+with open(descriptor_path) as file:
     des = file.read()
 
-with st.expander("Initial datapackage definition"):
+with st.expander("Initial datapackage definition provided by SoilPulse"):
+    st.warning("You can modify this by the pipeline steps.")
     st.json(des)
-    st.warning("Modify by pipe")
 
 try:
-    st.session_state.package = Package("lenz2022_zip/datapackage.json")
+    st.session_state.package = Package(descriptor_path)
 except Exception as e:
     st.warning("could not load package")
     st.warning(e)
     st.stop()
 
-with st.sidebar:
-    table = st.radio("Select table", [x.name for x in st.session_state.package.resources])
+if len(st.session_state.package.resources) <= 0:
+    st.warning("There are no resources added by now, please select relevant resources from available files.")
+    st.stop()
 
-with st.expander("resource before pipe"+table):
-    #st.session_state.package.resources[0]
+with st.sidebar:
+    table = st.radio("Select resource table of this dataset package.", [x.name for x in st.session_state.package.resources])
+
+with st.expander("resource *"+table+"* before pipe"):
     st.write(st.session_state.package.get_resource(table).to_pandas())
 
 with st.expander("modify pipeline"):
-    if st.toggle("(re)load_pipe"):
-        with open("./lenz2022_zip\\pipe.txt") as pipe:
+    st.warning("Add user friendly interface (EGU Demo adaptation) to create steps in here!")
+    if st.toggle("(re)load existing pipe"):
+        with open(pipe_path) as pipe:
             a = pipe.read()
     else:
         a = st.session_state.pipe
@@ -110,15 +116,15 @@ with st.expander("resource validation"):
         st.write(report)
         st.json(st.session_state.package.validate().to_json())
 
+st.warning("hard coded deposition ID")
 if not 'deposition_id' in st.session_state:
     st.session_state.deposition_id = 109575
 
+st.warning("missing option to enter APIkey")
 if report.valid:
-
     control = portals.ZenodoControl(
-            metafn="zenodometa.json",
-    #        apikey=st.secrets["apikey"],
-            apikey="m2uSTiwu7ZBLu0IcpvK5MegmnDkfqCggpWe0skoFJNVvNgKtRzz0kM1HTxhy",
+            metafn=zenodo_path,
+            apikey=st.secrets["apikey"],
             base_url="https://sandbox.zenodo.org/api/",
             deposition_id = st.session_state.deposition_id
         )
