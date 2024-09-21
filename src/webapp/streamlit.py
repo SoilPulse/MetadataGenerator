@@ -104,7 +104,7 @@ if not st.session_state.localproject:
             projecttype = st.radio("There is a",
                                    options = [
                                        "DOI",
-                                       #"URL",
+                                       "URL",
                                        "File to upload"],
                                    horizontal = True)
             if projecttype == "DOI":
