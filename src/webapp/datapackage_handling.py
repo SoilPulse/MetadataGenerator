@@ -6,12 +6,15 @@ Created on Thu Sep  5 08:46:16 2024
 """
 
 from frictionless import Package, steps, Pipeline, portals, Catalog
-import os
-import json
-
+if not "os" in dir():
+    import os
+if not "json" in dir():
+    import json
 if not "st" in dir():
     import streamlit as st
 
+if 'package' not in st.session_state:
+    st.session_state.package = Package()
 if 'pipe' not in st.session_state:
     st.session_state.pipe = ""
 if 'counter' not in st.session_state:
