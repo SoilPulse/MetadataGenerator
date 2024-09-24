@@ -5,7 +5,8 @@ Created on Thu Sep  5 08:46:16 2024
 @author: jonas.lenz
 """
 
-from frictionless import Package, steps, Pipeline, portals, Catalog
+if not 'Package' in dir():
+    from frictionless import Package, steps, Pipeline, portals, Catalog
 if not "os" in dir():
     import os
 if not "json" in dir():
@@ -20,35 +21,31 @@ if 'pipe' not in st.session_state:
 if 'counter' not in st.session_state:
     st.session_state.counter = 0
 
+
 st.title("frictionless data manipulation")
 
 # expecting data package parsed from SoilPulse
 # manipulate descriptor
-basepath = "lenz2022_zip"
-descriptor_path = basepath + "/datapackage.json"
+basepath = st.session_state.localproject.temp_dir
 pipe_path = basepath + "/pipe.txt"
 zenodo_path = basepath + "/zenodometa.json"
+descriptor_path = basepath + "/package.json"
 
-with open(descriptor_path) as file:
-    des = file.read()
-
-with st.expander("Initial datapackage definition provided by SoilPulse"):
-    st.warning("You can modify this by the pipeline steps.")
-    st.json(des)
-
-try:
-    st.session_state.package = Package(descriptor_path)
-except Exception as e:
-    st.warning("could not load package")
-    st.warning(e)
-    st.stop()
+with st.sidebar:
+    table = st.radio("Select resource table of this dataset package.", [x.name for x in st.session_state.package.resources])
+    st.warning("add package top level view here?")
 
 if len(st.session_state.package.resources) <= 0:
     st.warning("There are no resources added by now, please select relevant resources from available files.")
     st.stop()
-
-with st.sidebar:
-    table = st.radio("Select resource table of this dataset package.", [x.name for x in st.session_state.package.resources])
+else:
+    with st.expander("original description"):
+        st.json(st.session_state.package.to_descriptor())
+    if st.button("save descriptor"):
+        with open(descriptor_path, "w") as file:
+            file.write(
+                str(st.session_state.package.to_descriptor())
+                )
 
 with st.expander("resource *"+table+"* before pipe"):
     st.write(st.session_state.package.get_resource(table).to_pandas())
@@ -139,17 +136,16 @@ if report.valid:
             st.warning(e)
 
 
+### option to merge tables by foreign keys
+#    table1 = "time"
+#    table2 = "meta"
+#    mylisttime = st.session_state.package.get_resource(table1).to_pandas()
+#    mylistmeta = st.session_state.package.get_resource(table2).to_pandas()
+#
+#    mylistmerge = mylisttime.merge(mylistmeta, left_on = "No", right_on="No")
+#
+#    st.write(mylistmerge)
+    #print(st.session_state.package.get_resource('bulk.density.g.cm-3_second.run').to_view())
 
-table1 = "time"
-table2 = "meta"
-mylisttime = st.session_state.package.get_resource(table1).to_pandas()
-mylistmeta = st.session_state.package.get_resource(table2).to_pandas()
 
-mylistmerge = mylisttime.merge(mylistmeta, left_on = "No", right_on="No")
-
-st.write(mylistmerge)
-#print(st.session_state.package.get_resource('bulk.density.g.cm-3_second.run').to_view())
-
-
-#print(st.session_state.package.get_resource('meta').to_view())
-
+    #print(st.session_state.package.get_resource('meta').to_view())

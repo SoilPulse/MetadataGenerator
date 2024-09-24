@@ -14,6 +14,10 @@ import streamlit_tree_select
 import streamlit_helper as sf
 
 import SoilPulse_middle as sp
+if not 'Package' in dir():
+    from frictionless import Package, steps, Pipeline, portals, Catalog
+if not "json" in dir():
+    import json
 
 st.set_page_config(layout="wide")
 
@@ -61,6 +65,14 @@ def set_session(clear = False, logout = False):
             con=st.session_state.con)
     if "DBprojectlist" in st.session_state and clear:
         del st.session_state.DBprojectlist
+
+    if 'package' not in st.session_state or clear:
+        st.session_state.package = Package()
+    if 'pipe' not in st.session_state or clear:
+        st.session_state.pipe = ""
+    if 'counter' not in st.session_state or clear:
+        st.session_state.counter = 0
+
     if clear:
         if logout:
             del st.session_state.user_id
@@ -135,67 +147,85 @@ else:
         st.title('You are on the project **"'
                  + st.session_state.localproject.name +
                  '"**')
+        dataview = st.toggle("Show project file tree or data tables.")
 
     with st.sidebar:
-        st.write('Here are the elements found in your project tree. You can select one and modify it.')
-        selected = streamlit_tree_select.tree_select(
-            sp._create_tree_from_project(st.session_state.localproject),
-            no_cascade=True,
-            checked=st.session_state.selected,
-            expanded=st.session_state.expanded
-            )
+        if not dataview:
+            st.write('Here are the elements found in your project tree. You can select one and modify it.')
+            selected = streamlit_tree_select.tree_select(
+                sp._create_tree_from_project(st.session_state.localproject),
+                no_cascade=True,
+                checked=st.session_state.selected,
+                expanded=st.session_state.expanded
+                )
 
-            # use session state as work around for single container selection
-        if len(selected["checked"]) != len(st.session_state.selected):
-            rerun = True
-        else:
-            rerun = False
-        if len(selected["checked"]) > 1:
-            st.session_state.selected = [x for x in selected["checked"] if x != st.session_state.selected[0]][0:1]
-            st.session_state.expanded = selected["expanded"]
-            st.rerun()
-        elif len(selected["expanded"]) != len(st.session_state.expanded):
-            st.session_state.expanded = selected["expanded"]
-            st.rerun()
-        else:
-            st.session_state.selected = selected["checked"]
-            st.session_state.expanded = selected["expanded"]
-        if rerun:
-            st.rerun()
+                # use session state as work around for single container selection
+            if len(selected["checked"]) != len(st.session_state.selected):
+                rerun = True
+            else:
+                rerun = False
+            if len(selected["checked"]) > 1:
+                st.session_state.selected = [x for x in selected["checked"] if x != st.session_state.selected[0]][0:1]
+                st.session_state.expanded = selected["expanded"]
+                st.rerun()
+            elif len(selected["expanded"]) != len(st.session_state.expanded):
+                st.session_state.expanded = selected["expanded"]
+                st.rerun()
+            else:
+                st.session_state.selected = selected["checked"]
+                st.session_state.expanded = selected["expanded"]
+            if rerun:
+                st.rerun()
 
 # Container edit
 with c1:
-    if st.session_state.localproject:
-        if not st.session_state.selected:
-            st.warning("Please select an element from your project tree.")
-        else:
-            container = sp._get_container_content(
-                project = st.session_state.localproject,
-                container_id = st.session_state.selected[0]
-                )
+    if not dataview:
+        if st.session_state.localproject:
+            if not st.session_state.selected:
+                st.warning("Please select an element from your project tree.")
+            else:
+                container = sp._get_container_content(
+                    project = st.session_state.localproject,
+                    container_id = st.session_state.selected[0]
+                    )
 
-            with st.expander("Container Settings", expanded = True):
-                #st.header("")
-                st.session_state.container = sf._mod_container_content(container)
-
+                with st.expander("Container Settings", expanded = True):
+                    #st.header("")
+                    st.session_state.container = sf._mod_container_content(container)
+                if container.containerType == 'file':
+                    paths = [x.path for x in st.session_state.package.resources]
+                    st.write(paths)
+                    if container.path in paths:
+                        if st.button("remove from dataset"):
+                            st.session_state.package.remove_resource(
+                                container.name.replace(".csv",""))
+                            st.rerun()
+                    else:
+                        if st.button("add to final dataset"):
+                            import frictionless
+                            st.session_state.package.add_resource(
+                                frictionless.describe(container.path))
+                            st.rerun()
+    else:
+        import datapackage_handling
 
             #st.json( {'test':'101','mr':'103','bishop':'102'})
 
             #sf._modify_agrovoc_concept(container)
 
 
-# data visualisation
-with c1:
-    if st.session_state.selected and st.session_state.container:
+# # data visualisation
+# with c1:
+#     if st.session_state.selected and st.session_state.container:
 
-        # container data visualisation
+#         # container data visualisation
 
-        with st.expander("Container Content", expanded = True):
-            if st.session_state.container.crawler:
-                tables = st.session_state.container.crawler.crawl()
-                if tables:
-                    for x in tables:
-                        st.data_editor(x)
+#         with st.expander("Container Content", expanded = True):
+#             if st.session_state.container.crawler:
+#                 tables = st.session_state.container.crawler.crawl()
+#                 if tables:
+#                     for x in tables:
+#                         st.data_editor(x)
 
 
 
