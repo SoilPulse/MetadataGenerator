@@ -53,9 +53,10 @@ def main():
     with st.expander("modify pipeline"):
         #st.write(dir(steps))
         steptype = st.selectbox("add transformation step", options = dir(steps))
-        st.write(steptype)
+        #st.write(steptype)
         dicci={}
-        for parme in inspect.signature(eval("steps."+steptype)):
+        st.write(inspect.signature(eval("steps."+steptype))
+        for parme in list(inspect.signature(eval("steps."+steptype))):
             dicci[parme] = st.text_input(parme)
         st.write(dicci)
         st.warning("Add user friendly interface (EGU Demo adaptation) to create steps in here!")
