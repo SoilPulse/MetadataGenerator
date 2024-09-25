@@ -51,7 +51,7 @@ def main():
         st.write(st.session_state.package.get_resource(table).to_pandas())
 
     with st.expander("modify pipeline"):
-        st.write(dir(steps))
+        #st.write(dir(steps))
         steptype = st.selectbox("add transformation step", options = dir(steps))
         st.write(steptype)
         dicci={}
