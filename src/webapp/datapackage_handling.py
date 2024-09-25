@@ -4,7 +4,7 @@ Created on Thu Sep  5 08:46:16 2024
 
 @author: jonas.lenz
 """
-
+import inspect
 if not 'Package' in dir():
     from frictionless import Package, steps, Pipeline, portals, Catalog
 if not "os" in dir():
@@ -51,6 +51,12 @@ def main():
         st.write(st.session_state.package.get_resource(table).to_pandas())
 
     with st.expander("modify pipeline"):
+        steptype = st.selectbox("add transformation step", options = dir(steps))
+        st.write(steptype)
+        dicci={}
+        for parme in inspect.signature(eval("steps"+steptype)):
+            dicci[parme] = st.text_input(parme)
+        st.write(dicci)
         st.warning("Add user friendly interface (EGU Demo adaptation) to create steps in here!")
         if st.toggle("(re)load existing pipe"):
             with open(pipe_path) as pipe:
