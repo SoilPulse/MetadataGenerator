@@ -56,7 +56,7 @@ def main():
         #st.write(steptype)
         dicci={}
         st.write(inspect.getargspec(eval("steps."+steptype)).args)
-        for parme in list(inspect.(eval("steps."+steptype)).args):
+        for parme in list(inspect.getargspec(eval("steps."+steptype)).args):
             dicci[parme] = st.text_input(parme)
         st.write(dicci)
         st.warning("Add user friendly interface (EGU Demo adaptation) to create steps in here!")
