@@ -55,8 +55,8 @@ def main():
         steptype = st.selectbox("add transformation step", options = dir(steps))
         #st.write(steptype)
         dicci={}
-        st.write(inspect.getargspec(eval("steps."+steptype)).args)
-        for parme in list(inspect.getargspec(eval("steps."+steptype)).args):
+        st.write(inspect.getfullargspec(eval("steps."+steptype)).args)
+        for parme in inspect.getfullargspec(eval("steps."+steptype)).args:
             dicci[parme] = st.text_input(parme)
         st.write(dicci)
         st.warning("Add user friendly interface (EGU Demo adaptation) to create steps in here!")
