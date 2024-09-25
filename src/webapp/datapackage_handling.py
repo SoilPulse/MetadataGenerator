@@ -55,7 +55,7 @@ def main():
         steptype = st.selectbox("add transformation step", options = dir(steps))
         #st.write(steptype)
         dicci={}
-        st.write(inspect.getfullargspec(eval("steps."+steptype)).args)
+        st.write(inspect.getfullargspec(eval("steps."+steptype)))
         for parme in inspect.getfullargspec(eval("steps."+steptype)).args:
             dicci[parme] = st.text_input(parme)
         st.write(dicci)
