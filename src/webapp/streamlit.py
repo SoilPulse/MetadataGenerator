@@ -12,6 +12,7 @@ It pickles to cache metadata.
 import streamlit as st
 import streamlit_tree_select
 import streamlit_helper as sf
+import datapackage_handling as dh
 
 import SoilPulse_middle as sp
 if not 'Package' in dir():
@@ -207,7 +208,7 @@ with c1:
                                 frictionless.describe(container.path))
                             st.rerun()
     else:
-        import datapackage_handling
+        dh.main()
 
             #st.json( {'test':'101','mr':'103','bishop':'102'})
 
