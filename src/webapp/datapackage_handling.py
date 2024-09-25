@@ -54,21 +54,21 @@ with st.expander("modify pipeline"):
     st.warning("Add user friendly interface (EGU Demo adaptation) to create steps in here!")
     if st.toggle("(re)load existing pipe"):
         with open(pipe_path) as pipe:
-            a = pipe.read()
+            apipe = pipe.read()
     else:
-        a = st.session_state.pipe
-    a = st.text_area("modify pipeline", key = "modpipe"+str(st.session_state.counter), value = a)
+        apipe = st.session_state.pipe
+    apipe = st.text_area("modify pipeline", key = "modpipe"+str(st.session_state.counter), value = apipe)
 
 if not st.toggle("Run Pipeline steps"):
     st.stop()
 
 with st.expander("resource transformed"):
-    if st.button("apply new Pipe", disabled = st.session_state.pipe == a):
+    if st.button("apply new Pipe", disabled = st.session_state.pipe == apipe):
         try:
-            pipeline = Pipeline(steps= eval(a))
+            pipeline = Pipeline(steps= eval(apipe))
             st.write(pipeline)
             st.session_state.package.transform(pipeline)
-            st.session_state.pipe = a
+            st.session_state.pipe = apipe
             st.session_state.counter += 1
             st.rerun()
         except Exception as e:
