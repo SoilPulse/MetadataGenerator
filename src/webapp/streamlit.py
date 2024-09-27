@@ -22,6 +22,13 @@ if not "json" in dir():
 
 st.set_page_config(layout="wide")
 
+if st.button("direct test of url + zip package"):
+    import os
+    st.write(os.listdir())
+    package = Package("package.json")
+    st.write(package)
+    for x in package.resources:
+        st.write(x.to_pandas())
 
 #### Mockup login page
 if "user_id" not in st.session_state:
