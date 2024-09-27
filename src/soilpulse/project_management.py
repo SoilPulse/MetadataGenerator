@@ -374,50 +374,51 @@ class ProjectManager:
 
                 fileList = []
                 if not list:
-                    for sourceFile in self.publishedFiles:
-                        url = sourceFile.source_url
-                        # any file name manipulation can be performed here
-                        filename = sourceFile.filename.replace("\\/<[^>]*>?", "_")
+                    list = self.publishedFiles
+                for sourceFile in list:
+                    url = sourceFile.source_url
+                    # any file name manipulation can be performed here
+                    filename = sourceFile.filename.replace("\\/<[^>]*>?", "_")
 
-                        local_path = os.path.join(self.temp_dir, filename)
+                    local_path = os.path.join(self.temp_dir, filename)
 
-                        try:
-                            response = requests.get(url+"/content")
-                        except requests.exceptions.ConnectionError:
-                            print("\tA connection error occurred while trying to download published files - check your internet connection.")
-                            return False
-                        except requests.exceptions.Timeout:
-                            print("\tThe request timed out while trying to download published files.")
-                            return False
-                        except requests.exceptions.HTTPError as e:
-                            print("\tHTTP Error occurred while trying to download published files:\n", e)
-                            return False
-                        except requests.exceptions.RequestException as e:
-                            print("\tRequest Error occurred while trying to download published files:\n", e)
-                            return False
+                    try:
+                        response = requests.get(url+"/content")
+                    except requests.exceptions.ConnectionError:
+                        print("\tA connection error occurred while trying to download published files - check your internet connection.")
+                        return False
+                    except requests.exceptions.Timeout:
+                        print("\tThe request timed out while trying to download published files.")
+                        return False
+                    except requests.exceptions.HTTPError as e:
+                        print("\tHTTP Error occurred while trying to download published files:\n", e)
+                        return False
+                    except requests.exceptions.RequestException as e:
+                        print("\tRequest Error occurred while trying to download published files:\n", e)
+                        return False
+                    else:
+                        if response.ok:
+                            with open(local_path, mode="wb") as filesave:
+                                filesave.write(response.content)
+
+                            # on success save local path of downloaded file to its attribute
+                            sourceFile.local_path = local_path
+                            fileList.append(local_path)
+
+                            # create new container from the file with all related actions
+                            newContainer = self.containerFactory.createHandler('filesystem', self, None, name=sourceFile.filename, path=local_path)
+                            self.containerTree.append(newContainer)
+
                         else:
-                            if response.ok:
-                                with open(local_path, mode="wb") as filesave:
-                                    filesave.write(response.content)
+                            # something needs to be done if the response is not OK ...
+                            print("\t\tThe response was not OK!")
+                            sourceFile.local_path= None
 
-                                # on success save local path of downloaded file to its attribute
-                                sourceFile.local_path = local_path
-                                fileList.append(local_path)
+                            return False
 
-                                # create new container from the file with all related actions
-                                newContainer = self.containerFactory.createHandler('filesystem', self, None, name=sourceFile.filename, path=local_path)
-                                self.containerTree.append(newContainer)
-
-                            else:
-                                # something needs to be done if the response is not OK ...
-                                print("\t\tThe response was not OK!")
-                                sourceFile.local_path= None
-
-                                return False
-
-                print(" ... successful\n")
-                self.downloadedFiles.extend(fileList)
-                return fileList
+            print(" ... successful\n")
+            self.downloadedFiles.extend(fileList)
+            return fileList
         else:
             raise DOIdataRetrievalException("List of files from DOI record was not retrieved correctly.")
 
