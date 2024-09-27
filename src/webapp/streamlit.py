@@ -26,7 +26,7 @@ if st.button("direct test of url + zip package"):
     import os
     st.write(os.listdir())
     package = Package("catalogue/example_TUBAF.json")
-    st.write(package)
+    st.json(package.to_descriptor())
     for x in package.resources:
         st.write(x.to_pandas())
 
