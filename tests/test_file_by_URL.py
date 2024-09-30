@@ -3,7 +3,7 @@
 @author: Jan Devátý, Jonas Lenz
 """
 
-from soilpulse.project_management import ProjectManager, DatabaseEntryError
+from soilpulse.project_management import ProjectManager, DatabaseEntryError, SourceFile
 import soilpulse.resource_managers.filesystem
 import soilpulse.resource_managers.mysql
 import soilpulse.resource_managers.xml
@@ -25,15 +25,15 @@ project_files_root.mkdir(parents=True, exist_ok=True)
 
 # example DOI records that can be used
 example_5 = {"name": "csvtest",
-             "url_list": [ProjectManager.SourceFile(id = 1,
-                                                    filename = "testdata.csv",
-                                                    source_url = "https://github.com/SoilPulse/MetadataGenerator/blob/main/tests/testfiles/testdata.csv"),
-                          ProjectManager.SourceFile(id = 1,
-                                                    filename = "testliteral.csv",
-                                                    source_url = "https://github.com/SoilPulse/MetadataGenerator/blob/main/tests/testfiles/testliteral.csv"),
-                          ProjectManager.SourceFile(id = 1,
-                                                    filename = "testtexture.csv",
-                                                    source_url = "https://github.com/SoilPulse/MetadataGenerator/blob/main/tests/testfiles/testtexture.csv"),
+             "url_list": [SourceFile(id = 1,
+                                     filename = "testdata.csv",
+                                     source_url = "https://github.com/SoilPulse/MetadataGenerator/blob/main/tests/testfiles/testdata.csv"),
+                          SourceFile(id = 1,
+                                     filename = "testliteral.csv",
+                                     source_url = "https://github.com/SoilPulse/MetadataGenerator/blob/main/tests/testfiles/testliteral.csv"),
+                          SourceFile(id = 1,
+                                     filename = "testtexture.csv",
+                                     source_url = "https://github.com/SoilPulse/MetadataGenerator/blob/main/tests/testfiles/testtexture.csv"),
                          ],
              "asserts": {
                      "RA": None, # which RA should be returned from doi.org
