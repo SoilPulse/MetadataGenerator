@@ -38,6 +38,11 @@ if "user_id" not in st.session_state:
 def set_session(clear = False, logout = False):
     if logout:
         clear = True
+
+# workaround to clear file uploader, after treatment of files https://discuss.streamlit.io/t/are-there-any-ways-to-clear-file-uploader-values-without-using-streamlit-form/40903/2
+    if "file_uploader_key" not in st.session_state or clear:
+        st.session_state["file_uploader_key"] = 0
+
     if "selected" not in st.session_state or clear:
         st.session_state.selected = []
     if "expanded" not in st.session_state or clear:
@@ -95,15 +100,30 @@ if not st.session_state.localproject:
         with cpr1:
             st.title("New project")
             new_name = st.text_input("Project Name")
-            new_doi = st.text_input("Project DOI")
+            new_doi, new_url = None, None
+            projecttype = st.radio("There is a",
+                                   options = [
+                                       "DOI",
+                                       "URL",
+                                       "File to upload"],
+                                   horizontal = True)
+            if projecttype == "DOI":
+                new_doi = st.text_input("Project DOI")
+            else:
+                new_doi = None
+            if projecttype == "URL":
+                st.warning("Not implemented yet, please use file upload.")
+                new_url = st.text_input("Project URL")
+            else:
+                new_url = None
             if st.button(
                 "Add Project",
-                disabled=new_doi == "" or
-                new_name == ""
+                disabled=new_name == ""
             ):
                 st.session_state.localproject = sp._add_local_project(
                     new_name,
                     new_doi,
+                    new_url,
                     st.session_state.user_id,
                     con = st.session_state.con)
                 st.rerun()
@@ -162,6 +182,10 @@ else:
             st.session_state.expanded = selected["expanded"]
         if rerun:
             st.rerun()
+
+# file upload
+    with st.sidebar:
+        sf._file_upload()
 
 # Container edit
 with c1:

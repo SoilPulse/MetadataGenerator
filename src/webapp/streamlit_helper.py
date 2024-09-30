@@ -9,6 +9,7 @@ import pandas as pd
 import numpy as np
 import os
 import copy
+from io import StringIO
 
 
 def _select_project(projectlist):
@@ -175,3 +176,27 @@ def _visualize_data(container, mainID, agrovoc, projects=[]):
     st.write("showing mockup data")
     st.line_chart(chart_data)
     pass
+
+
+def _file_upload():
+    with st.expander("Add Files to project", expanded=False):
+        fileadd = st.radio("Add by", options = ["URL","Upload"], horizontal = True)
+        if fileadd == "Upload":
+            uploaded_files = st.file_uploader("Select files to add to project",
+                                         key="uploader"+str(st.session_state["file_uploader_key"]),
+                                         accept_multiple_files=True,
+                                         )
+            if not uploaded_files == []:
+                for uploaded_file in uploaded_files:
+                    st.write(uploaded_file.name)
+                if st.button("Add to project"):
+                    for uploaded_file in uploaded_files:
+                        with open(uploaded_file.name,"wb") as f:
+                            f.write(uploaded_file.getbuffer())
+                        st.session_state.localproject.uploadFilesFromSession(uploaded_file.name)
+                        st.write("added " + uploaded_file.name)
+                        os.remove(uploaded_file.name)
+                    st.session_state["file_uploader_key"] += 1
+                    st.rerun()
+        if fileadd == "URL":
+            st.write("To be implemented")
