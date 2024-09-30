@@ -27,9 +27,9 @@ def main():
 # expecting data package parsed from SoilPulse
 # manipulate descriptor
     basepath = st.session_state.localproject.temp_dir
-    pipe_path = basepath + "/pipe.txt"
-    zenodo_path = basepath + "/zenodometa.json"
-    descriptor_path = basepath + "/package.json"
+    pipe_path = basepath + "/to_publish/pipe.txt"
+    zenodo_path = basepath + "/to_publish/Publisher_metadata.json"
+    descriptor_path = basepath + "/to_publish/package.json"
 
     with st.sidebar:
         table = st.radio("Select resource table of this dataset package.", [x.name for x in st.session_state.package.resources])
