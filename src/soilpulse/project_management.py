@@ -416,9 +416,9 @@ class ProjectManager:
 
                             return False
 
-            print(" ... successful\n")
-            self.downloadedFiles.extend(fileList)
-            return fileList
+                print(" ... successful\n")
+                self.downloadedFiles.extend(fileList)
+                return fileList
         else:
             raise DOIdataRetrievalException("List of files from DOI record was not retrieved correctly.")
 
