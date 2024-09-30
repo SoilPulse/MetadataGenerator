@@ -770,6 +770,7 @@ class NullConnector(DBconnector):
     project_attr_filename = "_project.json"
     containers_attr_filename = "_containers.json"
     datasets_attr_filename = "_datasets.json"
+    concepts_vocabulary_filename = "_concepts_vocabulary.json"
 
     def __init__(self, project_files_root):
         super().__init__(project_files_root)
@@ -830,19 +831,29 @@ class NullConnector(DBconnector):
         return project_id, project_temp_dir
 
     def updateProjectRecord(self, project, cascade=False):
+        # update project dump
         with open(os.path.join(project.temp_dir, self.project_attr_filename), "w") as f:
             project_attr = {"name": project.name, "doi": project.getDOI(), "temp_dir": project.temp_dir,
                          "keep_files": (1 if project.keepFiles else 0)}
             json.dump(project_attr, f, ensure_ascii=False, indent=4)
 
         if cascade:
-            print(f"\tsaving containers ...")
+            # update containers dump
             with open(os.path.join(project.temp_dir, self.containers_attr_filename), "w") as f:
                 json.dump(project.getContainersSerialization(), f, ensure_ascii=False, indent=4)
+            print(f"\tcontainers saved")
+
+        # update project concept vocabulary
+        with open(os.path.join(project.temp_dir, self.concepts_vocabulary_filename), "w") as f:
+            json.dump(project.conceptsVocabulary, f, ensure_ascii=False, indent=4)
+        print(f"\tconcepts vocabulary saved")
+
+        # update concept mapping dump
 
         return
 
     def loadProject(self, project, cascade=True):
+        # load the project itself
         if project.id in self.getAllTempProjectIDs():
             project_json = os.path.join(self.project_files_root, self.dirname_prefix+str(project.id), self.project_attr_filename)
             with open(project_json, "r") as f:
@@ -859,17 +870,29 @@ class NullConnector(DBconnector):
             raise DatabaseFetchError(f"Project ID {project.id} does not exist within local temporary projects."
                  f"\nAvailable project IDs are: {', '.join([str(pid) for pid in self.getAllTempProjectIDs()])}")
 
+        # laod containers structure
         if cascade:
             containers_attr_filepath = os.path.join(project.temp_dir, self.containers_attr_filename)
             if os.path.isfile(containers_attr_filepath):
                 with open(containers_attr_filepath, "r") as f:
                     containers_serialized = json.load(f)
 
+
                     project.containerTree = self.loadChildContainers(project, containers_serialized, parent_container=None)
             else:
                 raise DatabaseFetchError(f"JSON file with stored containers info '{self.containers_attr_filename}'"
                                          f" was not found in project's directory '{project.temp_dir}'")
-
+        # load concepts vocabulary
+        concepts_vocabulary_path = os.path.join(project.temp_dir, self.concepts_vocabulary_filename)
+        if os.path.isfile(concepts_vocabulary_path) and os.path.getsize(concepts_vocabulary_path) > 0:
+            with open(concepts_vocabulary_path, "r") as f:
+                project.conceptsVocabulary = json.load(f)
+        else:
+            # nothing really needs to happen here as the vocabulary is in memory until the updateDBrecord is called
+            # and then it's rewritten everytime anyway
+            # raise DatabaseFetchError(f"JSON file with project's concepts vocabulary '{self.concepts_vocabulary_filename}'"
+            #                          f" was not found in project's directory '{project.temp_dir}'")
+            pass
         return project
 
     def loadChildContainers(self, project, containers_serialized, parent_container=None):

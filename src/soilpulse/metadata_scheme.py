@@ -262,7 +262,7 @@ class TextMetadataEntity(MetadataEntity):
 
     def __init__(self, value, language, encoding):
         # the actual value of the metadata element
-        super(TextMetadataEntity, self).__init__(value)
+        super().__init__(value)
         # the original language of the element value
         self.language = language
         # the encoding of the value
@@ -278,7 +278,7 @@ class DateMetadataEntity(MetadataEntity):
 
     def __init__(self, value):
         # the actual value of the metadata element
-        super(DateMetadataEntity, self).__init__(value)
+        super().__init__(value)
         return
 
 class GeographicalMetadataEntity(MetadataEntity):
@@ -302,7 +302,7 @@ class SubjectMetadataEntity(MetadataEntity):
     roleTypes = {}
     def __init__(self, value):
         # the actual value of the metadata element
-        super(SubjectMetadataEntity, self).__init__(value)
+        super().__init__(value)
 
         return
 
