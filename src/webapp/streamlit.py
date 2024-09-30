@@ -234,10 +234,14 @@ with c1:
                             st.rerun()
                     else:
                         if st.button("add to final dataset"):
-                            import frictionless
-                            st.session_state.package.add_resource(
-                                frictionless.describe(container.path))
-                            st.rerun()
+                            try:
+                                import frictionless
+                                st.session_state.package.add_resource(
+                                    frictionless.describe(container.path))
+                                st.rerun()
+                            except Exception as e:
+                                st.warning(e)
+                                st.warning("")
             st.write(st.session_state.package)
     else:
         dh.main()
