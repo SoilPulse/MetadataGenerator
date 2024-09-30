@@ -214,6 +214,7 @@ with c1:
                             st.session_state.package.add_resource(
                                 frictionless.describe(container.path))
                             st.rerun()
+            st.write(st.session_state.package)
     else:
         dh.main()
 

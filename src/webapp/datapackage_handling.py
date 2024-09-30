@@ -84,14 +84,14 @@ def main():
                 st.warning(e)
                 st.stop()
     #st.session_state.package.resources[0]
-        a = st.session_state.package.get_resource(table).to_pandas()
-        if "time" in a.index.names:
-            a.index = a.index.set_levels( a.index.levels[1].astype("timedelta64[s]"), level = 1)
-        a = a.reset_index()
-        st.write(a.head())
+        fltable = st.session_state.package.get_resource(table).to_pandas()
+        if "time" in fltable.index.names:
+            fltable.index = fltable.index.set_levels( fltable.index.levels[1].astype("timedelta64[s]"), level = 1)
+        fltable = fltable.reset_index()
+        st.write(fltable.head())
     with st.expander("resource visualisation"):
         options = st.multiselect("choose relevant columns",
-                             options = a.columns
+                             options = fltable.columns
                              )
         colsel = st.columns(3)
         if len(options)>0:
@@ -105,7 +105,7 @@ def main():
 
         if st.toggle("chart"):
             try:
-                st.scatter_chart(a, y = sely, x = selx, color=selc)
+                st.scatter_chart(fltable, y = sely, x = selx, color=selc)
             except Exception as e:
                 st.warning("No chart possible.")
                 st.warning(e)
@@ -113,7 +113,7 @@ def main():
             try:
                 mylist = [selc, sely, selx]
                 mylist = list(dict.fromkeys(mylist))
-                st.write(a[mylist])
+                st.write(fltable[mylist])
             except Exception as e:
                 st.warning("No table possible.")
                 st.warning(e)
