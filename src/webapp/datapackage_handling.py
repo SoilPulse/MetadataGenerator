@@ -52,7 +52,15 @@ def main():
 
     with st.expander("modify pipeline"):
         #st.write(dir(steps))
-        steptype = st.selectbox("add transformation step", options = dir(steps))
+        allowed_steps = [method_name for method_name in dir(steps)
+                      if not callable(getattr(steps, method_name))
+                      and "cell_" in method_name
+                      or "field_" in method_name
+                      or "resource_" in method_name
+                      or "row_" in method_name
+                      or "table_" in method_name
+                      ]
+        steptype = st.selectbox("add transformation step", options = allowed_steps)
         #st.write(steptype)
         dicci={}
         st.write(inspect.getfullargspec(eval("steps."+steptype)))
