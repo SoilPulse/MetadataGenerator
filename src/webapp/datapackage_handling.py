@@ -6,13 +6,14 @@ Created on Thu Sep  5 08:46:16 2024
 """
 import inspect
 if not 'Package' in dir():
-    from frictionless import Package, steps, Pipeline, portals, Catalog
+    from frictionless import Package, steps, Pipeline, portals, Catalog, Detector
 if not "os" in dir():
     import os
 if not "json" in dir():
     import json
 if not "st" in dir():
     import streamlit as st
+import frictionless
 
 if 'package' not in st.session_state:
     st.session_state.package = Package()
@@ -21,8 +22,32 @@ if 'pipe' not in st.session_state:
 if 'counter' not in st.session_state:
     st.session_state.counter = 0
 
+
 def main():
     st.title("frictionless data manipulation")
+
+    with st.sidebar:
+        with st.expander("Add File by path"):
+            sourcepath = st.text_input("paste source path to your dataset", value="")
+            if not sourcepath == "":
+                files = []
+                for dirname, dirnames,filenames in os.walk(sourcepath):
+                    for filename in filenames:
+                        files = files + [os.path.join(dirname, filename)]
+
+                file = st.selectbox("Choose file", options = files)
+                if st.toggle("show options"):
+                    buffer = st.slider("buffer_size", min_value=20000, max_value=1000000, step = 1000, value = 500000)
+                    detector = Detector(buffer_size=buffer)
+                else:
+                    detector = Detector()
+            if st.button(label = "Add file"):
+                try:
+                    st.session_state.package.add_resource(
+                        frictionless.describe(os.path.normpath(file), detector=detector))
+                except Exception as e:
+                    st.warning(e)
+
 
 # expecting data package parsed from SoilPulse
 # manipulate descriptor
