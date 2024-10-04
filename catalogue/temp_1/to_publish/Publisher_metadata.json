@@ -1,0 +1,199 @@
+{
+    "created": "2022-07-18T19:49:11.999235+00:00",
+    "modified": "2022-07-19T01:49:45.155967+00:00",
+    "id": 6654150,
+    "conceptrecid": "6654149",
+    "doi": "10.5281/zenodo.6654150",
+    "conceptdoi": "10.5281/zenodo.6654149",
+    "doi_url": "https://doi.org/10.5281/zenodo.6654150",
+    "metadata": {
+        "title": "PHD-dissertation-code: \"Improved parameter estimation for the soil erosion modeling tool EROSION-3D\"",
+        "doi": "10.5281/zenodo.6654150",
+        "publication_date": "2022-07-20",
+        "description": "<p>Source code to the dissertation project &quot;Improved parameter estimation for the soil erosion modeling tool EROSION-3D&quot;</p>\n\n<p>This repo contains the *.Rmd source files of my thesis project, the included source code used for data analysis and processing; and the primary data compiled from different base repositories for this thesis. Style files (e.g. citation, latex template), protected third party software, citation information (*.bib files) and data of the base repositories is available from the author upon request.</p>",
+        "access_right": "open",
+        "creators": [
+            {
+                "name": "Lenz, Jonas",
+                "affiliation": "TU Bergakademie Freiberg",
+                "orcid": "0000-0002-6167-1161"
+            }
+        ],
+        "keywords": [
+            "soil erosion modeling; EROSION-3D"
+        ],
+        "version": "0.9 - state of submission",
+        "language": "eng",
+        "resource_type": {
+            "title": "Thesis",
+            "type": "publication",
+            "subtype": "thesis"
+        },
+        "license": {
+            "id": "cc-by-4.0"
+        },
+        "relations": {
+            "version": [
+                {
+                    "index": 0,
+                    "is_last": true,
+                    "parent": {
+                        "pid_type": "recid",
+                        "pid_value": "6654149"
+                    }
+                }
+            ]
+        }
+    },
+    "title": "PHD-dissertation-code: \"Improved parameter estimation for the soil erosion modeling tool EROSION-3D\"",
+    "links": {
+        "self": "https://zenodo.org/api/records/6654150",
+        "self_html": "https://zenodo.org/records/6654150",
+        "self_doi": "https://zenodo.org/doi/10.5281/zenodo.6654150",
+        "doi": "https://doi.org/10.5281/zenodo.6654150",
+        "parent": "https://zenodo.org/api/records/6654149",
+        "parent_html": "https://zenodo.org/records/6654149",
+        "parent_doi": "https://zenodo.org/doi/10.5281/zenodo.6654149",
+        "self_iiif_manifest": "https://zenodo.org/api/iiif/record:6654150/manifest",
+        "self_iiif_sequence": "https://zenodo.org/api/iiif/record:6654150/sequence/default",
+        "files": "https://zenodo.org/api/records/6654150/files",
+        "media_files": "https://zenodo.org/api/records/6654150/media-files",
+        "archive": "https://zenodo.org/api/records/6654150/files-archive",
+        "archive_media": "https://zenodo.org/api/records/6654150/media-files-archive",
+        "latest": "https://zenodo.org/api/records/6654150/versions/latest",
+        "latest_html": "https://zenodo.org/records/6654150/latest",
+        "draft": "https://zenodo.org/api/records/6654150/draft",
+        "versions": "https://zenodo.org/api/records/6654150/versions",
+        "access_links": "https://zenodo.org/api/records/6654150/access/links",
+        "access_grants": "https://zenodo.org/api/records/6654150/access/grants",
+        "access_users": "https://zenodo.org/api/records/6654150/access/users",
+        "access_request": "https://zenodo.org/api/records/6654150/access/request",
+        "access": "https://zenodo.org/api/records/6654150/access",
+        "reserve_doi": "https://zenodo.org/api/records/6654150/draft/pids/doi",
+        "communities": "https://zenodo.org/api/records/6654150/communities",
+        "communities-suggestions": "https://zenodo.org/api/records/6654150/communities-suggestions",
+        "requests": "https://zenodo.org/api/records/6654150/requests"
+    },
+    "updated": "2022-07-19T01:49:45.155967+00:00",
+    "recid": "6654150",
+    "revision": 2,
+    "files": [
+        {
+            "id": "8867231a-c91f-44c4-8d45-0ca0776c0b34",
+            "key": "10-toolboxvignette.Rmd",
+            "size": 1792,
+            "checksum": "md5:d793cedbbdb1b82fa818430109ffaf8e",
+            "links": {
+                "self": "https://zenodo.org/api/records/6654150/files/10-toolboxvignette.Rmd/content"
+            }
+        },
+        {
+            "id": "6c81ed36-1b22-4927-95a3-f229cac5e425",
+            "key": "06-lookout.Rmd",
+            "size": 6161,
+            "checksum": "md5:9d70fc91c9d2dcbdd91a968d85b74f4a",
+            "links": {
+                "self": "https://zenodo.org/api/records/6654150/files/06-lookout.Rmd/content"
+            }
+        },
+        {
+            "id": "029ee47c-5d48-4026-8b10-5bb600d9ebc2",
+            "key": "index.Rmd",
+            "size": 22345,
+            "checksum": "md5:6e20321b3e26276ca0bf63c76189f55d",
+            "links": {
+                "self": "https://zenodo.org/api/records/6654150/files/index.Rmd/content"
+            }
+        },
+        {
+            "id": "abb2adf8-6182-4efe-adc6-3eeb7ff66838",
+            "key": "lenz2022.zip",
+            "size": 506516,
+            "checksum": "md5:6175dc50a2ce638a20b5df03679aca5a",
+            "links": {
+                "self": "https://zenodo.org/api/records/6654150/files/lenz2022.zip/content"
+            }
+        },
+        {
+            "id": "79d3d712-7bee-4575-ad77-b2cf23c1159b",
+            "key": "09-database.Rmd",
+            "size": 20146,
+            "checksum": "md5:a094f97302f07bd2e7e6e29656a6858a",
+            "links": {
+                "self": "https://zenodo.org/api/records/6654150/files/09-database.Rmd/content"
+            }
+        },
+        {
+            "id": "20f50fd7-cd73-4f04-80c2-64a9a5988657",
+            "key": "11-varrain.Rmd",
+            "size": 1411,
+            "checksum": "md5:3bb3cd321fbe62f3e8b31765769d5397",
+            "links": {
+                "self": "https://zenodo.org/api/records/6654150/files/11-varrain.Rmd/content"
+            }
+        },
+        {
+            "id": "4d5a9da5-6db7-4a10-9979-dc1b3d1709f7",
+            "key": "08-E3DIssues.Rmd",
+            "size": 26799,
+            "checksum": "md5:0cb31ff32aad311c9e7bbb8c59482d06",
+            "links": {
+                "self": "https://zenodo.org/api/records/6654150/files/08-E3DIssues.Rmd/content"
+            }
+        },
+        {
+            "id": "66d953da-02ca-47e5-be6e-e2799c38823f",
+            "key": "_output.yml",
+            "size": 173,
+            "checksum": "md5:b3f694c960b64a5637f0f9985a4b9ab4",
+            "links": {
+                "self": "https://zenodo.org/api/records/6654150/files/_output.yml/content"
+            }
+        },
+        {
+            "id": "6f3b4ae0-9948-4631-820a-fffbaf7559b6",
+            "key": "07-references.Rmd",
+            "size": 520,
+            "checksum": "md5:efa0c6921230ba7ace741f404319c772",
+            "links": {
+                "self": "https://zenodo.org/api/records/6654150/files/07-references.Rmd/content"
+            }
+        },
+        {
+            "id": "32bda72b-8324-4626-bc23-a9bc752e9c53",
+            "key": "preamble.tex",
+            "size": 1254,
+            "checksum": "md5:cc99eecd99ff4c7946c08b5caae62756",
+            "links": {
+                "self": "https://zenodo.org/api/records/6654150/files/preamble.tex/content"
+            }
+        },
+        {
+            "id": "cb387d1e-23b6-4839-8a50-6069f35677e6",
+            "key": "03a-code.Rmd",
+            "size": 31822,
+            "checksum": "md5:f582a64170203044d5b40aabd2387e8c",
+            "links": {
+                "self": "https://zenodo.org/api/records/6654150/files/03a-code.Rmd/content"
+            }
+        }
+    ],
+    "owners": [
+        {
+            "id": "362595"
+        }
+    ],
+    "status": "published",
+    "stats": {
+        "downloads": 8120,
+        "unique_downloads": 2458,
+        "views": 113,
+        "unique_views": 92,
+        "version_downloads": 8029,
+        "version_unique_downloads": 2415,
+        "version_unique_views": 90,
+        "version_views": 107
+    },
+    "state": "done",
+    "submitted": true
+}
