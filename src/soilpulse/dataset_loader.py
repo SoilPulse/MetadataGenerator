@@ -5,7 +5,7 @@ Created on Tue Oct  1 13:59:52 2024
 @author: JL
 """
 
-from frictionless import Package, Pipeline, steps
+from frictionless import Package, Pipeline, steps, transform
 import os
 import json
 from pathlib import Path
@@ -63,6 +63,111 @@ def load_sp_datapackage(project):
             raise ("Failed to load project.")
 
 
+def get_dataset_concepts(dataset):
+    concepts = []
+    for z in dataset.resources:
+        for x in z.schema.fields:
+            y = x.to_descriptor()
+            if 'concept' in y:
+                concepts += [y['concept']]
+    return(concepts)
+
+
+def view_sp_resource(resource, fields = None, row_filters = []):
+    view = resource.to_copy()
+    view = transform(
+        view,
+        steps =
+        [
+            steps.table_normalize()
+        ]
+        )
+    if fields:
+        for y in view.schema.to_descriptor()['primaryKey']:
+            if not y in fields:
+                fields = fields + [y]
+        view = transform(
+            view,
+            steps=[
+                steps.field_filter(names=fields),
+            ]
+            )
+    for x in row_filters:
+        view = transform(
+            view,
+            steps=[
+                steps.row_filter(formula=x)
+            ]
+            )
+    return view
+
+
+def get_sp_data(dataset, fielddefinition):
+    view = dataset.to_copy()
+    for z in dataset.resources:
+        resourcefields = []
+        row_filters = []
+        for fieldit in fielddefinition:
+            for resfield in z.schema.fields:
+                get = True
+                resfield = resfield.to_descriptor()
+                if 'name' in fieldit:
+                    if not fieldit['name'] == resfield['name']:
+                        get = False
+                if 'concept' in fieldit:
+                    if not 'concept' in resfield:
+                        get = False
+                    elif not fieldit['concept'] == resfield['concept']:
+                        get = False
+                if 'unit' in fieldit:
+                    if not 'unit' in resfield:
+                        get = False
+                    elif not fieldit['unit'] == resfield['unit']:
+                        get = False
+                if get:
+                    resourcefields += [resfield['name']]
+                    if 'row_filters' in fieldit:
+                        row_filters += fieldit['row_filters']
+        if len(resourcefields)>0:
+            view.remove_resource(z.name)
+            z = view_sp_resource(z, resourcefields, row_filters = row_filters)
+            view.add_resource(z)
+        else:
+            view.remove_resource(z.name)
+    return view
+
 
 TUBAF = load_sp_datapackage({"sourcedir": "catalogue/temp_1/"})
 RIES = load_sp_datapackage({"sourcedir": "catalogue/temp_2/"})
+
+view_sp_resource(TUBAF.resources[0], fields = ['SigP'], row_filters = ['SigP >9', 'SigP < 12']).to_pandas()
+get_dataset_concepts(TUBAF)
+
+get_sp_data(TUBAF, fielddefinition=[{'name': 'SigP'}])
+
+view = get_sp_data(
+    TUBAF,
+    fielddefinition=[
+        {'name': 'SigP',
+         'row_filters': ['SigP > 10']
+         },
+        {'unit': 'g/l',
+         'row_filters': ['not sedconc == None and sedconc >=300']
+         }
+        ]
+    )
+
+try:
+    view.extract()
+except:
+    view.extract()
+
+# model requirements can be defined by row constraints
+#from frictionless import validate, checks, transform
+#validate(TUBAF.resources[0],
+#         checks=[
+#             checks.row_constraint(formula="fSi + mSi + cSi == SILT"),
+#             checks.row_constraint(formula="fSa + mSa + cSa == SAND"),
+#             checks.row_constraint(formula="SILT + SAND + CLAY == 100")
+#             ]
+#         )
