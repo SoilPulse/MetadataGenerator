@@ -9,7 +9,7 @@ from frictionless import Package, Pipeline, steps
 import os
 import json
 from pathlib import Path
-
+import simpleeval
 
 #project = {}
 
@@ -34,7 +34,7 @@ def load_sp_datapackage(project):
         return project[meta['doi']+'targ']
     else:
         with open(project['pipe_path'], 'r') as f:
-            pipe = Pipeline(steps=eval(f.read()))
+            pipe = Pipeline(steps=simpleeval.simple_eval(f.read()))
 
         project[meta['doi']] = Package(project['prim_path'])
         project[meta['doi']].transform(pipe)
