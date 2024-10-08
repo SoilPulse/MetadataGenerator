@@ -226,8 +226,7 @@
         ],
         "primaryKey": [
           "No"
-        ],
-        "foreignKeys": []
+        ]
       }
     },
     {
@@ -300,27 +299,22 @@
             "method": "Boolean indicator for identification of measurements taken in runoff feeding phase."
           }
         ],
-        "missingValues": [
-          "NA", ""
-        ],
-        "primaryKey": [
-          "No",
-          "time"
-        ]
-      },
-      "foreignKeys": [
-        {
-          "fields": [
-            "No"
-          ],
-          "reference": {
-            "resource": "meta",
+        "primaryKey": ["No", "time"],
+        "missingValues": ["NA", ""],
+        "foreignKeys": [
+          {
             "fields": [
               "No"
-            ]
+            ],
+            "reference": {
+              "resource": "meta",
+              "fields": [
+                "No"
+              ]
+            }
           }
-        }
-      ]
+        ]
+      }
     }
   ]
 }

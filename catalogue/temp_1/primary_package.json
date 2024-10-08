@@ -560,23 +560,21 @@
           }
         ],
         "primaryKey": ["No", "time"],
-        "missingValues": [
-          "NA"
-        ]
-      },
-      "foreignKeys": [
-        {
-          "fields": [
-            "No"
-          ],
-          "reference": {
-            "resource": "meta",
+        "missingValues": ["NA"],
+        "foreignKeys": [
+          {
             "fields": [
               "No"
-            ]
+            ],
+            "reference": {
+              "resource": "meta",
+              "fields": [
+                "No"
+              ]
+            }
           }
-        }
-      ]
+        ]
+      }
     }
   ]
 }
