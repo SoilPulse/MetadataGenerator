@@ -9,7 +9,6 @@ from frictionless import Package, Pipeline, steps, transform
 import os
 import json
 from pathlib import Path
-import simpleeval
 
 #project = {}
 
@@ -17,6 +16,7 @@ import simpleeval
 
 
 def load_sp_datapackage(project):
+#    project = {"sourcedir": "catalogue/temp_1/"}
     project['prim_path'] = os.path.normpath(project['sourcedir']+"primary_package.json")
     project['meta_path'] = os.path.normpath(project['sourcedir']+"to_publish/Publisher_metadata.json")
     project['pipe_path'] = os.path.normpath(project['sourcedir']+"to_publish/pipe.txt")
@@ -34,7 +34,7 @@ def load_sp_datapackage(project):
         return project[meta['doi']+'targ']
     else:
         with open(project['pipe_path'], 'r') as f:
-            pipe = Pipeline(steps=simpleeval.simple_eval(f.read()))
+            pipe = Pipeline(steps=eval(f.read()))
 
         project[meta['doi']] = Package(project['prim_path'])
         project[meta['doi']].transform(pipe)
