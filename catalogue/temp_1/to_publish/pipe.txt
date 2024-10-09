@@ -24,7 +24,7 @@
         name='time',
         steps=[
             steps.table_normalize(),
-            steps.row_filter(formula="not ( No == '99' and time == 3720 )"),
+            steps.row_filter(formula="not ( No == '99' and time == 3720 )"),     # ToDo this step needs to be modified, primiary key is duplicate here. the first value must be kept, the second must be likely "time = 3740", check maybe with original protocols...
             #steps.field_update(name="sedconc", descriptor={"type": "boolean"}),
             ]
     )
