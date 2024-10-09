@@ -137,6 +137,42 @@ def get_sp_data(dataset, fielddefinition):
     return view
 
 
+def merge_foreign_keys(dataset):
+    view = dataset.to_copy()
+    if len(view.resources)>1:
+        for y in view.resources:
+            if y.schema.foreign_keys and len(y.schema.foreign_keys)>0:
+                for x in y.schema.foreign_keys:
+                    if x['fields'] == x['reference']['fields']:
+                        try:
+                            transform(
+                                source = y,
+                                steps = [
+                                    steps.table_normalize(),
+                                    steps.table_join(
+                                        resource=x['reference']['resource'],
+                                        field_name=x['fields'],
+#                                        mode = 'outer'
+                                        )
+                                    ]
+                            )
+                            y.foreign_keys=[]
+                        except:
+                            y = transform(
+                                source = y,
+                                steps = [
+                                    steps.table_normalize(),
+                                    steps.table_join(
+                                        resource=x['reference']['resource'],
+                                        field_name=x['fields'],
+#                                        mode = 'outer'
+                                        )
+                                    ]
+                            )
+                            y.foreign_keys=[]
+    return view
+
+
 TUBAF = load_sp_datapackage({"sourcedir": "catalogue/temp_1/"})
 RIES = load_sp_datapackage({"sourcedir": "catalogue/temp_2/"})
 
@@ -155,6 +191,21 @@ view = get_sp_data(
          'row_filters': ['not sedconc == None and sedconc >=300']
          }
         ]
+    )
+
+
+view = merge_foreign_keys(
+    get_sp_data(
+        TUBAF,
+        fielddefinition=[
+            {'name': 'SigP',
+             'row_filters': ['No == "8"']
+             },
+            {'unit': 'g/l',
+             'row_filters': ['not sedconc == None', 'No == "8"']
+             }
+            ]
+        )
     )
 
 try:
