@@ -1,0 +1,10 @@
+
+[
+    steps.resource_transform(
+        name='table3',
+        steps=[
+            steps.table_normalize(),
+            steps.field_remove(names=['field1', 'field4'])
+            ]
+    )
+]
