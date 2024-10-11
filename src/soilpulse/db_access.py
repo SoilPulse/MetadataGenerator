@@ -358,12 +358,16 @@ class MySQLConnector(DBconnector):
         thecursor.close()
 
         if cascade:
+            # save containers and their strings translations
             if len(project.containerTree) > 0:
                 for cont in project.containerTree:
                     self.updateContainerRecord(cont, cascade)
                 print(f"\tcontainers saved")
+                print(f"\tvocabularies saved")
             else:
                 print(f"\t(no containers to save)")
+
+            # save datasest
             if len(project.datasets) > 0:
                 for dats in project.datasets:
                     self.updateDatasetRecord(dats)
@@ -371,35 +375,50 @@ class MySQLConnector(DBconnector):
             else:
                 print(f"\t(no datasets to save)")
 
-        # update project concept vocabulary
-        # first update the projects vocabulary by concepts of containers
-        project.updateConceptsVocabularyFromContents()
+        # project concept/methods/units vocabulary doesn't need to be saved in MySQLconnector
+        # project concept vocabulary it's just a subset of all translations stored in DB
 
-        # thecursor = self.db_connection.cursor()
-        # for string, concepts_of_string in project.conceptsVocabulary.items():
-        #     # one string can have more than one concept definition linked
-        #     for concept in concepts_of_string:
-        #         # check if the concept-string already exists in DB for this project
-        #         query = f"SELECT COUNT(*) FROM {self.conceptVocabularyTableName} " \
-        #                 f"WHERE `string`  = '{string}' " \
-        #                 f"AND `vocabulary` = '{concept['vocabulary']}' " \
-        #                 f"AND `uri` = '{concept['uri']}' " \
-        #                 f"AND `project_id` = {project.id}"
-        #         thecursor.execute(query)
-        #         # don't insert new entry if identical exists
-        #         count = thecursor.fetchone()[0]
-        #         if count == 0:
-        #             # insert the string concept definition into DB
-        #             query = f"INSERT INTO {self.conceptVocabularyTableName} (`string`, `vocabulary`, `uri`, `project_id`) " \
-        #             f" VALUES ('{string}', '{concept['vocabulary']}', '{concept['uri']}', {project.id})"
-        #             thecursor.execute(query)
-        #             self.db_connection.commit()
-        #         else:
-        #             # print(f"Concept '{concept_of_project['string']}' - {concept_def['vocabulary']} - {concept_def['uri']} of project {project.id} already exists in the DB")
-        #             pass
+        # delete string-concept translations that are no longer in use
+        self.deleteOrphannnedConceptTranslations(project.id, project.collectAllConcepts())
+
 
         thecursor.close()
-        print(f"\tconcepts vocabulary saved")
+        return
+    def deleteOrphannnedConceptTranslations(self, project_id, current_vocab):
+        """
+        Deletes translations from the database that are no longer in use for given project.
+
+        :param project_id: The ID of the project for which to clean up translations.
+        :param current_vocab: A dictionary of currently used translations (structured as {string: [{vocabulary, uri}, ...]}).
+        """
+        # transform currently used translations into set of tuples
+        current_translations_set = set(
+            (string, translation['vocabulary'], translation['uri'])
+            for string, translations in current_vocab.items()
+            for translation in translations
+        )
+        # fetch all translations from the database for the project
+        thecursor = self.db_connection.cursor()
+        select_query = f"SELECT `id`, `string`, `vocabulary`, `uri`  FROM {self.conceptVocabularyTableName} " \
+                       f"WHERE `project_id` = {project_id}"
+        thecursor.execute(select_query)
+        rows = thecursor.fetchall()
+
+        # collect IDs of unused translations
+        ids_to_delete = []
+        for row in rows:
+            db_id, db_string, db_vocabulary, db_uri = row
+            # Check if the translation is not in the current translations set
+            if (db_string, db_vocabulary, db_uri) not in current_translations_set:
+                ids_to_delete.append(db_id)
+
+        # if there are IDs to delete, execute the deletion
+        if ids_to_delete:
+            delete_query = f"DELETE FROM {self.conceptVocabularyTableName} WHERE id IN " \
+                           f" ({', '.join([str(id) for id in ids_to_delete])})"
+            thecursor.execute(delete_query)
+            self.db_connection.commit()
+        thecursor.close()
         return
 
     def updateContainerRecord(self, container, cascade=False):
@@ -446,7 +465,7 @@ class MySQLConnector(DBconnector):
         # update methods records of container
         self.updateMethodsOfContainer(container)
 
-        # update subcontainers records if desired
+        # update sub-containers records if desired
         if cascade:
             for cont in container.containers:
                 self.updateContainerRecord(cont, cascade)
@@ -532,7 +551,7 @@ class MySQLConnector(DBconnector):
     def getConceptTranslationID(self, string, vocabulary, uri, project_id):
         """
         Returns id of string-concept translation in DB or None if no such translation exists.
-        The return ID is used in container-translation link
+        The return ID is used in container-translation relation
         """
         thecursor = self.db_connection.cursor(dictionary=True)
         query = f"SELECT `id` FROM {self.conceptVocabularyTableName} " \
@@ -553,7 +572,6 @@ class MySQLConnector(DBconnector):
         thecursor = self.db_connection.cursor(dictionary=True)
         query = f"INSERT INTO {self.conceptVocabularyTableName} (`string`, `vocabulary`, `uri`, `project_id`) " \
               f"VALUES ('{string}', '{vocabulary}', '{uri}', {project_id});"
-        print(query)
         thecursor.execute(query)
         self.db_connection.commit()
         # get the last inserted ID

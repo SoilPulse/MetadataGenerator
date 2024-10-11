@@ -563,7 +563,7 @@ class ProjectManager:
         # load the input JSON file to vocabulary
         str_cons_dict = self.loadConceptsVocabularyFromFile(input_file)
 
-        self.updateVocabulary(self.conceptsVocabulary, str_cons_dict)
+        updateVocabulary(self.conceptsVocabulary, str_cons_dict)
         # no need to save the vocabulary to file as it is saved when project is saved
         return
 
@@ -601,38 +601,13 @@ class ProjectManager:
 
             out_structure.append()
 
-    # @classmethod
-    # def updateVocabulary(cls, target_vocab, input_vocab):
-    #     """
-    #     Updates target vocabulary by adding translations from input vocabulary that were not present before
-    #     """
-    #
-    #     # iterate through the input data
-    #     for new_string, strings_meanings in input_vocab.items():
-    #         print(f"string: {new_string}")
-    #         if new_string in target_vocab.keys():
-    #             print(f"\tstring meanings: {target_vocab.get(new_string)}")
-    #             # if the string exists, check for concept duplicates
-    #             existing_meanings_list = [(s_c['vocabulary'], s_c['uri']) for s_c in target_vocab.get(new_string)]
-    #             print(f"existing_meanings_list:\n{existing_meanings_list}")
-    #         else:
-    #             print("\tnot in target vocabulary")
-    #         #     for new_meaning in strings_meanings:
-    #         #         new_meaning_tuple = (new_string, new_meaning['vocabulary'], new_meaning['uri'])
-    #         #         # add the new concept only if it's not a duplicate
-    #         #         if new_meaning_tuple not in existing_meanings_list:
-    #         #             target_vocab[new_string].append(new_meaning)
-    #         # else:
-    #         #     # if the string does not exist, add the new item
-    #         #     target_vocab.update({new_string: strings_meanings})
-    #     return target_vocab
-
     def showConceptsVocabulary(self):
-        print(f"\nString-concept vocabulary of project #{self.id} :")
+        print(f"\nString-concept vocabulary of project #{self.id}:")
         for string, concepts in self.conceptsVocabulary.items():
             print(f"\"{string}\"")
             for concept in concepts:
                 print(f"\t{concept}")
+        print("\n")
 
 class Dataset:
     """

@@ -116,25 +116,25 @@ def load_project_test_concepts(dbcon, user_id, project_id):
 
 
         # upload vocabulary of concepts
-        # project.updateConceptsVocabularyFromFile(r"c://Users//jande//SoilPulse//project_files//_concepts2.json")
-        # project.showConceptsVocabulary()
+        project.updateConceptsVocabularyFromFile(r"c://Users//jande//SoilPulse//project_files//_concepts2.json")
+        project.showConceptsVocabulary()
 
         # # do whatever the automated crawling is capable of
         # newDataset.getCrawled()
 
-        # and do some manual tweaking
-        # like removing all concepts from container
-        project.getContainerByID(776).removeAllConcepts()
-        project.getContainerByID(778).removeAllConcepts()
-        #
-        # # assigning a concept to container
-        # project.getContainerByID(776).addStringConcept(project.getContainerByID(776).name, {"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_64a2abf9"})
-        #     # this one is wrong and shoouldn't be there ...
-        # project.getContainerByID(778).addStringConcept(project.getContainerByID(778).name, {"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_64a2abf9"})
-        # project.getContainerByID(778).addStringConcept(project.getContainerByID(778).name, {"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_36811"})
-        # project.getContainerByID(778).addStringConcept(project.getContainerByID(778).name, {"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_36811"})
-        # project.getContainerByID(778).addStringConcept(project.getContainerByID(778).name, {"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_4260"})
-        # project.getContainerByID(778).addStringConcept(project.getContainerByID(778).name, {"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_4260"})
+        # # and do some manual tweaking
+        # # like removing all concepts from container
+        # project.getContainerByID(776).removeAllConcepts()
+        # project.getContainerByID(778).removeAllConcepts()
+
+        # assigning a concept to container
+        project.getContainerByID(776).addStringConcept(project.getContainerByID(776).name, {"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_64a2abf9"})
+            # this one is wrong and shoouldn't be there ...
+        project.getContainerByID(778).addStringConcept(project.getContainerByID(778).name, {"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_64a2abf9"})
+        project.getContainerByID(778).addStringConcept(project.getContainerByID(778).name, {"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_36811"})
+        project.getContainerByID(778).addStringConcept(project.getContainerByID(778).name, {"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_36811"})
+        project.getContainerByID(778).addStringConcept(project.getContainerByID(778).name, {"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_4260"})
+        project.getContainerByID(778).addStringConcept(project.getContainerByID(778).name, {"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_4260"})
 
 
         # removing a concept from container
@@ -143,9 +143,6 @@ def load_project_test_concepts(dbcon, user_id, project_id):
 
         # show the datasets
         project.showDatasetsContents()
-
-        # # update vocabulary by concepts collected from containers
-        # project.updateConceptsVocabularyFromContents()
 
         # # show the dataset's content
         # newDataset.showContents(show_containers=True)
