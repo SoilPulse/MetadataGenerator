@@ -22,12 +22,11 @@ class ProjectManager:
     Top level manager of metadata mining project.
     Gathers all source files either from remote sources (download from URL) or local sources (upload from local computer).
 
-
     """
 
     def __init__(self, db_connection, user_id, **kwargs):
         self.initialized = False
-        # on initialization load Project from DB or establish a new one
+
         self.dbconnection = db_connection
         self.ownerID = user_id
         self.name = kwargs.get("name")
@@ -70,8 +69,8 @@ class ProjectManager:
         # list of Dataset class instances existing within this project
         self.datasets = []
 
+        # if ID is None establish a new project on the storage
         if kwargs.get("id") is None:
-            # Try to create a new project record in the database
             try:
                 self.id, self.temp_dir = self.dbconnection.establishProjectRecord(user_id, self)
             except DatabaseEntryError as e:
@@ -85,7 +84,7 @@ class ProjectManager:
                 self.setDOI(kwargs.get("doi"))
 
         else:
-            # Load the existing project properties from the database
+            # load the existing project properties from the database
             self.id = kwargs.get("id")
             try:
                 self.dbconnection.loadProject(self)
@@ -101,8 +100,6 @@ class ProjectManager:
                 self.initialized = False
             else:
                 self.initialized = True
-
-
         return
 
 
@@ -136,21 +133,25 @@ class ProjectManager:
         return
 
     def getContainersSerialization(self):
+        """
+        Collects serialization JSON structure of all containers in the tree
+        :return: dictionary with all containers attributes
+        """
         cont_dict = {}
         for cont in self.containerTree:
             cont_dict.update({cont.id: cont.getSerializationDictionary()})
-        # print(f"collected serialization dictionary of all projects containers:\n{cont_dict}")
         return cont_dict
 
     def getDatasetsSerialization(self):
+        """
+        Collects serialization JSON structure of all datasets in the project
+        :return: dictionary with all datasets attributes
+        """
         dataset_list = []
         for dataset in self.datasets:
             dataset_list.append(dataset.getSerializationDictionary())
         return dataset_list
 
-    def loadDBrecord(self, cascade=True):
-
-        return True
 
     def setDOI(self, doi):
         """
@@ -163,7 +164,7 @@ class ProjectManager:
 
         """
         print(f"doi: '{doi}'")
-        # if the __doi parameter already had some value
+        # if the doi parameter already had some value
         if self.doi:
             # and the new value differs from the previous one
             if self.doi != doi:
@@ -184,34 +185,38 @@ class ProjectManager:
             DOIcont.saveAsFile(self.temp_dir, doi_metadata_key.replace(" ", "_")+".json")
 
             # populate publisher with Publisher class instance
-            self.publisher = self.getPublisher(self.DOImetadata)
-            self.publisherMetadata = self.getPublisherMetadata()
+            try:
+                self.publisher = self.getPublisher(self.DOImetadata)
+            except NotImplementedError:
+                print("Publisher instance could not be created:")
+                print("No other data publisher than Zenodo implemented so far.")
+            else:
+                self.publisherMetadata = self.getPublisherMetadata()
 
-            # append the publisher metadata JSON container to the ProjectManagers containers
-            publisherCont = self.containerFactory.createHandler("json", name=publisher_metadata_key, project_manager=self, parent_container=None, content=self.publisherMetadata, path=None)
-            self.containerTree.append(publisherCont)
-            publisherCont.saveAsFile(self.temp_dir, publisher_metadata_key.replace(" ", "_")+".json")
+                # append the publisher metadata JSON container to the ProjectManagers containers
+                publisherCont = self.containerFactory.createHandler("json", name=publisher_metadata_key, project_manager=self, parent_container=None, content=self.publisherMetadata, path=None)
+                self.containerTree.append(publisherCont)
+                publisherCont.saveAsFile(self.temp_dir, publisher_metadata_key.replace(" ", "_")+".json")
 
-            # get downloadable files information from publisher
-            self.publishedFiles = self.publisher.getFileInfo()
+                # get downloadable files information from publisher
+                self.publishedFiles = self.publisher.getFileInfo()
         else:
             return
         return
 
-    def getDOI(self):
-        """
-        Private attribute __doi getter
-        """
-        return self.doi
-
-
     def getAllFilesList(self):
+        """
+        Collects file paths from all containers in the tree
+        """
         filesList = []
         for cont in self.containerTree:
             cont.listOwnFiles(filesList)
         return filesList
 
     def deleteAllProjectFiles(self):
+        """
+        Deletes files of all containers in the tree
+        """
         failed = []
         for cont in self.containerTree:
             cont.deleteOwnFiles(failed)
@@ -513,9 +518,6 @@ class ProjectManager:
         return
 
 
-
-
-
     def showContainerTree(self):
         """
         Induces printing contents of the whole container tree
@@ -528,12 +530,16 @@ class ProjectManager:
         print(80 * "=" + 2 * "\n")
 
 
-    def showDatasetsContents(self):
+    def showDatasetsContents(self, show_containers=True):
         for ds in self.datasets:
-            ds.showContents()
+            ds.showContents(show_containers=show_containers)
         return
 
     def showFilesStructure(self):
+        """
+        Prints "file path" - "container ID" mapping for all containers in the project
+        """
+
         print("\n" + 80 * "-")
         print(f"{self.name}\nfile paths and related container IDs:")
         print(80 * "-")
@@ -581,7 +587,7 @@ class ProjectManager:
         # load the JSON file to vocabulary structure
         target_vocabulary = self.loadConceptsVocabularyFromFile(vocabulary_file)
 
-        self.updateConceptsVocabulary(target_vocabulary, self.conceptsVocabulary)
+        updateVocabulary(target_vocabulary, self.conceptsVocabulary)
         self.exportConceptsVocabularyToFile()
 
         pass
@@ -593,13 +599,6 @@ class ProjectManager:
         with open(os.path.join(filepath, self.project_attr_filename), "w") as f:
             json.dump(filepath, f, ensure_ascii=False, indent=4)
 
-
-
-    def saveConceptsVocabularytoFile(self, vocabulary, output_file):
-        out_structure = []
-        for string, concepts in vocabulary.items():
-
-            out_structure.append()
 
     def showConceptsVocabulary(self):
         print(f"\nString-concept vocabulary of project #{self.id}:")
