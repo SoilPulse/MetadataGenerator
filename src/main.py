@@ -58,7 +58,6 @@ def establish_new_project(dbcon, user_id, **example):
             # show the whole container tree
             project.showContainerTree()
 
-
             project.updateDBrecord()
 
         return project
@@ -108,24 +107,20 @@ def load_project_test_concepts(dbcon, user_id, project_id):
 
         #show paths of files and related containers
         # project.showFilesStructure()
-        # change Resource name ... testing
-        project.name = "Jonas' dissertation"
 
-        # show the whole container tree
-        # project.showContainerTree()
-
-
-        # upload vocabulary of concepts
-        project.updateConceptsVocabularyFromFile(r"c://Users//jande//SoilPulse//project_files//_concepts2.json")
+        # upload vocabulary of concepts, methods and units from files
+        project.updateConceptsVocabularyFromFile(os.path.join(project_files_root, "test_import_concepts.json"))
+        project.updateMethodsVocabularyFromFile(os.path.join(project_files_root, "test_import_methods.json"))
+        project.updateUnitsVocabularyFromFile(os.path.join(project_files_root, "test_import_units.json"))
         project.showConceptsVocabulary()
 
         # # do whatever the automated crawling is capable of
         # newDataset.getCrawled()
 
-        # # and do some manual tweaking
-        # # like removing all concepts from container
-        # project.getContainerByID(776).removeAllConcepts()
-        # project.getContainerByID(778).removeAllConcepts()
+        # and do some manual tweaking
+        # like removing all concepts from container
+        project.getContainerByID(776).removeAllConcepts()
+        project.getContainerByID(778).removeAllConcepts()
 
         # assigning a concept to container
         project.getContainerByID(776).addStringConcept(project.getContainerByID(776).name, {"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_64a2abf9"})
@@ -136,16 +131,36 @@ def load_project_test_concepts(dbcon, user_id, project_id):
         project.getContainerByID(778).addStringConcept(project.getContainerByID(778).name, {"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_4260"})
         project.getContainerByID(778).addStringConcept(project.getContainerByID(778).name, {"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_4260"})
 
-
         # removing a concept from container
             # ... so it's removed
         project.getContainerByID(778).removeConceptOfString(project.getContainerByID(778).name, {"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_64a2abf9"})
 
+
+        # assigning a method to container
+        project.getContainerByID(776).addStringMethod(project.getContainerByID(776).name, {"vocabulary": "methodic", "uri": "http://something"})
+            # this one is wrong and shoouldn't be there ...
+        project.getContainerByID(778).addStringMethod("some method", {"vocabulary": "methodic", "uri": "somethingsomething"})
+        project.getContainerByID(778).addStringMethod("another method", {"vocabulary": "methodic", "uri": "somethingsomething2"})
+        project.getContainerByID(778).addStringMethod("and one more method", {"vocabulary": "methodic", "uri": "somethingsomethingsomething"})
+
+        # removing a method from container
+            # ... so it's removed
+        project.getContainerByID(778).removeMethodOfString(project.getContainerByID(778).name, {"vocabulary": "methodic", "uri": "somethingsomethingsomething"})
+
+        # assigning a unit to container
+        project.getContainerByID(776).addStringUnit(project.getContainerByID(776).name, {"vocabulary": "unitic", "uri": "http://something"})
+            # this one is wrong and shoouldn't be there ...
+        project.getContainerByID(778).addStringUnit(project.getContainerByID(778).name, {"vocabulary": "unitic", "uri": "[pigs per light year]"})
+        project.getContainerByID(778).addStringUnit(project.getContainerByID(778).name, {"vocabulary": "pint", "uri": "{farts*m^-3"})
+        project.getContainerByID(778).addStringUnit(project.getContainerByID(778).name, {"vocabulary": "pint", "uri": "<minions>"})
+
+        # removing a unit from container
+            # ... so it's removed
+        project.getContainerByID(778).removeUnitOfString(project.getContainerByID(778).name, {"vocabulary": "pint", "uri": "<minions>"})
+
+
         # show the datasets
         project.showDatasetsContents()
-
-        # # show the dataset's content
-        # newDataset.showContents(show_containers=True)
 
         # update database record
         project.updateDBrecord()
@@ -234,8 +249,8 @@ if __name__ == "__main__":
 
     # database connection to load/save projects and their structure
     # dbcon = DBconnector.get_connector(project_files_root)
-    dbcon = MySQLConnector(project_files_root)
-    # dbcon = NullConnector(project_files_root)
+    # dbcon = MySQLConnector(project_files_root)
+    dbcon = NullConnector(project_files_root)
 
 
     # checkout user - needed for proper manipulation of project if MySQL server is not reachable

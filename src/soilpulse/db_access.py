@@ -41,10 +41,20 @@ def generate_project_unique_name(existing_names, name):
 
 class DBconnector:
 
+    # filename of global concepts vocabulary
+    concepts_vocabulary_filename = "_concepts_vocabulary.json"
+    # filename of global methods vocabulary
+    methods_vocabulary_filename = "_methods_vocabulary.json"
+    # filename of global units vocabulary
+    units_vocabulary_filename = "_units_vocabulary.json"
     dirname_prefix = None
 
     @classmethod
     def get_connector(cls, project_files_root):
+        """
+        Returns DBconnector subclass instance that links to storage where project structural information will be stored.
+        If running MySQL server with soilpulse DB is found MySQLconnector is return otherwise NullConnector
+        """
         try:
             return MySQLConnector(project_files_root)
         except Exception:
@@ -52,8 +62,29 @@ class DBconnector:
             return NullConnector(project_files_root)
 
     def __init__(self, project_files_root):
+        # the top directory for project directories
         self.project_files_root = project_files_root
+        # global concepts vocabulary file path
+        self.global_concepts_vocabulary = os.path.join(self.project_files_root, self.concepts_vocabulary_filename)
+        # global methods vocabulary file path
+        self.global_methods_vocabulary = os.path.join(self.project_files_root, self.methods_vocabulary_filename)
+        # global units vocabulary file path
+        self.global_units_vocabulary = os.path.join(self.project_files_root, self.units_vocabulary_filename)
 
+
+        # create empty vocabulary files if don't exist to prevent future problems ...
+        if not os.path.isfile(self.global_concepts_vocabulary):
+            with open(self.global_concepts_vocabulary, 'a') as f:
+                f.write("[]")
+                f.close()
+        if not os.path.isfile(self.global_methods_vocabulary):
+            with open(self.global_methods_vocabulary, 'a') as f:
+                f.write("[]")
+                f.close()
+        if not os.path.isfile(self.global_units_vocabulary):
+            with open(self.global_units_vocabulary, 'a') as f:
+                f.write("[]")
+                f.close()
     def getNewProjectID(self):
         """
         Finds a correct ID that should be assigned to next new project.
@@ -103,6 +134,7 @@ class DBconnector:
             print(f"Directory for newly established project '{project_dir}' already exists - all of it's current contents will be deleted.")
             shutil.rmtree(project_dir)
         os.mkdir(project_dir)
+
         return project_dir
 
     def getDatasetsOfProject(self, project_id):
@@ -671,6 +703,8 @@ class MySQLConnector(DBconnector):
 
     def loadStringConcepts(self):
         project_vocabulary = {}
+
+
         return project_vocabulary
 
     def loadChildContainers(self, project, parent_container=None):
@@ -838,7 +872,6 @@ class MySQLConnector(DBconnector):
                 f"AND {self.containersTableName}.`project_id` = {container.project.id}"
         thecursor.execute(query)
 
-        concepts_list = []
         concepts_dict = {}
         results = thecursor.fetchall()
         for res in results:
@@ -850,17 +883,11 @@ class MySQLConnector(DBconnector):
 
         return concepts_dict
 
-    def loadUnitsOfContainer(self, container, as_dict=False):
-        if as_dict:
-            return {}
-        else:
-            return []
+    def loadUnitsOfContainer(self, container):
+        return {}
 
-    def loadMethodsOfContainer(self, container, as_dict=False):
-        if as_dict:
-            return {}
-        else:
-            return []
+    def loadMethodsOfContainer(self, container):
+        return {}
 
     def getContainerGlobalID(self, container):
         """
@@ -933,11 +960,14 @@ class MySQLConnector(DBconnector):
         return None
 
 class NullConnector(DBconnector):
+    # project files dedicated direcotry
     dirname_prefix = "temp_"
+    # filename with saved project definition
     project_attr_filename = "_project.json"
+    # filename with saved containers definition
     containers_attr_filename = "_containers.json"
+    # filename with saved datasets definition
     datasets_attr_filename = "_datasets.json"
-    concepts_vocabulary_filename = "_concepts_vocabulary.json"
 
     def __init__(self, project_files_root):
         super().__init__(project_files_root)
@@ -959,10 +989,14 @@ class NullConnector(DBconnector):
                 if os.path.isfile(os.path.join(project_dir, self.project_attr_filename)):
                     # Load the JSON file to get the project name
                     with open(os.path.join(project_dir, self.project_attr_filename), "r") as f:
-                        project_attributes = json.load(f)
-                        project_name = project_attributes.get("name",
+                        try:
+                            project_attributes = json.load(f)
+                        except json.decoder.JSONDecodeError as e:
+                            print("The project definition file doesn't have proper JSON structure.")
+                        else:
+                            project_name = project_attributes.get("name",
                                                               "Unnamed Project")  # Default to "Unnamed Project" if name is not found
-                    projects[project_id] = project_name
+                            projects[project_id] = project_name
             return projects
         return None
 
@@ -991,16 +1025,22 @@ class NullConnector(DBconnector):
         project.keepFiles = True
         # save attributes to a JSON file
         with open(os.path.join(project_temp_dir, self.project_attr_filename), "w") as f:
-            project_attr = {"name": project.name, "doi": project.getDOI(), "temp_dir": project_temp_dir,
+            project_attr = {"name": project.name, "doi": project.doi, "temp_dir": project_temp_dir,
                          "keep_files": (1 if project.keepFiles else 0)}
             json.dump(project_attr, f)
+
+        # create empty datasets file if don't exist to prevent future problems ...
+        if not os.path.isfile(os.path.join(project_temp_dir, self.datasets_attr_filename)):
+            with open(os.path.join(project_temp_dir, self.datasets_attr_filename), 'a') as f:
+                f.write("[]")
+                f.close()
 
         return project_id, project_temp_dir
 
     def updateProjectRecord(self, project, cascade=False):
         # update project dump
         with open(os.path.join(project.temp_dir, self.project_attr_filename), "w") as f:
-            project_attr = {"name": project.name, "doi": project.getDOI(), "temp_dir": project.temp_dir,
+            project_attr = {"name": project.name, "doi": project.doi, "temp_dir": project.temp_dir,
                          "keep_files": (1 if project.keepFiles else 0)}
             json.dump(project_attr, f, ensure_ascii=False, indent=4)
 
@@ -1020,12 +1060,24 @@ class NullConnector(DBconnector):
             else:
                 print(f"\t(no datasets to save)")
 
-        # # update project concept vocabulary
-        # # first update the projects vocabulary by concepts of containers
-        # project.updateConceptsVocabularyFromContents()
-        # with open(os.path.join(project.temp_dir, self.concepts_vocabulary_filename), "w") as f:
-        #     json.dump(project.conceptsVocabulary, f, ensure_ascii=False, indent=4)
-        # print(f"\tconcepts vocabulary saved")
+        # update project vocabularies
+        # update the projects vocabulary by concepts of containers
+        project.updateConceptsVocabularyFromContents()
+        with open(os.path.join(project.temp_dir, self.concepts_vocabulary_filename), "w") as f:
+            json.dump(project.conceptsVocabulary, f, ensure_ascii=False, indent=4)
+        print(f"\tconcepts vocabulary saved")
+
+        # update the projects vocabulary by methods of containers
+        project.updateMethodsVocabularyFromContents()
+        with open(os.path.join(project.temp_dir, self.methods_vocabulary_filename), "w") as f:
+            json.dump(project.methodsVocabulary, f, ensure_ascii=False, indent=4)
+        print(f"\tmethods vocabulary saved")
+
+        # update the projects vocabulary by units of containers
+        project.updateUnitsVocabularyFromContents()
+        with open(os.path.join(project.temp_dir, self.units_vocabulary_filename), "w") as f:
+            json.dump(project.unitsVocabulary, f, ensure_ascii=False, indent=4)
+        print(f"\tunits vocabulary saved")
 
         # update concept mapping dump
 
@@ -1148,12 +1200,14 @@ class NullConnector(DBconnector):
                     if container_data.get("concepts"):
                         newCont.concepts = container_data.get("concepts")
                         print(f"newCont.concepts: {newCont.concepts}")
-                    # load units
-                    if hasattr(newCont, "units") and container_data.get("units"):
-                        newCont.units = container_data.get("units")
                     # load methods
-                    if hasattr(newCont, "methods") and container_data.get("methods"):
+                    if container_data.get("methods"):
                         newCont.methods = container_data.get("methods")
+
+                    # load units
+                    if container_data.get("units"):
+                        newCont.units = container_data.get("units")
+
 
                     # print(str(newCont))
 
