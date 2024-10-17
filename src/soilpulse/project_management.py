@@ -990,18 +990,21 @@ class ContainerHandler:
         print(f"{t}{self.id} - {self.name} ({self.containerType}) [{len(self.containers)}] >{pContID}")
         if show_concepts:
             if hasattr(self, "concepts"):
+                print("  " * (depth + 1) + "concepts:") if len(self.concepts) > 0 else None
                 for string, concepts in self.concepts.items():
-                    print("  "*(depth+1)+string+": "+"; ".join([f"'{conc['uri']}' ('{conc['vocabulary']}')'" for conc in concepts]))
+                    print("  "*(depth+2)+string+": "+"; ".join([f"'{conc['uri']}' ('{conc['vocabulary']}')'" for conc in concepts]))
 
         if show_methods:
             if hasattr(self, "methods"):
+                print("  " * (depth + 1) + "methods:") if len(self.methods) > 0 else None
                 for string, methods in self.methods.items():
-                    print("  "*(depth+1)+string+": "+"; ".join([f"'{meth['uri']}' ('{meth['vocabulary']}')'" for meth in methods]))
+                    print("  "*(depth+2)+string+": "+"; ".join([f"'{meth['uri']}' ('{meth['vocabulary']}')'" for meth in methods]))
 
         if show_units:
             if hasattr(self, "units"):
+                print("  " * (depth + 1) + "units:") if len(self.units) > 0 else None
                 for string, units in self.units.items():
-                    print("  "*(depth+1)+string+": "+"; ".join([f"'{unit['uri']}' ('{unit['vocabulary']}')'" for unit in units]))
+                    print("  "*(depth+2)+string+": "+"; ".join([f"'{unit['uri']}' ('{unit['vocabulary']}')'" for unit in units]))
 
         # invoke showContents of sub-containers
         if len(self.containers) > 0:

@@ -119,8 +119,12 @@ def load_project_test_concepts(dbcon, user_id, project_id):
 
         # and do some manual tweaking
         # like removing all concepts from container
-        project.getContainerByID(776).removeAllConcepts()
-        project.getContainerByID(778).removeAllConcepts()
+        # project.getContainerByID(776).removeAllConcepts()
+        # project.getContainerByID(778).removeAllConcepts()
+        # project.getContainerByID(776).removeAllMethods()
+        # project.getContainerByID(778).removeAllMethods()
+        # project.getContainerByID(776).removeAllUnits()
+        # project.getContainerByID(778).removeAllUnits()
 
         # assigning a concept to container
         project.getContainerByID(776).addStringConcept(project.getContainerByID(776).name, {"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_64a2abf9"})
@@ -249,8 +253,8 @@ if __name__ == "__main__":
 
     # database connection to load/save projects and their structure
     # dbcon = DBconnector.get_connector(project_files_root)
-    # dbcon = MySQLConnector(project_files_root)
-    dbcon = NullConnector(project_files_root)
+    dbcon = MySQLConnector(project_files_root)
+    # dbcon = NullConnector(project_files_root)
 
 
     # checkout user - needed for proper manipulation of project if MySQL server is not reachable
