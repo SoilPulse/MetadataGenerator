@@ -183,11 +183,6 @@ def load_project_test_datasets(dbcon, user_id, project_id):
         # show project details
         # print(str(project))
 
-        #show paths of files and related containers
-        # project.showFilesStructure()
-        # change Resource name ... testing
-        project.name = "Jonas' dissertation"
-
         # show the whole container tree
         # project.showContainerTree()
 
@@ -225,8 +220,9 @@ def load_project_upload_files(dbcon, user_id, project_id):
         # show project details
         print(str(project))
 
-        project.uploadFilesFromSession("d:\\downloads\\test_file_4.csv")
-        project.uploadFilesFromSession("d:\\downloads\\test_files.rar")
+        # project.uploadFilesFromSession("d:\\downloads\\test_file_4.csv")
+        # project.uploadFilesFromSession("d:\\downloads\\test_files.rar")
+        project.downloadFilesFromURL("https://storm.fsv.cvut.cz/data/files/p%C5%99edm%C4%9Bty/GPU/klavesove_zkratky.xlsx")
 
         # show the whole container tree
         project.showContainerTree()
@@ -276,8 +272,8 @@ if __name__ == "__main__":
     # project3.updateDBrecord()
 
     # load_project_test_datasets(dbcon, user_id, 1)
-    load_project_test_concepts(dbcon, user_id, 1)
-    # load_project_upload_files(dbcon, user_id, 1)
+    # load_project_test_concepts(dbcon, user_id, 1)
+    load_project_upload_files(dbcon, user_id, 1)
     # load_existing_project(dbcon, user_id, 2)
 
 

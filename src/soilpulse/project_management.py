@@ -403,7 +403,6 @@ class ProjectManager:
             if len(self.publishedFiles) == 0:
                 print("The list of published files is empty.\n")
             else:
-                # create the target directory if not exists
                 print("downloading remote files to SoilPulse storage ...")
 
                 fileList = []
@@ -421,13 +420,13 @@ class ProjectManager:
                             print("\tA connection error occurred while trying to download published files - check your internet connection.")
                             return False
                         except requests.exceptions.Timeout:
-                            print("\tThe request timed out while trying to download published files.")
+                            print(f"\tThe request timed out while trying to download file from URL:\n'{url}'")
                             return False
                         except requests.exceptions.HTTPError as e:
-                            print("\tHTTP Error occurred while trying to download published files:\n", e)
+                            print(f"\tHTTP Error occurred while trying to download file from URL:\n'{url}'\n", e)
                             return False
                         except requests.exceptions.RequestException as e:
-                            print("\tRequest Error occurred while trying to download published files:\n", e)
+                            print(f"\tRequest Error occurred while trying to download file from URL:\n'{url}'\n", e)
                             return False
                         else:
                             if response.ok:
@@ -472,8 +471,57 @@ class ProjectManager:
             self.containerTree.append(newContainer)
             # add new file path to uploaded files list
             self.uploadedFiles.append(newContainer.path)
-
         return
+
+    def downloadFilesFromURL(self, urls):
+        """
+        Handles all needed steps to download file/files from a session (unpack archives if necessary) and create file structure tree
+        """
+        from urllib.parse import urlparse, unquote
+
+        if not isinstance(urls, list):
+            urls = [urls]
+
+        fileList = []
+        for url in urls:
+            filename = unquote(urlparse(url).path.split("/")[-1])
+            local_path = os.path.join(self.temp_dir, filename)
+            # print(f"{filename} -> {local_path}")
+            try:
+                response = requests.get(url)
+            except requests.exceptions.ConnectionError:
+                print(
+                    "\tA connection error occurred while trying to download file from URL - check your internet connection.")
+                return False
+            except requests.exceptions.Timeout:
+                print(f"\tThe request timed out while trying to download file from URL:\n'{url}'")
+                return False
+            except requests.exceptions.HTTPError as e:
+                print(f"\tHTTP Error occurred while trying to download file from URL:\n'{url}'\n", e)
+                return False
+            except requests.exceptions.RequestException as e:
+                print(f"\tRequest Error occurred while trying to download file from URL:\n'{url}'\n", e)
+                return False
+            else:
+                if response.ok:
+                    with open(local_path, mode="wb") as filesave:
+                        filesave.write(response.content)
+
+                    # create new container from the file with all related actions
+                    newContainer = self.containerFactory.createHandler('filesystem', self, None,
+                                                                       name=filename, path=local_path)
+                    self.containerTree.append(newContainer)
+
+                else:
+                    # something needs to be done if the response is not OK ...
+                    print("\t\tThe response was not OK!")
+
+                    return False
+
+        print(" ... successful\n")
+        self.downloadedFiles.extend(fileList)
+        return fileList
+
 
     def getContainerByID(self, cid):
         if isinstance(cid, list):
@@ -659,7 +707,7 @@ class ProjectManager:
 
     def loadVocabularyFromFile(self, input_file, type):
         """
-        Loads string- translations JSON file
+        Loads string-* translations JSON file
 
         :param input_file: path of vocabulary file to load from
         :param type: type of vocabulary 'concept'/'method'/'unit'
