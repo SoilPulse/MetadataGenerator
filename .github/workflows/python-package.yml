@@ -53,6 +53,10 @@ jobs:
       run: |
         pytest tests/test_main.py --cov=./ --cov-report=xml
 
+    - name: Test create project with URL
+      run: |
+        pytest tests/test_file_by_URL.py --cov=./ --cov-report=xml
+
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
