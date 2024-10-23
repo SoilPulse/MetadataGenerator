@@ -75,7 +75,7 @@ class ProjectManager:
         self.keepFiles = False
 
         # project's own ContainerHandlerFactory to keep track of containers
-        self.containerFactory = ContainerHandlerFactory()
+        self.containerFactory = ContainerHandlerFactory(self)
         # the crawlers factory
         self.crawlerFactory = CrawlerFactory()
 
@@ -540,6 +540,25 @@ class ProjectManager:
         """
         return self.getContainerByID(pid).containers
 
+    def removeContainer(self, container):
+        # first remove sub-containers if any
+        for sub_cont in container.containers:
+            print(f"\tremoving container {sub_cont.id}")
+
+            # self.removeContainer(cont)
+            self.removeContainer(sub_cont)
+
+        self.containerFactory.removeContainerByID(container.id)
+        # remove the container itself from project instance
+        # for i, cont in enumerate(self.containerTree):
+        #     if cont.id == container.id:
+        #         del self.containerTree[i]
+        #         break
+
+        # remove the link to dataset
+
+        return
+
     def createDataset(self, name, id=None):
         """
         Adds Dataset object instance to dataset list
@@ -843,6 +862,10 @@ class Dataset:
         return {"id": self.id, "name": self.name, "container IDs": [c.id for c in self.containers]}
 
 
+    def getFrictionlessCompleteTransformation(self):
+
+        return
+
     def checkMetadataStructure(self):
         self.metadataMap.checkConsistency()
 
@@ -888,8 +911,10 @@ class ContainerHandlerFactory:
                 needed_fields.append(fieldname)
         return needed_fields
 
-    def __init__(self):
+    def __init__(self, project):
 
+        # the project instance the factory belongs to
+        self.project = project
         # dictionary of already created container handlers by ID
         self.containers = {}
         # class counter of ID that was assigned to last created ContainerHandler
@@ -937,21 +962,36 @@ class ContainerHandlerFactory:
                     raise ValueError("Unsupported container handler type '{}'. Supported are:"
                                      " {}".format(general_type, ",".join(["'" + k + "'" for k in self.containerTypes.keys()])))
 
-                # create new container instance with unique id in the ProjectManager scope
+            # create new container instance with unique id in the ProjectManager scope
             new_container = self.containerTypes[specialized_type](*args, **kwargs)
             # put it in the factory list
             self.containers.update({new_container.id: new_container})
-            return new_container
+            print(f"type of weakref object: {type(weakref.ref(new_container))}")
+            return weakref.ref(new_container)
 
     def getContainerByID(cls, cid):
         """
-        Returns container of particular ID from inner dictionary
+        Returns container of given ID from inner dictionary
         """
 
         if cls.containers.get(cid) is not None:
             return cls.containers.get(cid)
         else:
-            raise ContainerStructureError(f"Container id = {cid} was never created by this factory!")
+            raise ContainerStructureError(
+                f"Container id = {cid} was never created by this factory or was already removed.")
+
+    def removeContainerByID(self, cid):
+        """
+        Removes container with given local ID and all of its sub-containers from projects container tree
+        """
+
+        if cid in self.containers.keys():
+            print(f"deleting container {cid}")
+            del(self.containers[cid])
+        else:
+            raise ContainerStructureError(
+                f"Container id = {cid} was never created by this factory or was already removed.")
+        pass
 
 class ContainerHandler:
     """
@@ -1617,7 +1657,7 @@ class Crawler:
 
     def crawl(self):
         """
-        Parses the container content and searches for meatadata elements.
+        Parses the container content and searches for metadata elements.
         :return: MetadataStructureMap
         """
         print(f"No crawling procedure defined for crawler type '{self.crawlerType}'")

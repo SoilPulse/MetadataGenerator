@@ -399,6 +399,9 @@ class MySQLConnector(DBconnector):
             else:
                 print(f"\t(no containers to save)")
 
+            # delete DB records of containers that are no longer existing
+            self.deleteRemovedContainers()
+
             # save datasest
             if len(project.datasets) > 0:
                 for dats in project.datasets:
@@ -420,6 +423,9 @@ class MySQLConnector(DBconnector):
 
         thecursor.close()
         return
+
+    def deleteRemovedContainers(self):
+        pass
 
     def deleteOrphannedConceptTranslations(self, project_id, current_vocab):
         """

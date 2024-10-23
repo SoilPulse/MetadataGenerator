@@ -220,20 +220,68 @@ def load_project_upload_files(dbcon, user_id, project_id):
         # show project details
         print(str(project))
 
-        # project.uploadFilesFromSession("d:\\downloads\\test_file_4.csv")
+        project.uploadFilesFromSession("d:\\downloads\\test_file_4.csv")
         # project.uploadFilesFromSession("d:\\downloads\\test_files.rar")
-        project.downloadFilesFromURL("https://storm.fsv.cvut.cz/data/files/p%C5%99edm%C4%9Bty/GPU/klavesove_zkratky.xlsx")
+        # project.downloadFilesFromURL("https://storm.fsv.cvut.cz/data/files/p%C5%99edm%C4%9Bty/GPU/klavesove_zkratky.xlsx")
 
         # show the whole container tree
         project.showContainerTree()
 
         # show paths of files and related containers
-        project.showFilesStructure()
+        # project.showFilesStructure()
+
+        # update database record
+        project.updateDBrecord()
+    return
+
+def load_project_remove_container(dbcon, user_id, project_id):
+    """
+    use case function
+    """
+    project = load_existing_project(dbcon, user_id, project_id)
+    if project is None:
+        print("Can't test container removing because the project was not loaded from the storage.")
+    else:
+        # show project details
+        print(str(project))
+
+        # show the whole container tree
+        project.showContainerTree()
+
+        # remove a container from the project
+        project.removeContainer(project.getContainerByID(1018))
+
+        # show the whole container tree
+        project.showContainerTree()
+
+        # show paths of files and related containers
+        # project.showFilesStructure()
 
         # update database record
         # project.updateDBrecord()
     return
 
+def load_project_test_multitable(dbcon, user_id, project_id):
+    """
+    use case function
+    """
+    project = load_existing_project(dbcon, user_id, project_id)
+    if project is None:
+        print("Can't test container removing because the project was not loaded from the storage.")
+    else:
+        # show project details
+        print(str(project))
+        #
+        # show the whole container tree
+        project.showContainerTree()
+
+        project.getContainerByID(1018).getAnalyzed()
+        # show paths of files and related containers
+        # project.showFilesStructure()
+
+        # update database record
+        # project.updateDBrecord()
+    return
 
 if __name__ == "__main__":
     # user identifier that will be later managed by some login framework in streamlit
@@ -273,7 +321,9 @@ if __name__ == "__main__":
 
     # load_project_test_datasets(dbcon, user_id, 1)
     # load_project_test_concepts(dbcon, user_id, 1)
-    load_project_upload_files(dbcon, user_id, 1)
+    # load_project_upload_files(dbcon, user_id, 1)
+    load_project_remove_container(dbcon, user_id, 1)
+    # load_project_test_multitable(dbcon, user_id, 1)
     # load_existing_project(dbcon, user_id, 2)
 
 

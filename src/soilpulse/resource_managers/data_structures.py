@@ -34,6 +34,7 @@ class TableContainer(ContainerHandler):
 
         self.crawler = TableCrawler(self)
 
+
         pass
 
     def getAnalyzed(self):
@@ -105,8 +106,8 @@ class TableCrawler(Crawler):
         """
 
         if not self.container.wasCrawled or (not self.container.wasCrawled and forceRecrawl):
-
-            pass
+            print(f"")
+            return None
         else:
             print(f"Container {self.container.id} was already crawled.")
             return None
