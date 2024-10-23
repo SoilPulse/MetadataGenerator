@@ -306,6 +306,17 @@ if __name__ == "__main__":
     # show current saved resources of user
     dbcon.printUserInfo(user_id)
 
+    # database connection to load/save projects and their structure
+    # dbcon = DBconnector.get_connector(project_files_root)
+    # dbcon = MySQLConnector(project_files_root)
+    dbcon = NullConnector(project_files_root)
+
+
+    # checkout user - needed for proper manipulation of project if MySQL server is not reachable
+    user_id = dbcon.checkoutUser(user_id)
+    # show current saved resources of user
+    dbcon.printUserInfo(user_id)
+
 
     # do the use case
     # project1 = establish_new_project(dbcon, user_id, **example_1)
@@ -314,6 +325,7 @@ if __name__ == "__main__":
     # del project1
     # project2 = establish_new_project(dbcon, user_id, **example_3)
     # project2 = establish_new_project(dbcon, user_id, **example_4)
+
     # project3 = establish_new_project(dbcon, user_id, **example_6)
     # project3.uploadFilesFromSession("d:\\downloads\\lenz2022.zip")
     # project3.showContainerTree()

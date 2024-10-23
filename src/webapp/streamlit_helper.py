@@ -9,6 +9,7 @@ import pandas as pd
 import numpy as np
 import os
 import copy
+from io import StringIO
 
 
 def _select_project(projectlist):
@@ -99,35 +100,50 @@ def _modify_agrovoc_concept(container):
 def _mod_container_content(container_org):
     modc1, modc2 = st.columns(2)
     container_mod = copy.deepcopy(container_org)
-    if container_mod.containerType == 'json':
-        attributes = ['containerType', 'content', 'name']
-    elif container_mod.containerType == 'file':
-        attributes = ['encoding', 'metadataElements', 'name']
-    elif container_mod.containerType == 'directory':
-        attributes = ['parentContainer', 'containers', 'name']
-    else:
+    with modc2:
+        show_all = st.toggle("show all dic")
+    if show_all:
         attributes = [method_name for method_name in dir(container_mod)
-                          if not callable(getattr(container_mod, method_name))
-                          and not "__" in method_name]
+                      if not callable(getattr(container_mod, method_name))
+                      and not "__" in method_name]
+    else:
+        if container_mod.containerType == 'column':
+            attributes = ['concepts', 'methods', 'units']
+        elif container_mod.containerType == 'table':
+            attributes = ['containers']
+        elif container_mod.containerType == 'json':
+            attributes = ['containerType', 'name']
+        elif container_mod.containerType == 'file':
+            attributes = ['name']
+        elif container_mod.containerType == 'directory':
+            attributes = ['parentContainer', 'containers', 'name']
+        else:
+            attributes = [method_name for method_name in dir(container_mod)
+                              if not callable(getattr(container_mod, method_name))
+                              and not "__" in method_name]
 
+    # using a dict allows to assign streamlit-container names generic (https://stackoverflow.com/questions/5036700/how-can-you-dynamically-create-variables)
+    DictForVisual = {}
     for attribute in attributes:
 ## json error
-        if attribute == 'scontent':
-            with modc1:
+        DictForVisual[attribute + "1"], DictForVisual[attribute + "2"] = st.columns(2)
+        with DictForVisual[attribute + "1"]:
+            if attribute == 'scontent':
                 st.json(getattr(container_mod, attribute))
-        else:
-            with modc1:
+            elif attribute == 'containers':
+                children = [x.name for x in getattr(container_mod, attribute)]
+                st.write(children)
+            else:
                 setattr(container_mod, attribute, st.text_input(
                         label = attribute,
                         value = str(getattr(container_mod, attribute))
                         )
                     )
-            with modc2:
-                test = st.button("Test Changes for "+attribute,
-                           disabled = getattr(container_mod, attribute) == getattr(container_org, attribute))
-
-                change = st.button("Save Changes for "+attribute,
-                           disabled = getattr(container_mod, attribute) == getattr(container_org, attribute))
+        with DictForVisual[attribute + "2"]:
+            test = st.button("Test Changes for "+attribute,
+                       disabled = getattr(container_mod, attribute) == getattr(container_org, attribute))
+            change = st.button("Save Changes for "+attribute,
+                       disabled = getattr(container_mod, attribute) == getattr(container_org, attribute))
         if change:
             change = False
             setattr(container_org, attribute, getattr(container_mod, attribute))
@@ -160,3 +176,27 @@ def _visualize_data(container, mainID, agrovoc, projects=[]):
     st.write("showing mockup data")
     st.line_chart(chart_data)
     pass
+
+
+def _file_upload():
+    with st.expander("Add Files to project", expanded=False):
+        fileadd = st.radio("Add by", options = ["URL","Upload"], horizontal = True)
+        if fileadd == "Upload":
+            uploaded_files = st.file_uploader("Select files to add to project",
+                                         key="uploader"+str(st.session_state["file_uploader_key"]),
+                                         accept_multiple_files=True,
+                                         )
+            if not uploaded_files == []:
+                for uploaded_file in uploaded_files:
+                    st.write(uploaded_file.name)
+                if st.button("Add to project"):
+                    for uploaded_file in uploaded_files:
+                        with open(uploaded_file.name,"wb") as f:
+                            f.write(uploaded_file.getbuffer())
+                        st.session_state.localproject.uploadFilesFromSession(uploaded_file.name)
+                        st.write("added " + uploaded_file.name)
+                        os.remove(uploaded_file.name)
+                    st.session_state["file_uploader_key"] += 1
+                    st.rerun()
+        if fileadd == "URL":
+            st.write("To be implemented")

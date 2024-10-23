@@ -11,9 +11,9 @@ It pickles to cache metadata.
 
 import streamlit as st
 import streamlit_tree_select
+import streamlit_helper as sf
 
 import SoilPulse_middle as sp
-import streamlit_helper as sf
 
 st.set_page_config(layout="wide")
 
@@ -35,7 +35,14 @@ if "user_id" not in st.session_state:
 # use session state as work around for single container selection
 # https://github.com/Schluca/streamlit_tree_select/issues/1#issuecomment-1554552554
 
-def set_session(clear = False):
+def set_session(clear = False, logout = False):
+    if logout:
+        clear = True
+
+# workaround to clear file uploader, after treatment of files https://discuss.streamlit.io/t/are-there-any-ways-to-clear-file-uploader-values-without-using-streamlit-form/40903/2
+    if "file_uploader_key" not in st.session_state or clear:
+        st.session_state["file_uploader_key"] = 0
+
     if "selected" not in st.session_state or clear:
         st.session_state.selected = []
     if "expanded" not in st.session_state or clear:
@@ -47,78 +54,110 @@ def set_session(clear = False):
     if "container" not in st.session_state or clear:
         st.session_state.container = None
 
+    if "con" not in st.session_state:
+        st.session_state.con = sp._get_DB_connection()
+    if "con" in st.session_state and logout:
+        del st.session_state.con
+
     # get projectlist of User
-    if "DBprojectlist" not in st.session_state or clear:
-        st.session_state.DBprojectlist = sp._getprojects(st.session_state.user_id)
+    if "DBprojectlist" not in st.session_state:
+        st.session_state.DBprojectlist = sp._getprojects(
+            user_id=st.session_state.user_id,
+            con=st.session_state.con)
+    if "DBprojectlist" in st.session_state and clear:
+        del st.session_state.DBprojectlist
     if clear:
-        del st.session_state.user_id
+        if logout:
+            del st.session_state.user_id
         st.rerun()
+
 
 set_session()
 
 ###########################################
 # Frontend imlementation
 
-c1, c2 = st.columns((8, 3), gap="large")
+c1, c2 = st.columns((8, 2), gap="large")
 
 with c2:
     logout = st.button("Logout and restart session.")
     if logout:
         logout = False
-        set_session(clear=True)
+        set_session(logout=True)
 
-# welcome
-with st.sidebar:
-    st.title("Welcome to SoilPulse!")
-    if not st.session_state.DBprojectlist:
-        st.warning("Can not connect to SoilPulse Database! You still can work locally.")
-
-# local warning
-with st.sidebar:
-    if st.session_state.localproject and st.session_state.localproject.id == 'local':
-        st.warning("You are on a local project and will loose all progress until uploading to DB!")
-
-
-# dialog to create new project
-with st.sidebar:
-    with st.expander("New project"):
-        new_name = st.text_input("Project Name")
-        new_doi = st.text_input("Project DOI")
-        if st.button(
-            "Add Project",
-            disabled=new_doi == "" or
-            new_name == ""
-        ):
-            st.session_state.localproject = sp._add_local_project(
-                new_name,
-                new_doi,
-                st.session_state.user_id)
-
-# Load Project from DB
-with st.sidebar:
-    if not st.session_state.DBprojectlist:
-        DB_project_id = None
-    else:
-        with st.expander("Load Project from DB", expanded = False):
-            DB_project_id = sf._select_project(
-                projectlist = st.session_state.DBprojectlist
-                )
-            # load project from DB
-            if DB_project_id:
-                if st.button("load project"):
-                    st.session_state.localproject = sp._load_project(
-                        user_id=st.session_state.user_id,
-                        project_id=DB_project_id
-                        )
-
-
-# show tree of Project and select container
 if not st.session_state.localproject:
+    # welcome
     with c1:
-        st.warning("Please create a new project or load one from DB.")
+        st.title("Welcome to SoilPulse!")
+        st.write("Please create a new project or load one from DB.")
+
+        if 'server' not in dir(st.session_state.con):
+            st.warning("Can not connect to the global SoilPulse Database! You still can work locally.")
+
+        cpr1, cpr2 = st.columns(2, gap = 'large')
+
+        # dialog to create new project
+        with cpr1:
+            st.title("New project")
+            new_name = st.text_input("Project Name")
+            new_doi, new_url = None, None
+            projecttype = st.radio("There is a",
+                                   options = [
+                                       "DOI",
+                                       "URL",
+                                       "File to upload"],
+                                   horizontal = True)
+            if projecttype == "DOI":
+                new_doi = st.text_input("Project DOI")
+            else:
+                new_doi = None
+            if projecttype == "URL":
+                st.warning("Not implemented yet, please use file upload.")
+                new_url = st.text_input("Project URL")
+            else:
+                new_url = None
+            if st.button(
+                "Add Project",
+                disabled=new_name == ""
+            ):
+                st.session_state.localproject = sp._add_local_project(
+                    new_name,
+                    new_doi,
+                    new_url,
+                    st.session_state.user_id,
+                    con = st.session_state.con)
+                st.rerun()
+
+
+        # Load Project from DB
+        with cpr2:
+            if not st.session_state.DBprojectlist:
+                DB_project_id = None
+            else:
+                st.title("Load Project from DB")
+                DB_project_id = sf._select_project(
+                    projectlist = st.session_state.DBprojectlist
+                    )
+                # load project from DB
+                if DB_project_id:
+                    if st.button("load project"):
+                        st.session_state.localproject = sp._load_project(
+                            user_id=st.session_state.user_id,
+                            project_id=DB_project_id,
+                            con = st.session_state.con
+                            )
+                        st.rerun()
+    st.stop()
+
+# if localproject is selected
 else:
+    with st.sidebar:
+        st.title('You are on the project **"'
+                 + st.session_state.localproject.name +
+                 '"**')
 
     with st.sidebar:
+        st.write('Here are the elements found in your project tree. You can select one and modify it.')
         selected = streamlit_tree_select.tree_select(
             sp._create_tree_from_project(st.session_state.localproject),
             no_cascade=True,
@@ -144,6 +183,10 @@ else:
         if rerun:
             st.rerun()
 
+# file upload
+    with st.sidebar:
+        sf._file_upload()
+
 # Container edit
 with c1:
     if st.session_state.localproject:
@@ -155,7 +198,7 @@ with c1:
                 container_id = st.session_state.selected[0]
                 )
 
-            with st.expander("Container Settings"):
+            with st.expander("Container Settings", expanded = True):
                 #st.header("")
                 st.session_state.container = sf._mod_container_content(container)
 
@@ -182,10 +225,21 @@ with c1:
 
 with c2:
     if st.session_state.localproject:
-        if st.button("Apply all changes on "+st.session_state.localproject.name+" to local DB"):
-            DB_project_id = sp._update_local_db(project=st.session_state.localproject,
-                                user_id=st.session_state.user_id)
-            st.session_state.DBprojectlist = sp._getprojects(st.session_state.user_id)
+        if st.button("Switch to another project."):
+            set_session(clear=True)
+            st.rerun()
+
+        save = st.button("Apply all changes on "+st.session_state.localproject.name+" to local DB")
+        if save:
+            DB_project_id = sp._update_local_db(
+                project=st.session_state.localproject,
+                user_id=st.session_state.user_id,
+                con=st.session_state.con)
+            st.session_state.DBprojectlist = sp._getprojects(
+                        user_id=st.session_state.user_id,
+                        con=st.session_state.con)
+            save = False
+            st.rerun()
 
         if st.button("Reset all changes to "+st.session_state.localproject.name):
             st.session_state.localproject = sp._load_project(

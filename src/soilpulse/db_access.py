@@ -1322,6 +1322,7 @@ class NullConnector(DBconnector):
             if os.path.isfile(containers_attr_filepath):
                 with open(containers_attr_filepath, "r") as f:
                     containers_serialized = json.load(f)
+
                     project.containerTree = self.loadChildContainers(project, containers_serialized, parent_container=None)
             else:
                 raise DatabaseFetchError(f"JSON file with stored containers info '{self.containers_attr_filename}'"
