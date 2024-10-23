@@ -58,17 +58,12 @@ def establish_new_project(dbcon, user_id, **example):
             # show the whole container tree
             project.showContainerTree()
 
-
             project.updateDBrecord()
 
         return project
     return
 
-
 def load_existing_project(dbcon, user_id, project_id):
-    """
-    use case function
-    """
 
     print("\n\n" + 150 * "#")
     print("LOAD EXISTING PROJECT")
@@ -92,59 +87,124 @@ def load_existing_project(dbcon, user_id, project_id):
 
     else:
         if project.initialized:
-            # print(f"project files root: {project.temp_dir}")
-            # show project details
-            print(str(project))
+            return project
+        else:
+            print(f"Project {project_id} of user {user_id} initialization failed.")
 
-            #show paths of files and related containers
-            # project.showFilesStructure()
-            # change Resource name ... testing
-            project.name = "Jonas' dissertation"
+            return None
 
-            # show the whole container tree
-            project.showContainerTree()
+def load_project_test_concepts(dbcon, user_id, project_id):
+    """
+    use case function
+    """
+    project = load_existing_project(dbcon, user_id, project_id)
+    if project is None:
+        print("Can't test concepts because the project was not loaded from the storage.")
+    else:
+        # print(f"project files root: {project.temp_dir}")
+        # show project details
+        # print(str(project))
 
-            # CREATE AND WORK WITH DATASET
-            # new empty dataset is created and added to the ResourceManager
-            newDataset = project.newDataset("TUBAF Rainfall simulations")
-            # add some containers from the ResourceManager - will be done through the GUI
-            newDataset.addContainers(project.getContainerByID([771, 956, 992]))
+        #show paths of files and related containers
+        # project.showFilesStructure()
 
-            # upload vocabulary of concepts
-            project.updateConceptsVocabularyFromFile(r"c://Users//jande//SoilPulse//project_files//_concepts2.json")
-            print(f"loaded concept vocabulary: {project.conceptsVocabulary}")
+        # upload vocabulary of concepts, methods and units from files
+        project.updateConceptsVocabularyFromFile(os.path.join(project_files_root, "test_import_concepts.json"))
+        project.updateMethodsVocabularyFromFile(os.path.join(project_files_root, "test_import_methods.json"))
+        project.updateUnitsVocabularyFromFile(os.path.join(project_files_root, "test_import_units.json"))
+        project.showConceptsVocabulary()
 
-            # do whatever the automated crawling is capable of
-            newDataset.getCrawled()
+        # # do whatever the automated crawling is capable of
+        # newDataset.getCrawled()
 
-            # and do some manual tweaking
-            # like removing all concepts from container
-            project.getContainerByID(776).removeAllConcepts()
-            project.getContainerByID(778).removeAllConcepts()
+        # and do some manual tweaking
+        # like removing all concepts from container
+        # project.getContainerByID(776).removeAllConcepts()
+        # project.getContainerByID(778).removeAllConcepts()
+        # project.getContainerByID(776).removeAllMethods()
+        # project.getContainerByID(778).removeAllMethods()
+        # project.getContainerByID(776).removeAllUnits()
+        # project.getContainerByID(778).removeAllUnits()
 
-            # assigning a concept to container
-            project.getContainerByID(776).addConcept({"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_64a2abf9"})
-                # this one is wrong and shoouldn't be there ...
-            project.getContainerByID(778).addConcept({"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_64a2abf9"})
-            project.getContainerByID(778).addConcept({"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_36811"})
-            project.getContainerByID(778).addConcept({"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_36811"})
-            project.getContainerByID(778).addConcept({"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_4260"})
-            project.getContainerByID(778).addConcept({"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_4260"})
+        # assigning a concept to container
+        project.getContainerByID(776).addStringConcept(project.getContainerByID(776).name, {"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_64a2abf9"})
+            # this one is wrong and shoouldn't be there ...
+        project.getContainerByID(778).addStringConcept(project.getContainerByID(778).name, {"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_64a2abf9"})
+        project.getContainerByID(778).addStringConcept(project.getContainerByID(778).name, {"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_36811"})
+        project.getContainerByID(778).addStringConcept(project.getContainerByID(778).name, {"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_36811"})
+        project.getContainerByID(778).addStringConcept(project.getContainerByID(778).name, {"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_4260"})
+        project.getContainerByID(778).addStringConcept(project.getContainerByID(778).name, {"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_4260"})
+
+        # removing a concept from container
+            # ... so it's removed
+        project.getContainerByID(778).removeConceptOfString(project.getContainerByID(778).name, {"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_64a2abf9"})
 
 
-            # removing a concept from container
-                # ... so it's removed
-            project.getContainerByID(778).removeConcept({"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_64a2abf9"})
+        # assigning a method to container
+        project.getContainerByID(776).addStringMethod(project.getContainerByID(776).name, {"vocabulary": "methodic", "uri": "http://something"})
+            # this one is wrong and shoouldn't be there ...
+        project.getContainerByID(778).addStringMethod("some method", {"vocabulary": "methodic", "uri": "somethingsomething"})
+        project.getContainerByID(778).addStringMethod("another method", {"vocabulary": "methodic", "uri": "somethingsomething2"})
+        project.getContainerByID(778).addStringMethod("and one more method", {"vocabulary": "methodic", "uri": "somethingsomethingsomething"})
 
-            # update vocabulary by concepts collected from containers
-            project.updateConceptsVocabularyFromContents()
+        # removing a method from container
+            # ... so it's removed
+        project.getContainerByID(778).removeMethodOfString(project.getContainerByID(778).name, {"vocabulary": "methodic", "uri": "somethingsomethingsomething"})
 
-            # show the dataset's content
-            newDataset.showContents(show_containers=True)
+        # assigning a unit to container
+        project.getContainerByID(776).addStringUnit(project.getContainerByID(776).name, {"vocabulary": "unitic", "uri": "http://something"})
+            # this one is wrong and shoouldn't be there ...
+        project.getContainerByID(778).addStringUnit(project.getContainerByID(778).name, {"vocabulary": "unitic", "uri": "[pigs per light year]"})
+        project.getContainerByID(778).addStringUnit(project.getContainerByID(778).name, {"vocabulary": "pint", "uri": "{farts*m^-3"})
+        project.getContainerByID(778).addStringUnit(project.getContainerByID(778).name, {"vocabulary": "pint", "uri": "<minions>"})
 
-            # update database record
+        # removing a unit from container
+            # ... so it's removed
+        project.getContainerByID(778).removeUnitOfString(project.getContainerByID(778).name, {"vocabulary": "pint", "uri": "<minions>"})
 
-            project.updateDBrecord()
+
+        # show the datasets
+        project.showDatasetsContents()
+
+        # update database record
+        project.updateDBrecord()
+
+    return
+
+def load_project_test_datasets(dbcon, user_id, project_id):
+    """
+    use case function
+    """
+    project = load_existing_project(dbcon, user_id, project_id)
+    if project is None:
+        print("Can't test datasets because the project was not loaded from the storage.")
+    else:
+        # print(f"project files root: {project.temp_dir}")
+        # show project details
+        # print(str(project))
+
+        # show the whole container tree
+        # project.showContainerTree()
+
+        # CREATE AND WORK WITH DATASET
+        # # new empty dataset is created and added to the ResourceManager
+        # newDataset = project.createDataset("TUBAF Rainfall simulations")
+        # # add some containers from the ResourceManager - will be done through the GUI
+        # newDataset.addContainers(project.getContainerByID([771, 956, 992]))
+        #
+        # # new empty dataset is created and added to the ResourceManager
+        # newDataset = project.createDataset("Test dataset")
+        # # add some containers from the ResourceManager - will be done through the GUI
+        # newDataset.addContainers(project.getContainerByID([285, 1, 2, 3, 789]))
+        #
+        # project.removeDataset(2)
+        project.removeDataset(1)
+
+        for dataset in project.datasets:
+            dataset.showContents(show_containers=True)
+
+        # update database record
+        project.updateDBrecord()
 
     return
 
@@ -152,45 +212,75 @@ def load_project_upload_files(dbcon, user_id, project_id):
     """
     use case function
     """
-
-    print("\n\n" + 150 * "#")
-    print("LOAD EXISTING PROJECT")
-    print(f"user_id: {user_id}\nproject_id: {project_id}")
-    print(150 * "#"+"\n")
-
-    # example = {"user_id": user_id, "id": project_id}
-    example = {"id": project_id}
-    # create ProjectManager instance for loaded resource:
-    try:
-        project = ProjectManager(dbcon, user_id, **example)
-
-    except DatabaseEntryError as e:
-        # this exception is thrown whne trying to add new ProjectManager with same name into the database (for same user)
-        # pass the error message to the user ... some pop-up window with the message
-        print(e.message)
-        pass
-    except NotImplementedError:
-        print(
-            f"Publisher of requested DOI record related files 'is not supported.\nCurrently implemented publishers: {[', '.join([k for k in PublisherFactory.publishers.keys()])]}")
-
+    project = load_existing_project(dbcon, user_id, project_id)
+    if project is None:
+        print("Can't test file upload because the project was not loaded from the storage.")
     else:
-        if project.initialized:
-            # print(f"project files root: {project.temp_dir}")
-            # show project details
-            print(str(project))
+        # print(f"project files root: {project.temp_dir}")
+        # show project details
+        print(str(project))
 
-            project.uploadFilesFromSession(["d:\\downloads\\test_file_3.txt", "d:\\downloads\\test_file_4.csv"])
-            project.uploadFilesFromSession("d:\\downloads\\test_files.rar")
+        project.uploadFilesFromSession("d:\\downloads\\test_file_4.csv")
+        # project.uploadFilesFromSession("d:\\downloads\\test_files.rar")
+        # project.downloadFilesFromURL("https://storm.fsv.cvut.cz/data/files/p%C5%99edm%C4%9Bty/GPU/klavesove_zkratky.xlsx")
 
-            # show the whole container tree
-            project.showContainerTree()
+        # show the whole container tree
+        project.showContainerTree()
 
-            # show paths of files and related containers
-            project.showFilesStructure()
+        # show paths of files and related containers
+        # project.showFilesStructure()
 
-            # update database record
-            # project.updateDBrecord()
+        # update database record
+        project.updateDBrecord()
+    return
 
+def load_project_remove_container(dbcon, user_id, project_id):
+    """
+    use case function
+    """
+    project = load_existing_project(dbcon, user_id, project_id)
+    if project is None:
+        print("Can't test container removing because the project was not loaded from the storage.")
+    else:
+        # show project details
+        print(str(project))
+
+        # show the whole container tree
+        project.showContainerTree()
+
+        # remove a container from the project
+        project.removeContainer(project.getContainerByID(1018))
+
+        # show the whole container tree
+        project.showContainerTree()
+
+        # show paths of files and related containers
+        # project.showFilesStructure()
+
+        # update database record
+        # project.updateDBrecord()
+    return
+
+def load_project_test_multitable(dbcon, user_id, project_id):
+    """
+    use case function
+    """
+    project = load_existing_project(dbcon, user_id, project_id)
+    if project is None:
+        print("Can't test container removing because the project was not loaded from the storage.")
+    else:
+        # show project details
+        print(str(project))
+        #
+        # show the whole container tree
+        project.showContainerTree()
+
+        project.getContainerByID(1018).getAnalyzed()
+        # show paths of files and related containers
+        # project.showFilesStructure()
+
+        # update database record
+        # project.updateDBrecord()
     return
 
 if __name__ == "__main__":
@@ -207,8 +297,8 @@ if __name__ == "__main__":
 
     # database connection to load/save projects and their structure
     # dbcon = DBconnector.get_connector(project_files_root)
-    # dbcon = MySQLConnector(project_files_root)
-    dbcon = NullConnector(project_files_root)
+    dbcon = MySQLConnector(project_files_root)
+    # dbcon = NullConnector(project_files_root)
 
 
     # checkout user - needed for proper manipulation of project if MySQL server is not reachable
@@ -241,8 +331,11 @@ if __name__ == "__main__":
     # project3.showContainerTree()
     # project3.updateDBrecord()
 
-    load_existing_project(dbcon, user_id, 1)
+    # load_project_test_datasets(dbcon, user_id, 1)
+    # load_project_test_concepts(dbcon, user_id, 1)
     # load_project_upload_files(dbcon, user_id, 1)
+    load_project_remove_container(dbcon, user_id, 1)
+    # load_project_test_multitable(dbcon, user_id, 1)
     # load_existing_project(dbcon, user_id, 2)
 
 

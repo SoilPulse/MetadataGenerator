@@ -22,19 +22,17 @@ class ProjectManager:
     Top level manager of metadata mining project.
     Gathers all source files either from remote sources (download from URL) or local sources (upload from local computer).
 
-
     """
 
     def __init__(self, db_connection, user_id, **kwargs):
         self.initialized = False
-        # on initialization load Project from DB or establish a new one
+
         self.dbconnection = db_connection
         self.ownerID = user_id
         self.name = kwargs.get("name")
 
         self.doi = kwargs.get("doi")
-        # list of Dataset class instances present within this project
-        self.datasets = []
+
         # registration agency of the DOI
         self.registrationAgency = None
         # container with metadata package from DOI record
@@ -55,8 +53,21 @@ class ProjectManager:
         self.containersOfPaths = {}
         # language of the project
         self.language = None
-        # project concepts dictionary
-        self.conceptsVocabulary = []
+
+        # project concepts vocabulary
+        self.conceptsVocabulary = {}
+        # project methods vocabulary
+        self.methodsVocabulary = {}
+        # project units vocabulary
+        self.unitsVocabulary = {}
+
+        # global concepts vocabulary
+        self.globalConceptsVocabulary = self.loadConceptsVocabularyFromFile(self.dbconnection.global_concepts_vocabulary)
+        # global methods vocabulary
+        self.globalMethodsVocabulary = self.loadMethodsVocabularyFromFile(self.dbconnection.global_methods_vocabulary)
+        # global units vocabulary
+        self.globalUnitsVocabulary = self.loadUnitsVocabularyFromFile(self.dbconnection.global_units_vocabulary)
+
 
         # dedicated directory for file saving
         self.temp_dir = None
@@ -64,12 +75,15 @@ class ProjectManager:
         self.keepFiles = False
 
         # project's own ContainerHandlerFactory to keep track of containers
-        self.containerFactory = ContainerHandlerFactory()
+        self.containerFactory = ContainerHandlerFactory(self)
         # the crawlers factory
         self.crawlerFactory = CrawlerFactory()
 
+        # list of Dataset class instances existing within this project
+        self.datasets = []
+
+        # if ID is None establish a new project on the storage
         if kwargs.get("id") is None:
-            # Try to create a new project record in the database
             try:
                 self.id, self.temp_dir = self.dbconnection.establishProjectRecord(user_id, self)
             except DatabaseEntryError as e:
@@ -82,9 +96,8 @@ class ProjectManager:
                 self.initialized = True
                 self.setDOI(kwargs.get("doi"))
 
-
         else:
-            # Load the existing project properties from the database
+            # load the existing project properties from the database
             self.id = kwargs.get("id")
             try:
                 self.dbconnection.loadProject(self)
@@ -125,23 +138,36 @@ class ProjectManager:
         return out
 
     def updateDBrecord(self, cascade=True):
+        """
+        Saves current state of the project and its contents (if specified) through current DBconnector object
+
+        :param cascade: whether to save the containers, datasets and other state attributes
+        """
         print(f"\nSaving project \"{self.name}\" with ID {self.id} ... ")
-
         self.dbconnection.updateProjectRecord(self, cascade)
-
         print(f" ... successful.")
         return
 
     def getContainersSerialization(self):
+        """
+        Collects serialization JSON structure of all containers in the tree
+        :return: dictionary with all containers attributes
+        """
         cont_dict = {}
         for cont in self.containerTree:
             cont_dict.update({cont.id: cont.getSerializationDictionary()})
-        # print(f"collected serialization dictionary of all projects containers:\n{cont_dict}")
         return cont_dict
 
-    def loadDBrecord(self, cascade=True):
+    def getDatasetsSerialization(self):
+        """
+        Collects serialization JSON structure of all datasets in the project
+        :return: dictionary with all datasets attributes
+        """
+        dataset_list = []
+        for dataset in self.datasets:
+            dataset_list.append(dataset.getSerializationDictionary())
+        return dataset_list
 
-        return True
 
     def setDOI(self, doi):
         """
@@ -154,7 +180,7 @@ class ProjectManager:
 
         """
         print(f"doi: '{doi}'")
-        # if the __doi parameter already had some value
+        # if the doi parameter already had some value
         if self.doi:
             # and the new value differs from the previous one
             if self.doi != doi:
@@ -175,34 +201,38 @@ class ProjectManager:
             DOIcont.saveAsFile(self.temp_dir, doi_metadata_key.replace(" ", "_")+".json")
 
             # populate publisher with Publisher class instance
-            self.publisher = self.getPublisher(self.DOImetadata)
-            self.publisherMetadata = self.getPublisherMetadata()
+            try:
+                self.publisher = self.getPublisher(self.DOImetadata)
+            except NotImplementedError:
+                print("Publisher instance could not be created:")
+                print("No other data publisher than Zenodo implemented so far.")
+            else:
+                self.publisherMetadata = self.getPublisherMetadata()
 
-            # append the publisher metadata JSON container to the ProjectManagers containers
-            publisherCont = self.containerFactory.createHandler("json", name=publisher_metadata_key, project_manager=self, parent_container=None, content=self.publisherMetadata, path=None)
-            self.containerTree.append(publisherCont)
-            publisherCont.saveAsFile(self.temp_dir, publisher_metadata_key.replace(" ", "_")+".json")
+                # append the publisher metadata JSON container to the ProjectManagers containers
+                publisherCont = self.containerFactory.createHandler("json", name=publisher_metadata_key, project_manager=self, parent_container=None, content=self.publisherMetadata, path=None)
+                self.containerTree.append(publisherCont)
+                publisherCont.saveAsFile(self.temp_dir, publisher_metadata_key.replace(" ", "_")+".json")
 
-            # get downloadable files information from publisher
-            self.publishedFiles = self.publisher.getFileInfo()
+                # get downloadable files information from publisher
+                self.publishedFiles = self.publisher.getFileInfo()
         else:
             return
         return
 
-    def getDOI(self):
-        """
-        Private attribute __doi getter
-        """
-        return self.doi
-
-
     def getAllFilesList(self):
+        """
+        Collects file paths from all containers in the tree
+        """
         filesList = []
         for cont in self.containerTree:
             cont.listOwnFiles(filesList)
         return filesList
 
     def deleteAllProjectFiles(self):
+        """
+        Deletes files of all containers in the tree
+        """
         failed = []
         for cont in self.containerTree:
             cont.deleteOwnFiles(failed)
@@ -373,7 +403,6 @@ class ProjectManager:
             if len(self.publishedFiles) == 0:
                 print("The list of published files is empty.\n")
             else:
-                # create the target directory if not exists
                 print("downloading remote files to SoilPulse storage ...")
 
                 fileList = []
@@ -391,13 +420,13 @@ class ProjectManager:
                             print("\tA connection error occurred while trying to download published files - check your internet connection.")
                             return False
                         except requests.exceptions.Timeout:
-                            print("\tThe request timed out while trying to download published files.")
+                            print(f"\tThe request timed out while trying to download file from URL:\n'{url}'")
                             return False
                         except requests.exceptions.HTTPError as e:
-                            print("\tHTTP Error occurred while trying to download published files:\n", e)
+                            print(f"\tHTTP Error occurred while trying to download file from URL:\n'{url}'\n", e)
                             return False
                         except requests.exceptions.RequestException as e:
-                            print("\tRequest Error occurred while trying to download published files:\n", e)
+                            print(f"\tRequest Error occurred while trying to download file from URL:\n'{url}'\n", e)
                             return False
                         else:
                             if response.ok:
@@ -428,7 +457,7 @@ class ProjectManager:
 
     def uploadFilesFromSession(self, files):
         """
-        handles all needed steps to upload files from a session (unpack archives if necessary) and create file structure tree
+        Handles all needed steps to upload files from a session (unpack archives if necessary) and create file structure tree
         """
         if not isinstance(files, list):
             files = [files]
@@ -442,8 +471,57 @@ class ProjectManager:
             self.containerTree.append(newContainer)
             # add new file path to uploaded files list
             self.uploadedFiles.append(newContainer.path)
-
         return
+
+    def downloadFilesFromURL(self, urls):
+        """
+        Handles all needed steps to download file/files from a session (unpack archives if necessary) and create file structure tree
+        """
+        from urllib.parse import urlparse, unquote
+
+        if not isinstance(urls, list):
+            urls = [urls]
+
+        fileList = []
+        for url in urls:
+            filename = unquote(urlparse(url).path.split("/")[-1])
+            local_path = os.path.join(self.temp_dir, filename)
+            # print(f"{filename} -> {local_path}")
+            try:
+                response = requests.get(url)
+            except requests.exceptions.ConnectionError:
+                print(
+                    "\tA connection error occurred while trying to download file from URL - check your internet connection.")
+                return False
+            except requests.exceptions.Timeout:
+                print(f"\tThe request timed out while trying to download file from URL:\n'{url}'")
+                return False
+            except requests.exceptions.HTTPError as e:
+                print(f"\tHTTP Error occurred while trying to download file from URL:\n'{url}'\n", e)
+                return False
+            except requests.exceptions.RequestException as e:
+                print(f"\tRequest Error occurred while trying to download file from URL:\n'{url}'\n", e)
+                return False
+            else:
+                if response.ok:
+                    with open(local_path, mode="wb") as filesave:
+                        filesave.write(response.content)
+
+                    # create new container from the file with all related actions
+                    newContainer = self.containerFactory.createHandler('filesystem', self, None,
+                                                                       name=filename, path=local_path)
+                    self.containerTree.append(newContainer)
+
+                else:
+                    # something needs to be done if the response is not OK ...
+                    print("\t\tThe response was not OK!")
+
+                    return False
+
+        print(" ... successful\n")
+        self.downloadedFiles.extend(fileList)
+        return fileList
+
 
     def getContainerByID(self, cid):
         if isinstance(cid, list):
@@ -455,32 +533,77 @@ class ProjectManager:
             return self.containerFactory.getContainerByID(cid)
 
     def getContainersByParentID(self, pid):
+        """
+        Return container instances that have parent container with given ID
+
+        :param pid: ID of the parent container
+        """
         return self.getContainerByID(pid).containers
 
-    def newDataset(self, name):
-        """
-        Adds DatasetHandler instance to dataset list
-        """
-        new_dataset = Dataset(name, self)
-        self.datasets.append(new_dataset)
-        return new_dataset
+    def removeContainer(self, container):
+        # first remove sub-containers if any
+        for sub_cont in container.containers:
+            print(f"\tremoving container {sub_cont.id}")
 
-    def addDataset(self, dataset):
-        """
-        Adds DatasetHandler instance to dataset list
-        """
-        self.datasets.append(dataset)
+            # self.removeContainer(cont)
+            self.removeContainer(sub_cont)
+
+        self.containerFactory.removeContainerByID(container.id)
+        # remove the container itself from project instance
+        # for i, cont in enumerate(self.containerTree):
+        #     if cont.id == container.id:
+        #         del self.containerTree[i]
+        #         break
+
+        # remove the link to dataset
+
         return
+
+    def createDataset(self, name, id=None):
+        """
+        Adds Dataset object instance to dataset list
+        """
+        if id is None:
+            # find next ID to assign
+            id = 0
+            if self.datasets is not None:
+                for ds in self.datasets:
+                    id = max(id, ds.id)
+                id += 1
+            else:
+                self.datasets = []
+                id = 1
+        else:
+            for dataset in self.datasets:
+                if dataset.id == id:
+                    print(f"Can't create dataset because the project {self.id} already contains dataset with ID {id}")
+                    return None
+        # create the dataset and assign ID
+        new_dataset = Dataset(name, self)
+        new_dataset.id = id
+        # append the dataset to the list of the project
+        self.datasets.append(new_dataset)
+
+        return new_dataset
 
     def removeDataset(self, item):
         """
-        Removes DatasetHandler instance from dataset list
+        Removes Dataset object instance from dataset list
         """
-        del self.datasets[item]
+
+        try:
+            did = self.datasets[item].id
+            dname = self.datasets[item].name
+            # remove record from DB
+            self.dbconnection.deleteDatasetRecord(self.datasets[item])
+            # remove dataset from the list
+            del self.datasets[item]
+
+        except IndexError:
+            print(f"Can't remove dataset {item} - project {self.id} has only {len(self.datasets)} datasets.")
+        else:
+            print(f"dataset #{did} - '{dname}' was deleted from project")
         return
-
-
-
 
 
     def showContainerTree(self):
@@ -495,77 +618,176 @@ class ProjectManager:
         print(80 * "=" + 2 * "\n")
 
 
-    def showDatasetsContents(self):
+    def showDatasetsContents(self, show_containers=True):
+        """
+        Induces printing contents of all dataset in project
+
+        """
         for ds in self.datasets:
-            ds.showContents()
+            ds.showContents(show_containers=show_containers)
         return
 
     def showFilesStructure(self):
+        """
+        Prints "file path" - "container ID" mapping for all containers in the project
+        """
+
         print("\n" + 80 * "-")
         print(f"{self.name}\nfile paths and related container IDs:")
         print(80 * "-")
         for path, contID in self.containersOfPaths.items():
             print(f"{path}\t[{contID}]")
 
-    def collectConcepts(self):
+    def collectAllConcepts(self):
         """
         Collects all concepts from containers of the tree
         """
-        project_concepts = []
+        project_concepts = {}
         for cont in self.containerTree:
-            project_concepts.extend(cont.getConcepts([]))
+            all_containers_concepts = cont.collectConcepts({}, True)
+            if len(all_containers_concepts) > 0:
+                updateVocabulary(project_concepts, all_containers_concepts)
         return project_concepts
 
+    def collectAllMethods(self):
+        """
+        Collects all methods from containers of the tree
+        """
+        project_methods = {}
+        for cont in self.containerTree:
+            all_containers_methods = cont.collectMethods({}, True)
+            if len(all_containers_methods) > 0:
+                updateVocabulary(project_methods, all_containers_methods)
+        return project_methods
+
+    def collectAllUnits(self):
+        """
+        Collects all units from containers of the tree
+        """
+        project_units = {}
+        for cont in self.containerTree:
+            all_containers_units = cont.collectUnits({}, True)
+            if len(all_containers_units) > 0:
+                updateVocabulary(project_units, all_containers_units)
+        return project_units
+
     def updateConceptsVocabularyFromContents(self):
-        self.updateConceptsVocabulary(self.conceptsVocabulary, self.collectConcepts())
+        """
+        Updates projects string-concept translations by translations from own containers
+        """
+        concepts_of_containers = self.collectAllConcepts()
+        updateVocabulary(self.conceptsVocabulary, concepts_of_containers)
+        return
+
+    def updateMethodsVocabularyFromContents(self):
+        """
+        Updates projects string-concept translations by translations from own containers
+        """
+        methods_of_containers = self.collectAllMethods()
+        updateVocabulary(self.methodsVocabulary, methods_of_containers)
+        return
+
+    def updateUnitsVocabularyFromContents(self):
+        """
+        Updates projects string-concept translations by translations from own containers
+        """
+        units_of_containers = self.collectAllUnits()
+        updateVocabulary(self.unitsVocabulary, units_of_containers)
+        return
     def updateConceptsVocabularyFromFile(self, input_file):
-        # load the input JSON file
-        with open(input_file, 'r') as f:
-            input_data = json.load(f)
-        self.updateConceptsVocabulary(self.conceptsVocabulary, input_data)
+        """
+        Adds string-concepts translations to project's vocabulary (if not already there) from specified file
+        """
+        # load the input JSON file to vocabulary
+        str_conc_dict = self.loadConceptsVocabularyFromFile(input_file)
+        updateVocabulary(self.conceptsVocabulary, str_conc_dict)
         # no need to save the vocabulary to file as it is saved when project is saved
         return
 
-    def exportConceptsToGlobalDictionary(self):
-        # global
-        global_file = os.path.join(self.dbconnection.project_files_root, self.dbconnection.concepts_vocabulary_filename)
-        # load the global JSON file
-        with open(global_file, 'r') as f:
-            target_data = json.load(f)
-        self.updateConceptsVocabulary(target_data, self.conceptsVocabulary)
-        json.dump(global_file, f, ensure_ascii=False, indent=4)
-        pass
+    def updateMethodsVocabularyFromFile(self, input_file):
+        """
+        Adds string-method translations to project's vocabulary (if not already there) from specified file
+        """
+        # load the input JSON file to vocabulary
+        str_meth_dict = self.loadMethodsVocabularyFromFile(input_file)
+        updateVocabulary(self.methodsVocabulary, str_meth_dict)
+        # no need to save the vocabulary to file as it is saved when project is saved
+        return
 
-    @classmethod
-    def updateConceptsVocabulary(cls, target_vocab, input_data):
-        # create a set of tuples representing existing entries to avoid duplicities
-        existing_concepts_set = set(
-            (concept['string'], c['vocabulary'], c['uri'])
-            for concept in target_vocab[:]
-            for c in concept['concept']
-        )
+    def updateUnitsVocabularyFromFile(self, input_file):
+        """
+        Adds string-concepts translations to project's vocabulary (if not already there) from specified file
+        """
+        # load the input JSON file to vocabulary
+        str_unit_dict = self.loadUnitsVocabularyFromFile(input_file)
+        updateVocabulary(self.unitsVocabulary, str_unit_dict)
+        # no need to save the vocabulary to file as it is saved when project is saved
+        return
 
-        # iterate through the input data
-        for new_item in input_data:
-            new_string = new_item['string']
-            new_concepts = new_item['concept']
+    def loadVocabularyFromFile(self, input_file, type):
+        """
+        Loads string-* translations JSON file
 
-            # check if the string already exists in the current concepts
-            existing_entry = next((item for item in target_vocab if item['string'] == new_string), None)
+        :param input_file: path of vocabulary file to load from
+        :param type: type of vocabulary 'concept'/'method'/'unit'
+        """
 
-            if existing_entry:
-                # if the string exists, check for concept duplicates
-                for new_concept in new_concepts:
-                    new_concept_tuple = (new_string, new_concept['vocabulary'], new_concept['uri'])
+        # load the input JSON file
+        str_dict = {}
+        with open(input_file, 'r') as f:
+            for str in json.load(f):
+                str_dict.update({str['string']: str[type]})
+        return str_dict
 
-                    # add the new concept only if it's not a duplicate
-                    if new_concept_tuple not in existing_concepts_set:
-                        existing_entry['concept'].append(new_concept)
-                        existing_concepts_set.add(new_concept_tuple)
-            else:
-                # if the string does not exist, add the new item
-                target_vocab.append(new_item)
-        return target_vocab
+    def loadConceptsVocabularyFromFile(self, input_file):
+        """
+        Loads string-concepts translations JSON file
+        """
+        return self.loadVocabularyFromFile(input_file, 'concept')
+
+    def loadMethodsVocabularyFromFile(self, input_file):
+        """
+        Loads string-method translations JSON file
+        """
+        return self.loadVocabularyFromFile(input_file, 'method')
+
+    def loadUnitsVocabularyFromFile(self, input_file):
+        """
+        Loads string-unit translations JSON file
+        """
+        return self.loadVocabularyFromFile(input_file, 'unit')
+
+    def updateGlobalConceptsVocabularyFromProject(self):
+        """
+        Adds string-concepts translations from project's vocabulary to global vocabulary if not already there
+        """
+        # global string-concept translations file path
+        vocabulary_file = os.path.join(self.dbconnection.project_files_root, self.dbconnection.concepts_vocabulary_filename)
+        # load the JSON file to vocabulary structure
+        target_vocabulary = self.loadConceptsVocabularyFromFile(vocabulary_file)
+
+        updateVocabulary(target_vocabulary, self.conceptsVocabulary)
+        self.exportConceptsVocabularyToFile(vocabulary_file)
+        return
+
+    def exportConceptsVocabularyToFile(self, vocabulary, filepath):
+        """
+        Saves string-concepts vocabulary to a file
+        """
+        output_data = []
+        for string, concepts in vocabulary.items():
+            output_data.append({"string": string, "concept": [{"vocabulary": concept['vocabulary'], "uri": concept['uri']} for concept in concepts]})
+        with open(filepath, "w") as f:
+            json.dump(output_data, f, ensure_ascii=False, indent=4)
+
+
+    def showConceptsVocabulary(self):
+        print(f"\nString-concept vocabulary of project #{self.id}:")
+        for string, concepts in self.conceptsVocabulary.items():
+            print(f"\"{string}\"")
+            for concept in concepts:
+                print(f"\t{concept}")
+        print("\n")
 
 class Dataset:
     """
@@ -574,11 +796,13 @@ class Dataset:
     """
 
     def __init__(self, name, project):
+        # dataset id
+        self.id = None
         # dataset name
         self.name = name
         # project reference
         self.project = project
-        # data containers that the dataset consists of
+        # container object instances that the dataset consists of
         self.containers = []
         # the instance of the metadata mapping
         self.metadataMap = MetadataStructureMap()
@@ -589,10 +813,19 @@ class Dataset:
         Adds one or more ContainerHandler instances to Dataset's containers list
         """
         if isinstance(containers, list):
-            self.containers.extend(containers)
+            for cont in containers:
+                self.addContainer(cont)
         else:
-            self.containers.append(containers)
+            self.addContainer(containers)
         return
+
+    def addContainer(self, container):
+        for existing in self.containers:
+            if container.id == existing.id:
+                return
+        self.containers.append(container)
+        return
+
     def removeContainer(self, containers_to_remove):
         """
         Removes one or more ContainerHandler instances from Dataset's containers list
@@ -611,21 +844,27 @@ class Dataset:
         return [c.id for c in self.containers]
 
     def showContents(self, show_containers=True):
-        print(f"\n==== {self.name} " + 70 * "=")
+        print(f"\n==== {self.name} " + 60 * "=" + f" #{self.id}")
 
         if show_containers:
             self.showContainerTree()
-        print(80 * "=" + 2 * "\n")
+        print(80 * "=" + "\n")
 
     def showContainerTree(self):
         """
-        Induces printing contents of the whole container tree
+        Induces printing contents of the dataset's container tree
         """
         print(f"---- container tree: ----")
         for container in self.containers:
             container.showContents(0)
 
+    def getSerializationDictionary(self):
+        return {"id": self.id, "name": self.name, "container IDs": [c.id for c in self.containers]}
 
+
+    def getFrictionlessCompleteTransformation(self):
+
+        return
 
     def checkMetadataStructure(self):
         self.metadataMap.checkConsistency()
@@ -672,8 +911,10 @@ class ContainerHandlerFactory:
                 needed_fields.append(fieldname)
         return needed_fields
 
-    def __init__(self):
+    def __init__(self, project):
 
+        # the project instance the factory belongs to
+        self.project = project
         # dictionary of already created container handlers by ID
         self.containers = {}
         # class counter of ID that was assigned to last created ContainerHandler
@@ -721,21 +962,36 @@ class ContainerHandlerFactory:
                     raise ValueError("Unsupported container handler type '{}'. Supported are:"
                                      " {}".format(general_type, ",".join(["'" + k + "'" for k in self.containerTypes.keys()])))
 
-                # create new container instance with unique id in the ProjectManager scope
+            # create new container instance with unique id in the ProjectManager scope
             new_container = self.containerTypes[specialized_type](*args, **kwargs)
             # put it in the factory list
             self.containers.update({new_container.id: new_container})
-            return new_container
+            print(f"type of weakref object: {type(weakref.ref(new_container))}")
+            return weakref.ref(new_container)
 
     def getContainerByID(cls, cid):
         """
-        Returns container of particular ID from inner dictionary
+        Returns container of given ID from inner dictionary
         """
 
         if cls.containers.get(cid) is not None:
             return cls.containers.get(cid)
         else:
-            raise ContainerStructureError(f"Container id = {cid} was never created by this factory!")
+            raise ContainerStructureError(
+                f"Container id = {cid} was never created by this factory or was already removed.")
+
+    def removeContainerByID(self, cid):
+        """
+        Removes container with given local ID and all of its sub-containers from projects container tree
+        """
+
+        if cid in self.containers.keys():
+            print(f"deleting container {cid}")
+            del(self.containers[cid])
+        else:
+            raise ContainerStructureError(
+                f"Container id = {cid} was never created by this factory or was already removed.")
+        pass
 
 class ContainerHandler:
     """
@@ -779,8 +1035,12 @@ class ContainerHandler:
         # was analyzed flag
         self.isAnalyzed = False
 
-        # list of dictionaries of assigned concept URIs [{"vocabulary": vocabulary provider, "uri": URI of the concept}, ...]
-        self.concepts = kwargs.get("concepts") if kwargs.get("concepts") is not None else []
+        # dictionary of string-concept translations {the string: [{"vocabulary": vocabulary provider, "uri": URI of the concept}, ...]
+        self.concepts = kwargs.get("concepts") if kwargs.get("concepts") is not None else {}
+        # dictionary of string-method translations {the string: [{"vocabulary": vocabulary provider, "uri": URI of the method}, ...]
+        self.methods = kwargs.get("methods") if kwargs.get("methods") is not None else {}
+        # dictionary of string-unit translations {the string: [{"vocabulary": vocabulary provider, "uri": URI of the unit}, ...]
+        self.units = kwargs.get("units") if kwargs.get("units") is not None else {}
 
     def __str__(self):
         out = f"\n|  # {self.id}  |  name: '{self.name}'  \n|  type: {type(self).__name__}  |  parent: "
@@ -788,20 +1048,27 @@ class ContainerHandler:
         if hasattr(self, "path"):
             out += f"|  {self.path}\n"
         if hasattr(self, "concepts"):
-            out += f"|  concepts: {', '.join([conc['uri']+' ('+conc['vocabulary']+')' for conc in self.concepts])}\n"
-        if hasattr(self, "units"):
-            out += f"|  units: {', '.join([unit['uri']+' ('+unit['vocabulary']+')' for unit in self.units])}\n"
+            out += f"|  string-concept translations:"
+            for string, concs in self.concepts.items():
+                out += f"|\t\"{string}\""
+                for conc in concs:
+                    out += f"|\t\t{concs}"
         if hasattr(self, "methods"):
             out += f"|  concepts: {', '.join([meth['uri']+' ('+meth['vocabulary']+')' for meth in self.methods])}"
+        if hasattr(self, "units"):
+            out += f"|  units: {', '.join([unit['uri']+' ('+unit['vocabulary']+')' for unit in self.units])}\n"
         return out
 
 
-    def showContents(self, depth = 0, ind = ". "):
+    def showContents(self, depth = 0, ind = ". ", show_concepts=True, show_methods=True, show_units=True):
         """
         Prints structured info about the container and invokes showContents on all of its containers
 
         :param depth: current depth of showContent recursion
         :param ind: string of a single level indentation
+        :param show_concepts: whether to show also the string-concepts translations
+        :param show_methods: whether to show also the string-methods translations
+        :param show_units: whether to show also the string-units translations
         """
         # get the indentation string
         t = ind * depth
@@ -809,13 +1076,24 @@ class ContainerHandler:
         pContID = self.parentContainer.id if self.parentContainer is not None else "root"
         # print(f"{t}{self.id} - {self.name} ({self.containerType}) [{len(self.containers)}] {'{'+self.crawler.crawlerType+'}'}  >{pContID}")
         print(f"{t}{self.id} - {self.name} ({self.containerType}) [{len(self.containers)}] >{pContID}")
-        if hasattr(self, "concepts"):
-            if len(self.concepts) > 0:
-                print("  "*(depth+1)+f"{', '.join([conc['uri']+' ('+conc['vocabulary']+')' for conc in self.concepts])}")
-        if hasattr(self, "units"):
-            pass
-        if hasattr(self, "methods"):
-            pass
+        if show_concepts:
+            if hasattr(self, "concepts"):
+                print("  " * (depth + 1) + "concepts:") if len(self.concepts) > 0 else None
+                for string, concepts in self.concepts.items():
+                    print("  "*(depth+2)+string+": "+"; ".join([f"'{conc['uri']}' ('{conc['vocabulary']}')'" for conc in concepts]))
+
+        if show_methods:
+            if hasattr(self, "methods"):
+                print("  " * (depth + 1) + "methods:") if len(self.methods) > 0 else None
+                for string, methods in self.methods.items():
+                    print("  "*(depth+2)+string+": "+"; ".join([f"'{meth['uri']}' ('{meth['vocabulary']}')'" for meth in methods]))
+
+        if show_units:
+            if hasattr(self, "units"):
+                print("  " * (depth + 1) + "units:") if len(self.units) > 0 else None
+                for string, units in self.units.items():
+                    print("  "*(depth+2)+string+": "+"; ".join([f"'{unit['uri']}' ('{unit['vocabulary']}')'" for unit in units]))
+
         # invoke showContents of sub-containers
         if len(self.containers) > 0:
             depth += 1
@@ -823,10 +1101,18 @@ class ContainerHandler:
                 cont.showContents(depth)
 
     def updateDBrecord(self, db_connection, cascade=True):
+        """
+        Invokes updating of containers record in storage
+        """
         db_connection.updateContainerRecord(self, cascade)
         return
 
     def getSerializationDictionary(self, cascade=True):
+        """
+        Creates JSON structured string with serialization of the container and its sub-containers
+
+        :param cascade: whether to recurse through sub-containers
+        """
         # general properties of all containers
         dict = {"id": self.id,
                 "type": self.containerType,
@@ -842,19 +1128,19 @@ class ContainerHandler:
         if self.concepts is not None:
             dict.update({"concepts": self.concepts})
         else:
-            dict.update({"concepts": []})
+            dict.update({"concepts": {}})
         # units
         if hasattr(self, "units"):
             if self.units is not None:
                 dict.update({"units": self.units})
             else:
-                dict.update({"units": []})
+                dict.update({"units": {}})
         # methods
         if hasattr(self, "methods"):
             if self.methods is not None:
                 dict.update({"methods": self.methods})
             else:
-                dict.update({"methods": []})
+                dict.update({"methods": {}})
 
         # and recursion for the sub-containers
         if cascade:
@@ -865,6 +1151,12 @@ class ContainerHandler:
         return dict
 
     def collectContainerIDsToList(self, output=[]):
+        """
+        Collects recursively IDs of all sub-containers (and their sub-containers ...)
+
+        :param output: the output list of all sub-container IDs
+        """
+
         output.append(self.id)
         for cont in self.containers:
             cont.collectContainerIDsToList(output)
@@ -888,62 +1180,276 @@ class ContainerHandler:
     def listOwnFiles(self, collection):
         pass
 
-    def addConcept(self, concept):
+    def addStringConcept(self, string, concept):
         """
-        Add concept to container while checking for duplicity with already present concepts
+        Add string to concept translation to container while checking for duplicity with already present concepts
 
+        :param string: string to be assigned the concept translation
         :param concept: concept to be added
         :return: None
         """
-        if len(self.concepts) == 0:
-            self.concepts.append(concept)
+        print(f"adding concept {concept} of string '{string}'")
+
+        # get all concepts assigned to the input string
+        this_string_concepts = self.concepts.get(string)
+        # if the string has no concept assigned yet
+        if this_string_concepts is None:
+            self.concepts.update({string: [concept]})
+        # otherwise check for new concept duplicity with already assigned concepts
         else:
-            for conc in self.concepts:
-                is_there = False
-                if conc["vocabulary"] == concept["vocabulary"] and conc["uri"] == concept["uri"]:
+            is_there = False
+            for existing_concept in this_string_concepts:
+                if existing_concept["vocabulary"] == concept["vocabulary"] and existing_concept["uri"] == concept["uri"]:
                     is_there = True
             if not is_there:
-                self.concepts.append(concept)
+                this_string_concepts.append(concept)
         return
 
-    def removeConcept(self, concept):
+    def addStringMethod(self, string, method):
         """
-        Remove concept from container.
+        Add string to method translation to container while checking for duplicity with already present methods
 
-        :param concept: concept to be removed
+        :param string: string to be assigned the method translation
+        :param method: method to be added
         :return: None
         """
-        if len(self.concepts) == 0:
-            return
+        print(f"adding method {method} of string '{string}'")
+        # get all methods assigned to the input string
+        this_string_methods = self.methods.get(string)
+        # if the string has no method assigned yet
+        if this_string_methods is None:
+            self.methods.update({string: [method]})
+        # otherwise check for new method duplicity with already assigned method
+        else:
+            is_there = False
+            for existing_method in this_string_methods:
+                if existing_method["vocabulary"] == method["vocabulary"] and existing_method["uri"] == method["uri"]:
+                    is_there = True
+            if not is_there:
+                this_string_methods.append(method)
+        return
+
+    def addStringUnit(self, string, unit):
+        """
+        Add string to unit translation to container while checking for duplicity with already present methods
+
+        :param string: string to be assigned the unit translation
+        :param unit: unit to be added
+        :return: None
+        """
+        print(f"adding unit {unit} of string '{string}'")
+
+        # get all methods assigned to the input string
+        this_string_units = self.units.get(string)
+        # if the string has no method assigned yet
+        if this_string_units is None:
+            self.units.update({string: [unit]})
+        # otherwise check for new unit duplicity with already assigned unit
+        else:
+            is_there = False
+            for existing_unit in this_string_units:
+                if existing_unit["vocabulary"] == unit["vocabulary"] and existing_unit["uri"] == unit["uri"]:
+                    is_there = True
+            if not is_there:
+                this_string_units.append(unit)
+        return
+
+    def removeConceptOfString(self, string, concept_to_remove):
+        """
+        Remove string-concept translation from container.
+        If the translation was last for given string, the string gets removed from the translations as well.
+
+        :param string: string that has the concept assigned
+        :param concept_to_remove: concept to be removed
+        :return: None if the string was not in the containers string-concept translations
+                0 if the string translations was empty and the string was removed from the translations
+                1 on successful removal of the concept from
+        """
+
+        if self.concepts.get(string) is None:
+            print(f"\tString '{string}' is not present in string-concept translations of container {self.id}")
+
         else:
             remi = None
-            # print(f"removing concept {concept}")
-            for i in range(len(self.concepts)):
-                # print(self.concepts[i])
-                if self.concepts[i]["vocabulary"] == concept["vocabulary"] and self.concepts[i]["uri"] == concept["uri"]:
+            print(f"removing concept {concept_to_remove} of string '{string}'")
+            i = 0
+            for concepts_of_string in self.concepts.get(string):
+                # print(concepts_of_string)
+                if concepts_of_string["vocabulary"] == concept_to_remove["vocabulary"] and concepts_of_string["uri"] == concept_to_remove["uri"]:
                     remi = i
+                i += 1
             if remi is not None:
-                self.concepts.pop(remi)
+                del(self.concepts.get(string)[remi])
+                print(f"\tremoved")
+            else:
+                print(f"\tconcept {concept_to_remove} is not present in translations for string '{string}'")
 
+            # if the resulting string translations list is empty, remove the string from translations list
+            if len(self.concepts.get(string)) == 0:
+                self.concepts.pop(string)
+                print(f"\tstring {string} removed as well")
         return
 
+    def removeMethodOfString(self, string, method_to_remove):
+        """
+        Remove string-method translation from container.
+        If the translation was last for given string, the string gets removed from the translations as well.
+
+        :param string: string that has the method assigned
+        :param method_to_remove: method to be removed
+        :return: None if the string was not in the containers string-method translations
+                0 if the string translations was empty and the string was removed from the translations
+                1 on successful removal of the method from container's list
+        """
+
+        if self.methods.get(string) is None:
+            print(f"\tString '{string}' is not present in string-method translations of container {self.id}")
+
+        else:
+            remi = None
+            print(f"removing method {method_to_remove} of string '{string}'")
+            i = 0
+            for methods_of_string in self.methods.get(string):
+                # print(concepts_of_string)
+                if methods_of_string["vocabulary"] == method_to_remove["vocabulary"] and methods_of_string["uri"] == method_to_remove["uri"]:
+                    remi = i
+                i += 1
+            if remi is not None:
+                del(self.methods.get(string)[remi])
+                print(f"\tremoved")
+            else:
+                print(f"\tmethod {method_to_remove} is not present in translations for string '{string}'")
+
+            # if the resulting string translations list is empty, remove the string from translations list
+            if len(self.methods.get(string)) == 0:
+                self.methods.pop(string)
+                print(f"\tstring {string} removed as well")
+        return
+
+    def removeUnitOfString(self, string, unit_to_remove):
+        """
+        Remove string-unit translation from container.
+        If the translation was last for given string, the string gets removed from the translations as well.
+
+        :param string: string that has the unit assigned
+        :param unit_to_remove: unit to be removed
+        :return: None if the string was not in the containers string-unit translations
+                0 if the string translations was empty and the string was removed from the translations
+                1 on successful removal of the unit
+        """
+
+        if self.units.get(string) is None:
+            print(f"\tString '{string}' is not present in string-unit translations of container {self.id}")
+
+        else:
+            remi = None
+            print(f"removing unit {unit_to_remove} of string '{string}'")
+            i = 0
+            for units_of_string in self.units.get(string):
+                # print(concepts_of_string)
+                if units_of_string["vocabulary"] == unit_to_remove["vocabulary"] and units_of_string["uri"] == unit_to_remove["uri"]:
+                    remi = i
+                i += 1
+            if remi is not None:
+                del(self.units.get(string)[remi])
+                print(f"\tremoved")
+            else:
+                print(f"\tunit {unit_to_remove} is not present in translations for string '{string}'")
+
+            # if the resulting string translations list is empty, remove the string from translations list
+            if len(self.units.get(string)) == 0:
+                self.units.pop(string)
+                print(f"\tstring {string} removed as well")
+        return
     def removeAllConcepts(self):
         """
-        Removes all concepts assigned to container
+        Removes all string-concept assigned to container
         :return: None
         """
-        self.concepts = []
+        self.concepts = {}
+        return None
 
-    def getConcepts(self, collection):
+    def removeAllMethods(self):
+        """
+        Removes all string-method translation assigned to container
+        :return: None
+        """
+        self.methods = {}
+        return None
+
+    def removeAllUnits(self):
+        """
+        Removes all string-unit translations assigned to container
+        :return: None
+        """
+        self.units = {}
+        return None
+
+    def collectConcepts(self, collection={}, cascade=True):
+        """
+        Collects assigned string-concepts translations from the container and recursively from all sub-containers if desired
+
+        :param collection: the collection of string-concepts translations that will be returned
+        :param cascade: whether to include translations from sub-containers
+        :return: collection of string-concepts translations {the string: [{'vocabulary': vocabulary string, 'uri': uri string}, {...}]
+        """
+        # collect string-concepts from the container itself
         if len(self.concepts) > 0:
-            collection.append({"string": self.name, "concept": self.concepts})
-        for cont in self.containers:
-            cont.getConcepts(collection)
+            updateVocabulary(collection, self.concepts)
+
+        # collect concepts from child containers if desired
+        if cascade:
+            # then collect string-concepts from child containers
+            for cont in self.containers:
+                cont.collectConcepts(collection, cascade)
+
+        return collection
+
+
+    def collectMethods(self, collection={}, cascade=True):
+        """
+        Collects assigned string-methods translations from the container and recursively from all sub-containers if desired
+
+        :param collection: the collection of string-methods translations that will be returned
+        :param cascade: whether to include translations from sub-containers
+        :return: collection of string-methods translations {the string: [{'vocabulary': vocabulary string, 'uri': uri string}, {...}]
+        """
+        # collect string-concepts from the container itself
+        if len(self.methods) > 0:
+            updateVocabulary(collection, self.methods)
+
+        # collect methods from child containers if desired
+        if cascade:
+            # then collect string-methods from child containers
+            for cont in self.containers:
+                cont.collectMethods(collection, cascade)
+
+        return collection
+
+    def collectUnits(self, collection={}, cascade=True):
+        """
+        Collects assigned string-units translations from the container and recursively from all sub-containers if desired
+
+        :param collection: the collection of string-units translations that will be returned
+        :param cascade: whether to include translations from sub-containers
+        :return: collection of string-units translations {the string: [{'vocabulary': vocabulary string, 'uri': uri string}, {...}]
+        """
+        # collect string-units from the container itself
+        if len(self.units) > 0:
+            updateVocabulary(collection, self.units)
+
+        # collect units from child containers if desired
+        if cascade:
+            # then collect string-units from child containers
+            for cont in self.containers:
+                cont.collectUnits(collection, cascade)
+
         return collection
 
     def deleteOwnFiles(self, failed = []):
         """
-        Deletes container's own file (if exists) from locale storage and induces deleting own files of subcontainers
+        Deletes container's own file (if exists) from locale storage.
+        First induces deleting own files of sub-containers to prevent errors.
 
         :param failed: list of unsuccessful attempts and reason for that [undeleted file path, description of error]
         :return: the same list of undeleted files
@@ -951,11 +1457,12 @@ class ContainerHandler:
         # first delete sub-container's files (if any)
         for c in self.containers:
             c.deleteOwnFiles(failed)
+
+        # and afterwards the container's file/directory itself
         # only some of the subclasses have local file data
         if hasattr(self, 'path'):
             if self.path is not None:
                 try:
-                    # and afterwards the container's file/directory itself
                     if os.path.isfile(self.path):
                         os.remove(self.path)
                     elif os.path.isdir(self.path):
@@ -1150,7 +1657,7 @@ class Crawler:
 
     def crawl(self):
         """
-        Parses the container content and searches for meatadata elements.
+        Parses the container content and searches for metadata elements.
         :return: MetadataStructureMap
         """
         print(f"No crawling procedure defined for crawler type '{self.crawlerType}'")
@@ -1184,3 +1691,31 @@ def get_directory_size(path):
                 total_size += os.path.getsize(filepath)
     return total_size
 
+
+def updateVocabulary(target_vocab, input_vocab):
+    """
+    General function to update one vocabulary (concepts/methods/units) by another.
+    Strings from input vocabulary are added to target vocabulary if not there already.
+    Translations from input vocabulary are added to target vocabulary if not there already
+    """
+    # iterate over each string in the input vocabulary
+    for string, input_translations in input_vocab.items():
+        # check if the string exists in the target vocabulary
+        if string in target_vocab.keys():
+            # get the list of translations for the string in the target vocab
+            target_translations = target_vocab[string]
+            # create a set of existing translation tuples (vocabulary, uri) in the target vocab
+            existing_translations_set = set(
+                (translation['vocabulary'], translation['uri']) for translation in target_translations
+            )
+            # iterate through each translation in the input vocab
+            for input_translation in input_translations:
+                translation_tuple = (input_translation['vocabulary'], input_translation['uri'])
+
+                # if the translation doesn't already exist, add it to the target vocab
+                if translation_tuple not in existing_translations_set:
+                    target_translations.append(input_translation)
+        else:
+            # If the string does not exist in the target vocabulary, add it with its translations
+            target_vocab.update({string: input_translations})
+    return
