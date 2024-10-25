@@ -41,10 +41,20 @@ def generate_project_unique_name(existing_names, name):
 
 class DBconnector:
 
+    # filename of global concepts vocabulary
+    concepts_vocabulary_filename = "_concepts_vocabulary.json"
+    # filename of global methods vocabulary
+    methods_vocabulary_filename = "_methods_vocabulary.json"
+    # filename of global units vocabulary
+    units_vocabulary_filename = "_units_vocabulary.json"
     dirname_prefix = None
 
     @classmethod
     def get_connector(cls, project_files_root):
+        """
+        Returns DBconnector subclass instance that links to storage where project structural information will be stored.
+        If running MySQL server with soilpulse DB is found MySQLconnector is return otherwise NullConnector
+        """
         try:
             return MySQLConnector(project_files_root)
         except Exception:
@@ -52,8 +62,29 @@ class DBconnector:
             return NullConnector(project_files_root)
 
     def __init__(self, project_files_root):
+        # the top directory for project directories
         self.project_files_root = project_files_root
+        # global concepts vocabulary file path
+        self.global_concepts_vocabulary = os.path.join(self.project_files_root, self.concepts_vocabulary_filename)
+        # global methods vocabulary file path
+        self.global_methods_vocabulary = os.path.join(self.project_files_root, self.methods_vocabulary_filename)
+        # global units vocabulary file path
+        self.global_units_vocabulary = os.path.join(self.project_files_root, self.units_vocabulary_filename)
 
+
+        # create empty vocabulary files if don't exist to prevent future problems ...
+        if not os.path.isfile(self.global_concepts_vocabulary):
+            with open(self.global_concepts_vocabulary, 'a') as f:
+                f.write("[]")
+                f.close()
+        if not os.path.isfile(self.global_methods_vocabulary):
+            with open(self.global_methods_vocabulary, 'a') as f:
+                f.write("[]")
+                f.close()
+        if not os.path.isfile(self.global_units_vocabulary):
+            with open(self.global_units_vocabulary, 'a') as f:
+                f.write("[]")
+                f.close()
     def getNewProjectID(self):
         """
         Finds a correct ID that should be assigned to next new project.
@@ -83,13 +114,16 @@ class DBconnector:
     def updateProjectRecord(self, project, cascade=False):
         pass
 
-    def updateContainerRecord(self, container, cascade=False):
-        pass
-
     def loadProject(self, project):
         pass
 
     def deleteProjectRecord(self, project, delete_dir):
+        pass
+
+    def updateContainerRecord(self, container, cascade=False):
+        pass
+
+    def deleteDatasetRecord(self, dataset):
         pass
 
     def create_project_directory(self, project_id):
@@ -100,6 +134,7 @@ class DBconnector:
             print(f"Directory for newly established project '{project_dir}' already exists - all of it's current contents will be deleted.")
             shutil.rmtree(project_dir)
         os.mkdir(project_dir)
+
         return project_dir
 
     def getDatasetsOfProject(self, project_id):
@@ -125,9 +160,13 @@ class MySQLConnector(DBconnector):
     userTableName = "`users`"
     containersTableName = "`containers`"
     datasetsTableName = "`datasets`"
-    conceptsTableName = "`_concepts`"
-    unitsTableName = "`_units`"
-    methodsTableName = "`_methods`"
+    datasetsContainersTableName = "`datasets_containers`"
+    conceptsContainersTableName = "`container_concepts`"
+    unitsContainersTableName = "`container_units`"
+    methodsContainersTableName = "`container_methods`"
+    conceptVocabularyTableName = "`concepts_vocabulary`"
+    methodsVocabularyTableName = "`methods_vocabulary`"
+    unitsVocabularyTableName = "`units_vocabulary`"
 
 
     def __init__(self, project_files_root = None):
@@ -310,7 +349,8 @@ class MySQLConnector(DBconnector):
         """
         Updates database record of a Project and all of its contents
 
-        :param prj: the Project instance reference to be saved
+        :param project: the Project instance reference to be saved
+        :param cascade: whether to update the containers too
         """
         # default is that the name is updated as well
         update_name = True
@@ -333,7 +373,7 @@ class MySQLConnector(DBconnector):
         if count > 0:
             update_name = False
 
-        newValues = {"doi": project.getDOI(), "temp_dir": project.temp_dir, "keep_files": (1 if project.keepFiles else 0)}
+        newValues = {"doi": project.doi, "temp_dir": project.temp_dir, "keep_files": (1 if project.keepFiles else 0)}
         if update_name:
             newValues.update({"name": project.name})
 
@@ -350,11 +390,154 @@ class MySQLConnector(DBconnector):
         thecursor.close()
 
         if cascade:
-            for cont in project.containerTree:
-                self.updateContainerRecord(cont, cascade)
-            for dats in project.datasets:
-                self.updateDatasetRecord(dats)
+            # save containers and their strings translations
+            if len(project.containerTree) > 0:
+                for cont in project.containerTree:
+                    self.updateContainerRecord(cont, cascade)
+                print(f"\tcontainers saved")
+                print(f"\tvocabularies saved")
+            else:
+                print(f"\t(no containers to save)")
+
+            # delete DB records of containers that are no longer existing
+            self.deleteRemovedContainers()
+
+            # save datasest
+            if len(project.datasets) > 0:
+                for dats in project.datasets:
+                    self.updateDatasetRecord(dats)
+                print(f"\tdatasets saved")
+            else:
+                print(f"\t(no datasets to save)")
+
+        # project concept/methods/units vocabulary doesn't need to be saved in MySQLconnector
+        # project concept vocabulary it's just a subset of all translations stored in DB
+
+        # delete string-concept translations that are no longer in use
+        self.deleteOrphannedConceptTranslations(project.id, project.collectAllConcepts())
+        # delete string-method translations that are no longer in use
+        self.deleteOrphannedMethodTranslations(project.id, project.collectAllMethods())
+        # delete string-unit translations that are no longer in use
+        self.deleteOrphannedUnitTranslations(project.id, project.collectAllUnits())
+
+
+        thecursor.close()
         return
+
+    def deleteRemovedContainers(self):
+        pass
+
+    def deleteOrphannedConceptTranslations(self, project_id, current_vocab):
+        """
+        Deletes translations from the database that are no longer in use for given project.
+
+        :param project_id: The ID of the project for which to clean up translations.
+        :param current_vocab: A dictionary of currently used translations (structured as {string: [{vocabulary, uri}, ...]}).
+        """
+        # transform currently used translations into set of tuples
+        current_translations_set = set(
+            (string, translation['vocabulary'], translation['uri'])
+            for string, translations in current_vocab.items()
+            for translation in translations
+        )
+        # fetch all translations from the database for the project
+        thecursor = self.db_connection.cursor()
+        select_query = f"SELECT `id`, `string`, `vocabulary`, `uri`  FROM {self.conceptVocabularyTableName} " \
+                       f"WHERE `project_id` = {project_id}"
+        thecursor.execute(select_query)
+        rows = thecursor.fetchall()
+
+        # collect IDs of unused translations
+        ids_to_delete = []
+        for row in rows:
+            db_id, db_string, db_vocabulary, db_uri = row
+            # Check if the translation is not in the current translations set
+            if (db_string, db_vocabulary, db_uri) not in current_translations_set:
+                ids_to_delete.append(db_id)
+
+        # if there are IDs to delete, execute the deletion
+        if ids_to_delete:
+            delete_query = f"DELETE FROM {self.conceptVocabularyTableName} WHERE id IN " \
+                           f" ({', '.join([str(id) for id in ids_to_delete])})"
+            thecursor.execute(delete_query)
+            self.db_connection.commit()
+        thecursor.close()
+        return
+
+    def deleteOrphannedMethodTranslations(self, project_id, current_vocab):
+        """
+        Deletes string-method translations from the database that are no longer in use for given project.
+
+        :param project_id: The ID of the project for which to clean up translations.
+        :param current_vocab: A dictionary of currently used translations (structured as {string: [{vocabulary, uri}, ...]}).
+        """
+        # transform currently used translations into set of tuples
+        current_translations_set = set(
+            (string, translation['vocabulary'], translation['uri'])
+            for string, translations in current_vocab.items()
+            for translation in translations
+        )
+        # fetch all translations from the database for the project
+        thecursor = self.db_connection.cursor()
+        select_query = f"SELECT `id`, `string`, `vocabulary`, `uri`  FROM {self.methodsVocabularyTableName} " \
+                       f"WHERE `project_id` = {project_id}"
+        thecursor.execute(select_query)
+        rows = thecursor.fetchall()
+
+        # collect IDs of unused translations
+        ids_to_delete = []
+        for row in rows:
+            db_id, db_string, db_vocabulary, db_uri = row
+            # Check if the translation is not in the current translations set
+            if (db_string, db_vocabulary, db_uri) not in current_translations_set:
+                ids_to_delete.append(db_id)
+
+        # if there are IDs to delete, execute the deletion
+        if ids_to_delete:
+            delete_query = f"DELETE FROM {self.methodsVocabularyTableName} WHERE id IN " \
+                           f" ({', '.join([str(id) for id in ids_to_delete])})"
+            thecursor.execute(delete_query)
+            self.db_connection.commit()
+        thecursor.close()
+        return
+
+    def deleteOrphannedUnitTranslations(self, project_id, current_vocab):
+        """
+        Deletes string-unit translations from the database that are no longer in use for given project.
+
+        :param project_id: The ID of the project for which to clean up translations.
+        :param current_vocab: A dictionary of currently used translations (structured as {string: [{vocabulary, uri}, ...]}).
+        """
+        # transform currently used translations into set of tuples
+        current_translations_set = set(
+            (string, translation['vocabulary'], translation['uri'])
+            for string, translations in current_vocab.items()
+            for translation in translations
+        )
+        # fetch all translations from the database for the project
+        thecursor = self.db_connection.cursor()
+        select_query = f"SELECT `id`, `string`, `vocabulary`, `uri`  FROM {self.unitsVocabularyTableName} " \
+                       f"WHERE `project_id` = {project_id}"
+        thecursor.execute(select_query)
+        rows = thecursor.fetchall()
+
+        # collect IDs of unused translations
+        ids_to_delete = []
+        for row in rows:
+            db_id, db_string, db_vocabulary, db_uri = row
+            # Check if the translation is not in the current translations set
+            if (db_string, db_vocabulary, db_uri) not in current_translations_set:
+                ids_to_delete.append(db_id)
+
+        # if there are IDs to delete, execute the deletion
+        if ids_to_delete:
+            delete_query = f"DELETE FROM {self.unitsVocabularyTableName} WHERE id IN " \
+                           f" ({', '.join([str(id) for id in ids_to_delete])})"
+            thecursor.execute(delete_query)
+            self.db_connection.commit()
+        thecursor.close()
+        return
+
 
     def updateContainerRecord(self, container, cascade=False):
         thecursor = self.db_connection.cursor()
@@ -370,7 +553,7 @@ class MySQLConnector(DBconnector):
             arglist.update({db_key: str(getattr(container, attr_key))})
 
         # update properties if the container already exists
-        if self.containerRecordExists(container.id, container.project.id):
+        if self.getContainerGlobalID(container) is not None:
             query = f"UPDATE {self.containersTableName} SET "
             query += ", ".join([f"`{key}` = %s" for key in arglist.keys()])
             query += " WHERE `id_local` = %s AND project_id = %s"
@@ -394,112 +577,268 @@ class MySQLConnector(DBconnector):
         thecursor.close()
 
         # update concepts records of container
-        self.updateConceptRecords(container)
-        # update units records of container
-        self.updateUnitRecords(container)
+        self.updateConceptsOfContainer(container)
         # update methods records of container
-        self.updateMethodRecords(container)
+        self.updateMethodsOfContainer(container)
+        # update units records of container
+        self.updateUnitsOfContainer(container)
 
-        # update subcontainers records if desired
+        # update sub-containers records if desired
         if cascade:
             for cont in container.containers:
                 self.updateContainerRecord(cont, cascade)
         return
 
-    def updateConceptRecords(self, container):
-        if container.concepts is not None:
+    def updateConceptsOfContainer(self, container):
+        """
+        Updates DB record of all string-concept translations of a container
+        """
+        if len(container.concepts) > 0:
             # get container's global ID for foreign key
             cont_glob_id = self.getContainerGlobalID(container)
-            # get currently saved concepts of the container from DB
-            saved_concepts = self.loadConceptsOfContainer(container, as_dict=True)
-            if len(container.concepts) > 0:
+            for string, concepts in container.concepts.items():
+                for concept in concepts:
+                    # get string-concept translation id from DB if exists
+                    trans_id = self.getConceptTranslationID(string, concept['vocabulary'], concept['uri'], container.project.id)
+                    # if the translation doesn't exist create it
+                    if trans_id is None:
+                        trans_id = self.insertStringConceptTranslation(string, concept['vocabulary'], concept['uri'], container.project.id)
 
-                # convert the list of current concepts to a dictionary keyed by URI for easier comparison
-                current_concepts_by_uri = {concept['uri']: concept for concept in container.concepts}
-                # set of URIs in the current container state
-                current_uris = set(current_concepts_by_uri.keys())
-                # set of URIs in the saved database state
-                saved_uris = set(concept['uri'] for concept in saved_concepts.values())
-
-                # find URIs that need to be added (in current but not in saved)
-                uris_to_add = current_uris - saved_uris
-
-                # find URIs that need to be deleted (in saved but not in current)
-                uris_to_delete = saved_uris - current_uris
-
-                thecursor = self.db_connection.cursor()
-
-                # insert new record if not yet in DB
-                for uri in uris_to_add:
-                    conc = current_concepts_by_uri[uri]
-                    query = f"INSERT INTO {self.conceptsTableName} (`container_id`, `vocabulary`, `uri`) VALUES "
-                    query += "(%s, %s, %s)"
-
-                    values = [cont_glob_id, conc["vocabulary"], conc["uri"]]
-
-                    thecursor.execute(query, values)
-                    self.db_connection.commit()
-
-                # remove concepts from DB that no longer exist in container
-                for uri in uris_to_delete:
-                    concept_id = next((id_ for id_, concept in saved_concepts.items() if concept['uri'] == uri), None)
-                    if concept_id:
-                        query = f"DELETE FROM {self.conceptsTableName} WHERE `id` = {concept_id}"
+                    thecursor = self.db_connection.cursor()
+                    thecursor.execute(f"SELECT COUNT(*) FROM {self.conceptsContainersTableName}"
+                                      f"WHERE `container_id` = {cont_glob_id} AND `translation_id` = {trans_id}")
+                    count = thecursor.fetchone()[0]
+                    if count == 0:
+                        query = f"INSERT INTO {self.conceptsContainersTableName} (`container_id`, `translation_id`) " \
+                                  f"VALUES {cont_glob_id, trans_id}"
+                        print(query)
                         thecursor.execute(query)
                         self.db_connection.commit()
-
-                thecursor.close()
-            # in case there were some concepts stored before but currently the container has none
-            elif len(saved_concepts) > 0:
-                thecursor = self.db_connection.cursor()
-                query = f"DELETE FROM {self.conceptsTableName} WHERE `container_id` = {cont_glob_id}"
-                thecursor.execute(query)
-                self.db_connection.commit()
-                thecursor.close()
+                    thecursor.close()
         return
 
-    def updateUnitRecords(self, container):
-        # not all containers have the 'units' attribute
-        if hasattr(container, "units"):
-            if container.units is not None:
-                pass
-        pass
-    def updateMethodRecords(self, container):
-        # not all containers have the 'methods' attribute
-        if hasattr(container, "methods"):
-            if container.methods is not None:
-                pass
-        pass
+    def updateMethodsOfContainer(self, container):
+        """
+        Updates DB record of all string-method translations of a container
+        """
+        if len(container.methods) > 0:
+            # get container's global ID for foreign key
+            cont_glob_id = self.getContainerGlobalID(container)
+            for string, methods in container.methods.items():
+                for method in methods:
+                    # get string-method translation id from DB if exists
+                    trans_id = self.getMethodTranslationID(string, method['vocabulary'], method['uri'], container.project.id)
+                    # if the translation doesn't exist create it
+                    if trans_id is None:
+                        trans_id = self.insertStringMethodTranslation(string, method['vocabulary'], method['uri'], container.project.id)
+
+                    thecursor = self.db_connection.cursor()
+                    thecursor.execute(f"SELECT COUNT(*) FROM {self.methodsContainersTableName}"
+                                      f"WHERE `container_id` = {cont_glob_id} AND `translation_id` = {trans_id}")
+                    count = thecursor.fetchone()[0]
+                    if count == 0:
+                        query = f"INSERT INTO {self.methodsContainersTableName} (`container_id`, `translation_id`) " \
+                                  f"VALUES {cont_glob_id, trans_id}"
+                        print(query)
+                        thecursor.execute(query)
+                        self.db_connection.commit()
+                    thecursor.close()
+        return
+
+    def updateUnitsOfContainer(self, container):
+        """
+        Updates DB record of all string-units translations of a container
+        """
+        if len(container.units) > 0:
+            # get container's global ID for foreign key
+            cont_glob_id = self.getContainerGlobalID(container)
+            for string, units in container.units.items():
+                for unit in units:
+                    # get string-units translation id from DB if exists
+                    trans_id = self.getUnitTranslationID(string, unit['vocabulary'], unit['uri'], container.project.id)
+                    # if the translation doesn't exist create it
+                    if trans_id is None:
+                        trans_id = self.insertStringUnitTranslation(string, unit['vocabulary'], unit['uri'], container.project.id)
+
+                    thecursor = self.db_connection.cursor()
+                    thecursor.execute(f"SELECT COUNT(*) FROM {self.unitsContainersTableName}"
+                                      f"WHERE `container_id` = {cont_glob_id} AND `translation_id` = {trans_id}")
+                    count = thecursor.fetchone()[0]
+                    if count == 0:
+                        query = f"INSERT INTO {self.unitsContainersTableName} (`container_id`, `translation_id`) " \
+                                  f"VALUES {cont_glob_id, trans_id}"
+                        print(query)
+                        thecursor.execute(query)
+                        self.db_connection.commit()
+                    thecursor.close()
+        return
+
+    def getConceptTranslationID(self, string, vocabulary, uri, project_id):
+        """
+        Returns id of string-concept translation in DB or None if no such translation exists.
+        The return ID is used in container-translation relation
+        """
+        thecursor = self.db_connection.cursor(dictionary=True)
+        query = f"SELECT `id` FROM {self.conceptVocabularyTableName} " \
+              f"WHERE `string` = '{string}' AND `vocabulary` = '{vocabulary}' AND `uri` = '{uri}' "
+        query += f"AND `project_id` = {project_id}" if project_id is not None else None
+        thecursor.execute(query)
+        results = thecursor.fetchall()
+        thecursor.close()
+
+        if len(results) == 0:
+            return None
+        elif len(results) > 1:
+            raise DatabaseEntryError(f"Duplicit string-concept translation '{string}'-'{vocabulary}'-'{uri}' in project {project_id}")
+        else:
+            return results[0]['id']
+
+
+    def getMethodTranslationID(self, string, vocabulary, uri, project_id):
+        """
+        Returns id of string-method translation in DB or None if no such translation exists.
+        The return ID is used in container-translation relation
+        """
+        thecursor = self.db_connection.cursor(dictionary=True)
+        query = f"SELECT `id` FROM {self.methodsVocabularyTableName} " \
+              f"WHERE `string` = '{string}' AND `vocabulary` = '{vocabulary}' AND `uri` = '{uri}' "
+        query += f"AND `project_id` = {project_id}" if project_id is not None else None
+        thecursor.execute(query)
+        results = thecursor.fetchall()
+        thecursor.close()
+
+        if len(results) == 0:
+            return None
+        elif len(results) > 1:
+            raise DatabaseEntryError(f"Duplicit string-method translation '{string}'-'{vocabulary}'-'{uri}' in project {project_id}")
+        else:
+            return results[0]['id']
+
+    def getUnitTranslationID(self, string, vocabulary, uri, project_id):
+        """
+        Returns id of string-unit translation in DB or None if no such translation exists.
+        The return ID is used in container-translation relation
+        """
+        thecursor = self.db_connection.cursor(dictionary=True)
+        query = f"SELECT `id` FROM {self.unitsVocabularyTableName} " \
+                f"WHERE `string` = '{string}' AND `vocabulary` = '{vocabulary}' AND `uri` = '{uri}' "
+        query += f"AND `project_id` = {project_id}" if project_id is not None else None
+        thecursor.execute(query)
+        results = thecursor.fetchall()
+        thecursor.close()
+
+        if len(results) == 0:
+            return None
+        elif len(results) > 1:
+            raise DatabaseEntryError(
+                f"Duplicit string-unit translation '{string}'-'{vocabulary}'-'{uri}' in project {project_id}")
+        else:
+            return results[0]['id']
+
+
+    def insertStringConceptTranslation(self, string, vocabulary, uri, project_id):
+        """
+        Inserts DB entry of a string-concept definition into database table and returns ID of the translation
+
+        :param string: the string which translation it is
+        :param vocabulary: vocabulary of the unit definition
+        :param uri: unique identifier of the term within specified vocabulary
+        :param project_id: ID of project to which the translation belongs
+        :returns: ID of the newly created translation DB entry
+        """
+        thecursor = self.db_connection.cursor(dictionary=True)
+        query = f"INSERT INTO {self.conceptVocabularyTableName} (`string`, `vocabulary`, `uri`, `project_id`) " \
+              f"VALUES ('{string}', '{vocabulary}', '{uri}', {project_id});"
+        thecursor.execute(query)
+        self.db_connection.commit()
+        # get the last inserted ID
+        thecursor.execute("SELECT LAST_INSERT_ID()")
+        new_id = thecursor.fetchone()['LAST_INSERT_ID()']
+        thecursor.close()
+
+        return new_id
+
+    def insertStringMethodTranslation(self, string, vocabulary, uri, project_id):
+        """
+        Inserts DB entry of a string-method definition into database table and returns ID of the translation
+
+        :param string: the string which translation it is
+        :param vocabulary: vocabulary of the unit definition
+        :param uri: unique identifier of the term within specified vocabulary
+        :param project_id: ID of project to which the translation belongs
+        :returns: ID of the newly created translation DB entry
+        """
+        thecursor = self.db_connection.cursor(dictionary=True)
+        query = f"INSERT INTO {self.methodsVocabularyTableName} (`string`, `vocabulary`, `uri`, `project_id`) " \
+              f"VALUES ('{string}', '{vocabulary}', '{uri}', {project_id});"
+        thecursor.execute(query)
+        self.db_connection.commit()
+        # get the last inserted ID
+        thecursor.execute("SELECT LAST_INSERT_ID()")
+        new_id = thecursor.fetchone()['LAST_INSERT_ID()']
+        thecursor.close()
+
+        return new_id
+
+    def insertStringUnitTranslation(self, string, vocabulary, uri, project_id):
+        """
+        Inserts DB entry of a string-unit definition into database table and returns ID of the translation
+
+        :param string: the string which translation it is
+        :param vocabulary: vocabulary of the unit definition
+        :param uri: unique identifier of the term within specified vocabulary
+        :param project_id: ID of project to which the translation belongs
+        :returns: ID of the newly created translation DB entry
+        """
+        thecursor = self.db_connection.cursor(dictionary=True)
+        query = f"INSERT INTO {self.unitsVocabularyTableName} (`string`, `vocabulary`, `uri`, `project_id`) " \
+              f"VALUES ('{string}', '{vocabulary}', '{uri}', {project_id});"
+        thecursor.execute(query)
+        self.db_connection.commit()
+        # get the last inserted ID
+        thecursor.execute("SELECT LAST_INSERT_ID()")
+        new_id = thecursor.fetchone()['LAST_INSERT_ID()']
+        thecursor.close()
+
+        return new_id
 
     def updateDatasetRecord(self, dataset):
 
         thecursor = self.db_connection.cursor()
-        idListString =  "|".join([str(cid) for cid in dataset.getContainerIDsList()])
-        arglist = {"name": dataset.name, "project_id": dataset.project.id, "container_ids": idListString}
 
-        # update properties if the container already exists
-        if self.containerRecordExists(dataset.name, dataset.project.id):
-            query = f"UPDATE {self.datasetsTableName} SET "
-            query += ", ".join([f"`{key}` = %s" for key in arglist.keys()])
-            query += " WHERE `id_local` = %s AND project_id = %s"
+        # update properties if the dataset record already exists
+        dataset_glob_id = self.getDatasetGlobalID(dataset)
+        if dataset_glob_id is not None:
+            query = f"UPDATE {self.datasetsTableName} SET `name` = '{dataset.name}' "
+            query += f"WHERE `id` = {dataset_glob_id}"
 
-            values = list(arglist.values())
-            values.extend([dataset.id, dataset.project.id])
-
-        # insert new record if not yet in DB
+        # insert new dataset record if not yet in DB
         else:
-            arglist.update({"name": dataset.name, "project_id": dataset.project.id})
+            query = f"INSERT INTO {self.datasetsTableName} (`dataset_id`, `project_id`, `name`) "
+            query += f"VALUES ({dataset.id}, {dataset.project.id}, '{dataset.name}')"
 
-            query = f"INSERT INTO {self.datasetsTableName} ("
-            query += ", ".join([f"`{key}`" for key in arglist])
-            query += f") VALUES ("
-            query += ", ".join(["%s" for key in arglist])+")"
-
-            values = list(arglist.values())
-
-        thecursor.execute(query, values)
+        thecursor.execute(query)
         self.db_connection.commit()
+
+        # update container links
+        for container in dataset.containers:
+            # check if the link already exists
+            if not self.datasetContainerRecordExists(dataset, container):
+                query = f"INSERT INTO {self.datasetsContainersTableName} (`dataset_id`, `container_id`) "
+                query += f"VALUES ({dataset_glob_id}, {self.getContainerGlobalID(container)})"
+                thecursor.execute(query)
+                self.db_connection.commit()
+
         thecursor.close()
+        return
+
+    def deleteDatasetRecord(self, dataset):
+        dataset_glob_id = self.getDatasetGlobalID(dataset)
+        if dataset_glob_id is not None:
+            thecursor = self.db_connection.cursor()
+            query = f"DELETE FROM {self.datasetsTableName} WHERE `id` = {dataset_glob_id}"
+            thecursor.execute(query)
+            self.db_connection.commit()
         return
 
     def loadProject(self, project, cascade=True):
@@ -530,7 +869,10 @@ class MySQLConnector(DBconnector):
                 project.keepFiles = True
 
             if cascade:
+                # load the container tree
                 project.containerTree = self.loadChildContainers(project, parent_container=None)
+                # load the datasets
+                self.loadDatasetsOfProject(project)
 
         return
 
@@ -604,14 +946,15 @@ class MySQLConnector(DBconnector):
                     ## crawler assignment
                     newCont.crawler = None if container_data.get("crawler_type") is None \
                         else project.crawlerFactory.createCrawler(container_data.get("crawler_type"), newCont)
+
                     # load concepts
                     newCont.concepts = self.loadConceptsOfContainer(newCont)
+                    # load methods
+                    if hasattr(newCont, "methods"):
+                        newCont.methods = self.loadMethodsOfContainer(newCont)
                     # load units
                     if hasattr(newCont, "units"):
                         newCont.units = self.loadUnitsOfContainer(newCont)
-                    # load methods
-                    if hasattr(newCont, "methods"):
-                        newCont.units = self.loadMethodsOfContainer(newCont)
 
                     # load subcontainers
                     newCont.containers = self.loadChildContainers(project, newCont)
@@ -619,10 +962,35 @@ class MySQLConnector(DBconnector):
             thecursor.close()
         return out_container_list
 
+    def loadDatasetsOfProject(self, project):
+        thecursor = self.db_connection.cursor(dictionary=True)
+        # load datasets of project
+        query = f"SELECT `id`, `dataset_id`, `name` FROM {self.datasetsTableName} WHERE `project_id` = {project.id}"
+        thecursor.execute(query)
+        results = thecursor.fetchall()
+        if len(results) > 0:
+            # and for each of them load its containers
+            for res in results:
+                new_dataset = project.createDataset(res['name'], res['dataset_id'])
+                # find and get reference of the containers of the dataset
+                # need to join the containers table to get local ids
+                query = f"SELECT {self.containersTableName}.`id_local` as id FROM {self.containersTableName} " \
+                        f"INNER JOIN {self.datasetsContainersTableName} " \
+                        f"ON {self.datasetsContainersTableName}.`container_id` = {self.containersTableName}.`id` " \
+                        f"WHERE {self.datasetsContainersTableName}.`dataset_id` = {res['id']} "
+                thecursor.execute(query)
+                cont_res = thecursor.fetchall()
+                if len(cont_res) > 0:
+                    container_ids = []
+                    for cont in cont_res:
+                        container_ids.append(cont['id'])
+                    new_dataset.containers = project.getContainerByID(container_ids)
+        thecursor.close()
+        return
 
     def deleteProject(self, project, delete_dir=True):
         cursor = self.db_connection.cursor()
-        query = "DELETE FROM projects WHERE id = %s"
+        query = "DELETE FROM projects WHERE `id` = %s"
         cursor.execute(query, project.id)
         self.db_connection.commit()
         cursor.close()
@@ -633,18 +1001,20 @@ class MySQLConnector(DBconnector):
                 os.rmdir(project.temp_dir)
         return
 
-    def containerRecordExists(self, cont_id, project_id):
+    def datasetContainerRecordExists(self, dataset, container):
         """
-        Checks if container with provided local ID (Project scope) and Project ID already has database entry
+        Checks if datset-container link already has database entry
 
-        :param cont_id: local container ID
-        :param project_id: ID of project the container belongs to
+        :param dataset: local container ID
+        :param container: ID of project the container belongs to
         """
         thecursor = self.db_connection.cursor()
-        query = f"SELECT COUNT(*) FROM {self.containersTableName} " \
-                f"WHERE `id_local` = %s " \
-                f"AND `project_id` = %s"
-        values = [cont_id, project_id]
+        dataset_global_id = self.getDatasetGlobalID(dataset)
+        container_global_id = self.getContainerGlobalID(container)
+        query = f"SELECT COUNT(*) FROM {self.datasetsContainersTableName} " \
+                f"WHERE `dataset_id` = %s " \
+                f"AND `container_id` = %s"
+        values = [dataset_global_id, container_global_id]
         thecursor.execute(query, values)
 
         count = thecursor.fetchone()[0]
@@ -653,45 +1023,84 @@ class MySQLConnector(DBconnector):
         elif count == 1:
             return True
         else:
-            raise DatabaseEntryError(f"More then one ({count}) occurrence of a local container ID {cont_id} within a Project ID {project_id}.")
+            raise DatabaseEntryError(f"More then one ({count}) entry of link between dataset ID {dataset_global_id} and container ID {container_global_id}.")
 
-    def loadConceptsOfContainer(self, container, as_dict=False):
+    def loadConceptsOfContainer(self, container):
         """
         Collects all concept records from DB belonging to a given container
 
         :param container: the container instance
-        :param as_dict: list or URI of the concept (or whatever the concept uses as unique identifier)
         :return:
         """
         thecursor = self.db_connection.cursor(dictionary=True)
-        query = f"SELECT * FROM {self.conceptsTableName} " \
-                f"WHERE `container_id` = " \
-                f"(SELECT `id` FROM {self.containersTableName} WHERE `project_id` = %s AND `id_local` = %s)"
-        values = [container.project.id, container.id]
-        thecursor.execute(query, values)
+        query = f"SELECT `string`, `vocabulary`, `uri` FROM {self.conceptVocabularyTableName} " \
+                f"INNER JOIN {self.conceptsContainersTableName} ON {self.conceptsContainersTableName}.`translation_id` = {self.conceptVocabularyTableName}.`id` " \
+                f"INNER JOIN {self.containersTableName} ON {self.containersTableName}.`id` = {self.conceptsContainersTableName}.`container_id` " \
+                f"WHERE {self.containersTableName}.`id_local` = {container.id} " \
+                f"AND {self.containersTableName}.`project_id` = {container.project.id}"
+        thecursor.execute(query)
 
-        concepts_list = []
         concepts_dict = {}
         results = thecursor.fetchall()
         for res in results:
-            concepts_list.append({"vocabulary": res["vocabulary"], "uri": res["uri"]})
-            concepts_dict.update({res["id"]:{"vocabulary": res["vocabulary"], "uri": res["uri"]}})
-        if as_dict:
-            return concepts_dict
-        else:
-            return concepts_list
+            if res["string"] not in concepts_dict.keys():
+                # concepts_list.append("string": res["string"] "concept": {res["vocabulary"], "uri": res["uri"])
+                concepts_dict.update({res["string"]: [{"vocabulary": res["vocabulary"], "uri": res["uri"]}]})
+            else:
+                concepts_dict.get(res["string"]).append({"vocabulary": res["vocabulary"], "uri": res["uri"]})
 
-    def loadUnitsOfContainer(self, container, as_dict=False):
-        if as_dict:
-            return {}
-        else:
-            return []
+        return concepts_dict
 
-    def loadMethodsOfContainer(self, container, as_dict=False):
-        if as_dict:
-            return {}
-        else:
-            return []
+
+    def loadMethodsOfContainer(self, container):
+        """
+        Collects all method records from DB belonging to a given container
+
+        :param container: the container instance
+        :return:
+        """
+        thecursor = self.db_connection.cursor(dictionary=True)
+        query = f"SELECT `string`, `vocabulary`, `uri` FROM {self.methodsVocabularyTableName} " \
+                f"INNER JOIN {self.methodsContainersTableName} ON {self.methodsContainersTableName}.`translation_id` = {self.methodsVocabularyTableName}.`id` " \
+                f"INNER JOIN {self.containersTableName} ON {self.containersTableName}.`id` = {self.methodsContainersTableName}.`container_id` " \
+                f"WHERE {self.containersTableName}.`id_local` = {container.id} " \
+                f"AND {self.containersTableName}.`project_id` = {container.project.id}"
+        thecursor.execute(query)
+
+        methods_dict = {}
+        results = thecursor.fetchall()
+        for res in results:
+            if res["string"] not in methods_dict.keys():
+                methods_dict.update({res["string"]: [{"vocabulary": res["vocabulary"], "uri": res["uri"]}]})
+            else:
+                methods_dict.get(res["string"]).append({"vocabulary": res["vocabulary"], "uri": res["uri"]})
+
+        return methods_dict
+
+    def loadUnitsOfContainer(self, container):
+        """
+        Collects all unit records from DB belonging to a given container
+
+        :param container: the container instance
+        :return:
+        """
+        thecursor = self.db_connection.cursor(dictionary=True)
+        query = f"SELECT `string`, `vocabulary`, `uri` FROM {self.unitsVocabularyTableName} " \
+                f"INNER JOIN {self.unitsContainersTableName} ON {self.unitsContainersTableName}.`translation_id` = {self.unitsVocabularyTableName}.`id` " \
+                f"INNER JOIN {self.containersTableName} ON {self.containersTableName}.`id` = {self.unitsContainersTableName}.`container_id` " \
+                f"WHERE {self.containersTableName}.`id_local` = {container.id} " \
+                f"AND {self.containersTableName}.`project_id` = {container.project.id}"
+        thecursor.execute(query)
+
+        units_dict = {}
+        results = thecursor.fetchall()
+        for res in results:
+            if res["string"] not in units_dict.keys():
+                units_dict.update({res["string"]: [{"vocabulary": res["vocabulary"], "uri": res["uri"]}]})
+            else:
+                units_dict.get(res["string"]).append({"vocabulary": res["vocabulary"], "uri": res["uri"]})
+
+        return units_dict
 
     def getContainerGlobalID(self, container):
         """
@@ -708,37 +1117,35 @@ class MySQLConnector(DBconnector):
 
         results = thecursor.fetchall()
         if len(results) == 0:
-            return False
+            return None
         elif len(results) == 1:
             return results[0][0]
         else:
             raise DatabaseEntryError(
-                f"More then one database entry of a container with local ID {container.id}"
+                f"More then one ({len(results)}) database entry of a container with local ID {container.id}"
                 f" and project ID {container.project.id}.")
 
-    def datasetRecordExists(self, name, project_id):
+    def getDatasetGlobalID(self, dataset):
         """
         Checks if dataset with provided name and Project ID already has database entry
 
-        :param name: dataset name
-        :param project_id: ID of project the container belongs to
+        :param dataset: dataset object instance
         """
         thecursor = self.db_connection.cursor()
-        query = f"SELECT COUNT(*) FROM {self.datasetsTableName} " \
-                f"WHERE `name` = %s " \
-                f"AND `project_id` = %s"
-        values = [name, project_id]
+        query = f"SELECT `id` FROM {self.datasetsTableName} " \
+                f"WHERE `name` = %s  AND `project_id` = %s"
+        values = [dataset.name, dataset.project.id]
         thecursor.execute(query, values)
 
-        count = thecursor.fetchone()[0]
-        if count == 0:
-            return False
-        elif count == 1:
-            return True
+        results = thecursor.fetchall()
+        if len(results) == 0:
+            return None
+        elif len(results) == 1:
+            return results[0][0]
         else:
             raise DatabaseEntryError(
-                f"More then one ({count}) occurrence of dataset '{name}' within a project ID {project_id}.")
-
+                f"More then one ({len(results)}) database entry of dataset with local ID {dataset.id}"
+                f" and project ID {dataset.project_id}.")
 
     def loadSearchPatterns(self, entity):
         """
@@ -766,11 +1173,14 @@ class MySQLConnector(DBconnector):
         return None
 
 class NullConnector(DBconnector):
+    # project files dedicated direcotry
     dirname_prefix = "temp_"
+    # filename with saved project definition
     project_attr_filename = "_project.json"
+    # filename with saved containers definition
     containers_attr_filename = "_containers.json"
+    # filename with saved datasets definition
     datasets_attr_filename = "_datasets.json"
-    concepts_vocabulary_filename = "_concepts_vocabulary.json"
 
     def __init__(self, project_files_root):
         super().__init__(project_files_root)
@@ -792,10 +1202,14 @@ class NullConnector(DBconnector):
                 if os.path.isfile(os.path.join(project_dir, self.project_attr_filename)):
                     # Load the JSON file to get the project name
                     with open(os.path.join(project_dir, self.project_attr_filename), "r") as f:
-                        project_attributes = json.load(f)
-                        project_name = project_attributes.get("name",
+                        try:
+                            project_attributes = json.load(f)
+                        except json.decoder.JSONDecodeError as e:
+                            print("The project definition file doesn't have proper JSON structure.")
+                        else:
+                            project_name = project_attributes.get("name",
                                                               "Unnamed Project")  # Default to "Unnamed Project" if name is not found
-                    projects[project_id] = project_name
+                            projects[project_id] = project_name
             return projects
         return None
 
@@ -824,29 +1238,60 @@ class NullConnector(DBconnector):
         project.keepFiles = True
         # save attributes to a JSON file
         with open(os.path.join(project_temp_dir, self.project_attr_filename), "w") as f:
-            project_attr = {"name": project.name, "doi": project.getDOI(), "temp_dir": project_temp_dir,
+            project_attr = {"name": project.name, "doi": project.doi, "temp_dir": project_temp_dir,
                          "keep_files": (1 if project.keepFiles else 0)}
             json.dump(project_attr, f)
+
+        # create empty datasets file if don't exist to prevent future problems ...
+        if not os.path.isfile(os.path.join(project_temp_dir, self.datasets_attr_filename)):
+            with open(os.path.join(project_temp_dir, self.datasets_attr_filename), 'a') as f:
+                f.write("[]")
+                f.close()
 
         return project_id, project_temp_dir
 
     def updateProjectRecord(self, project, cascade=False):
-        # update project dump
+        # write project dump
         with open(os.path.join(project.temp_dir, self.project_attr_filename), "w") as f:
-            project_attr = {"name": project.name, "doi": project.getDOI(), "temp_dir": project.temp_dir,
+            project_attr = {"name": project.name, "doi": project.doi, "temp_dir": project.temp_dir,
                          "keep_files": (1 if project.keepFiles else 0)}
             json.dump(project_attr, f, ensure_ascii=False, indent=4)
 
         if cascade:
-            # update containers dump
-            with open(os.path.join(project.temp_dir, self.containers_attr_filename), "w") as f:
-                json.dump(project.getContainersSerialization(), f, ensure_ascii=False, indent=4)
-            print(f"\tcontainers saved")
+            # write containers dump
+            if len(project.containerTree) > 0:
+                with open(os.path.join(project.temp_dir, self.containers_attr_filename), "w") as f:
+                    json.dump(project.getContainersSerialization(), f, ensure_ascii=False, indent=4)
+                print(f"\tcontainers saved")
+            else:
+                print(f"\t(no containers to save)")
 
-        # update project concept vocabulary
+            # write datasets dump
+            if len(project.datasets) > 0:
+                with open(os.path.join(project.temp_dir, self.datasets_attr_filename), "w") as f:
+                    json.dump(project.getDatasetsSerialization(), f, ensure_ascii=False, indent=4)
+                print(f"\tdatasets saved")
+            else:
+                print(f"\t(no datasets to save)")
+
+        # update project vocabularies
+        # update the projects vocabulary by concepts of containers
+        project.updateConceptsVocabularyFromContents()
         with open(os.path.join(project.temp_dir, self.concepts_vocabulary_filename), "w") as f:
             json.dump(project.conceptsVocabulary, f, ensure_ascii=False, indent=4)
         print(f"\tconcepts vocabulary saved")
+
+        # update the projects vocabulary by methods of containers
+        project.updateMethodsVocabularyFromContents()
+        with open(os.path.join(project.temp_dir, self.methods_vocabulary_filename), "w") as f:
+            json.dump(project.methodsVocabulary, f, ensure_ascii=False, indent=4)
+        print(f"\tmethods vocabulary saved")
+
+        # update the projects vocabulary by units of containers
+        project.updateUnitsVocabularyFromContents()
+        with open(os.path.join(project.temp_dir, self.units_vocabulary_filename), "w") as f:
+            json.dump(project.unitsVocabulary, f, ensure_ascii=False, indent=4)
+        print(f"\tunits vocabulary saved")
 
         # update concept mapping dump
 
@@ -870,29 +1315,39 @@ class NullConnector(DBconnector):
             raise DatabaseFetchError(f"Project ID {project.id} does not exist within local temporary projects."
                  f"\nAvailable project IDs are: {', '.join([str(pid) for pid in self.getAllTempProjectIDs()])}")
 
-        # laod containers structure
+        # load containers structure
         if cascade:
+            # load containers
             containers_attr_filepath = os.path.join(project.temp_dir, self.containers_attr_filename)
             if os.path.isfile(containers_attr_filepath):
                 with open(containers_attr_filepath, "r") as f:
                     containers_serialized = json.load(f)
 
-
                     project.containerTree = self.loadChildContainers(project, containers_serialized, parent_container=None)
             else:
                 raise DatabaseFetchError(f"JSON file with stored containers info '{self.containers_attr_filename}'"
                                          f" was not found in project's directory '{project.temp_dir}'")
-        # load concepts vocabulary
-        concepts_vocabulary_path = os.path.join(project.temp_dir, self.concepts_vocabulary_filename)
-        if os.path.isfile(concepts_vocabulary_path) and os.path.getsize(concepts_vocabulary_path) > 0:
-            with open(concepts_vocabulary_path, "r") as f:
-                project.conceptsVocabulary = json.load(f)
-        else:
-            # nothing really needs to happen here as the vocabulary is in memory until the updateDBrecord is called
-            # and then it's rewritten everytime anyway
-            # raise DatabaseFetchError(f"JSON file with project's concepts vocabulary '{self.concepts_vocabulary_filename}'"
-            #                          f" was not found in project's directory '{project.temp_dir}'")
-            pass
+
+            # load datasets
+            datasets_attr_filepath = os.path.join(project.temp_dir, self.datasets_attr_filename)
+            if os.path.isfile(datasets_attr_filepath):
+                with open(datasets_attr_filepath, "r") as f:
+                    datasets_serialized = json.load(f)
+                    project.datasets = self.loadDatasets(project, datasets_serialized)
+            else:
+                raise DatabaseFetchError(f"JSON file with stored dataset info '{self.datasets_attr_filename}'"
+                                         f" was not found in project's directory '{project.temp_dir}'")
+        # # load concepts vocabulary
+        # concepts_vocabulary_path = os.path.join(project.temp_dir, self.concepts_vocabulary_filename)
+        # if os.path.isfile(concepts_vocabulary_path) and os.path.getsize(concepts_vocabulary_path) > 0:
+        #     with open(concepts_vocabulary_path, "r") as f:
+        #         project.conceptsVocabulary = json.load(f)
+        # else:
+        #     # nothing really needs to happen here as the vocabulary is in memory until the updateDBrecord is called
+        #     # and then it's rewritten everytime anyway
+        #     # raise DatabaseFetchError(f"JSON file with project's concepts vocabulary '{self.concepts_vocabulary_filename}'"
+        #     #                          f" was not found in project's directory '{project.temp_dir}'")
+        #     pass
         return project
 
     def loadChildContainers(self, project, containers_serialized, parent_container=None):
@@ -959,12 +1414,15 @@ class NullConnector(DBconnector):
                     # load concepts
                     if container_data.get("concepts"):
                         newCont.concepts = container_data.get("concepts")
-                    # load units
-                    if hasattr(newCont, "units") and container_data.get("units"):
-                        newCont.units = container_data.get("units")
+                        print(f"newCont.concepts: {newCont.concepts}")
                     # load methods
-                    if hasattr(newCont, "methods") and container_data.get("methods"):
+                    if container_data.get("methods"):
                         newCont.methods = container_data.get("methods")
+
+                    # load units
+                    if container_data.get("units"):
+                        newCont.units = container_data.get("units")
+
 
                     # print(str(newCont))
 
@@ -974,6 +1432,14 @@ class NullConnector(DBconnector):
                             newCont.containers = self.loadChildContainers(project, container_data.get("containers"), newCont)
 
         return out_container_list
+
+    def loadDatasets(self, project, datasets_serialized):
+        datasets = []
+        for dataset_record in datasets_serialized:
+            new_dataset = project.createDataset(dataset_record['name'], dataset_record['id'])
+            new_dataset.containers = project.getContainerByID(dataset_record['container IDs'])
+            datasets.append(new_dataset)
+        return datasets
 
     def deleteProject(self, project, delete_dir):
         if os.path.exists(project.temp_dir):

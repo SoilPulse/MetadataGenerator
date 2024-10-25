@@ -1,0 +1,20 @@
+[
+    {
+      "string": "This is a testing string method 1",
+      "method": [
+        {"vocabulary": "methodic", "uri": "http://some_method_uri"}
+      ]
+    },
+    {
+      "string": "Yet another method to test",
+      "method": [
+        {"vocabulary": "methodic", "uri": "http://another_method_uri"}
+      ]
+    },
+    {
+      "string": "And one more method with some crazy stuff",
+      "method": [
+        {"vocabulary": "methodic", "uri": "http://one_more_method_uri"}
+      ]
+    }
+  ]

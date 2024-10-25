@@ -58,7 +58,7 @@ def detect_delimiters(text):
     csv_file = io.StringIO(text)
     dialect = csv.Sniffer().sniff(csv_file.read(2048))  # Read a portion of the text for analysis
 
-    return dialect.delimiter, dialect.lineterminator
+    return str(dialect.delimiter), str(dialect.lineterminator)
 
 def is_file_archive(path):
     if os.path.isfile(path):
@@ -674,7 +674,6 @@ class CSVcrawler(Crawler):
     def __init__(self, container):
         super().__init__(container)
 
-
     def validate(self):
         return validate(self.container.path)
 
@@ -722,6 +721,32 @@ class CSVcrawler(Crawler):
             print(f"Container {self.container.id} was already crawled.")
             return None
 
+    def split_into_tables(self, content, cell_sep, line_sep):
+        """
+        Splits content into multiple tables based on sequences of detected cell separators and line breaks.
+        Only splits when multiple cell separators are followed by a line break. Empty cells within tables are ignored.
+
+        :param content: The raw text of the CSV file.
+        :param cell_sep: The detected cell separator (e.g., ';', ',').
+        :param line_sep: The detected line separator (e.g., '\n').
+        :return: A list of coherent table segments.
+        """
+        # First, split by multiple newlines
+        table_separator = r'\n{2,}'
+        tables = re.split(table_separator, content)
+
+        # List to hold valid table segments
+        valid_tables = []
+
+        for table in tables:
+            # Split each table segment by the cell separator and filter out empty lines
+            rows = [row.strip() for row in table.split('\n') if row.strip()]
+
+            # Check if the segment is valid
+            if rows and not all(cell_sep in row for row in rows):
+                valid_tables.append(table.strip())
+
+        return valid_tables
 
     def find_tables(self, min_lines=3, report = True):
         """
@@ -739,71 +764,140 @@ class CSVcrawler(Crawler):
             try:
                 content = file.read()
             except UnicodeDecodeError as e:
-                print(f"container '{self.container.name}' couldn't be analyzed due to problems with encoding.")
-                print(self.container.path)
+                print(f"Container '{self.container.name}' couldn't be analyzed due to encoding issues.")
                 return []
-            else:
-                # try detecting delimiters from file content
-                try:
-                    cell_sep, line_sep = detect_delimiters(content)
-                except:
-                    return []
-                print(f"\tcell delimiter: '{cell_sep}'") if report else None
 
-                # pattern to match CSV-like tables without knowing delimiters
-                pattern = r'(?:(?<!\w)[^\w\s]*(?:\w+\W*(?:\w+\W*)+\w+|\w+(?:\W+\w+)+\w+)\b(?:\W|\Z))'
-                # pattern = r'(?:(?<!\w)[^\w\s]*(?:\w+\W*(?:\w+\W*)+\w+|\w+(?:\W+\w+)+\w+)\b(?:\W|$))(?!\n\s*$)'
-                # pattern = r'(?:(?<!\w)[^\w\s]*(?:\w+\W*(?:\w+\W*)+\w+|\w+(?:\W+\w+)+\w+)\b(?:\W|$))(?=\n|\Z)'
+        # try detecting delimiters from file content
+        try:
+            cell_sep, line_sep = detect_delimiters(content)
+        except:
+            print(f"Searching for tables was interrupted due to exception in delimiters detection.")
+            return []
+        else:
+            print(f"\tCell delimiter: '{cell_sep}'") if report else None
 
-                # find all matches and their start character and length
-                matches = re.finditer(pattern, content)
-                # filter matches based on structure (e.g., number of lines) and store start character and length
+            # Split content into multiple table-like structures
+            table_segments = self.split_into_tables(content, cell_sep, line_sep)
 
-                # the file is directly converted to TableResource if only one table is found in the file
-                num_matches = sum(1 for _ in matches)
-                if num_matches == 1:
-                    try:
-                        if cell_sep is not None:
-                            control = formats.CsvControl(
-                                delimiter=cell_sep,  # Single space as the delimiter
-                                # quote_char='"',  # Fields are wrapped in double quotes
-                                skip_initial_space=True  # Ignore multiple spaces between fields
-                            )
+        i = 1
+        for segment in table_segments:
+            print(f"found table segment {i}:\n{segment}")
+            i += 1
+        return []
 
-                            fl = TableResource(self.container.path, format='csv', encoding=encoding, control=control)
+        # Define a pattern to capture tables separated by empty lines or specific patterns (e.g., ;;)
+        pattern = r'(?:(?<!\w)[^\w\s]*(?:\w+\W*(?:\w+\W*)+\w+|\w+(?:\W+\w+)+\w+)\b(?:\W|$))'
+        matches = re.finditer(pattern, content)
 
+        tables = []
 
-                        else:
-                            fl = TableResource(self.container.path, format='csv', encoding=encoding)
-                        # infer the columns scheme for frictionless resource
-                        fl.infer()
-                        pd = pandas.read_csv(self.container.path, encoding=encoding, on_bad_lines='skip')
-                        return [[fl, pd]]
-                    except pandas.errors.ParserError as e:
-                        print(
-                            f"Table '{self.container.path}' couldn't be parsed to pands dataframe")
-                        return []
-                else:
-                    tables = []
-                    m = 0
-                    for match in matches:
-                        start_char = match.start()
-                        length = match.end() - match.start()
+        i = 1
+        for match in matches:
+            print(f"match #{i}")
+            start_char = match.start()
+            end_char = match.end()
+            segment = content[start_char:end_char]
+            print(f"segment:\n{segment}")
+            # Check if the segment contains enough lines to be considered a table
+            lines = segment.strip().split(line_sep)
+            if len([line for line in lines if line.strip()]) < min_lines:
+                continue
 
-                        # split the content based on provided index pairs
-                        segment = content[match.start():match.end()]
+            # Create a TableResource and pandas DataFrame for each table segment
+            try:
+                control = formats.CsvControl(delimiter=cell_sep, skip_initial_space=True)
+                resource = TableResource(data=StringIO(segment), format='csv', control=control)
+                resource.infer()
 
-                        # create new TableResource from the data segment
-                        resource = TableResource(data=StringIO(segment), format='csv')
-                        # create new DataFrame  from the data segment
-                        try:
-                            dataframe = pandas.read_csv(StringIO(segment), encoding=encoding, on_bad_lines='skip')
-                        except pandas.errors.ParserError as e:
-                            print(f"Error while trying to create pandas frame from table {m} of {num_matches} in '{self.container.path}'")
-                            print(e.message)
-                        tables.append([resource, dataframe])
+                dataframe = pd.read_csv(StringIO(segment), delimiter=cell_sep, encoding=encoding,
+                                        on_bad_lines='skip')
 
-                    return tables
+                tables.append([resource, dataframe])
+
+            except pd.errors.ParserError as e:
+                print(f"Error parsing table starting at character {start_char}: {e}")
+
+        return tables
+        # """
+        # Searches for coherent tables by regular expression.
+        # Returns frictionless TableResource objects of all tables found in the file.
+        #
+        # :param min_lines: number of consistent lines needed for table identification
+        # :return: list of TableResource objects (even for a single table)
+        # """
+        #
+        # encoding = self.container.encoding
+        #
+        # # read the file into a text
+        # with open(self.container.path, 'r', encoding=encoding) as file:
+        #     try:
+        #         content = file.read()
+        #     except UnicodeDecodeError as e:
+        #         print(f"container '{self.container.name}' couldn't be analyzed due to problems with encoding.")
+        #         print(self.container.path)
+        #         return []
+        #     else:
+        #         # try detecting delimiters from file content
+        #         try:
+        #             cell_sep, line_sep = detect_delimiters(content)
+        #         except:
+        #             return []
+        #         print(f"\tcell delimiter: '{cell_sep}'") if report else None
+        #
+        #         # pattern to match CSV-like tables without knowing delimiters
+        #         pattern = r'(?:(?<!\w)[^\w\s]*(?:\w+\W*(?:\w+\W*)+\w+|\w+(?:\W+\w+)+\w+)\b(?:\W|\Z))'
+        #         # pattern = r'(?:(?<!\w)[^\w\s]*(?:\w+\W*(?:\w+\W*)+\w+|\w+(?:\W+\w+)+\w+)\b(?:\W|$))(?!\n\s*$)'
+        #         # pattern = r'(?:(?<!\w)[^\w\s]*(?:\w+\W*(?:\w+\W*)+\w+|\w+(?:\W+\w+)+\w+)\b(?:\W|$))(?=\n|\Z)'
+        #
+        #         # find all matches and their start character and length
+        #         matches = re.finditer(pattern, content)
+        #         # filter matches based on structure (e.g., number of lines) and store start character and length
+        #
+        #         # the file is directly converted to TableResource if only one table is found in the file
+        #         num_matches = sum(1 for _ in matches)
+        #         if num_matches == 1:
+        #             try:
+        #                 if cell_sep is not None:
+        #                     control = formats.CsvControl(
+        #                         delimiter=cell_sep,  # Single space as the delimiter
+        #                         # quote_char='"',  # Fields are wrapped in double quotes
+        #                         skip_initial_space=True  # Ignore multiple spaces between fields
+        #                     )
+        #
+        #                     fl = TableResource(self.container.path, format='csv', encoding=encoding, control=control)
+        #
+        #
+        #                 else:
+        #                     fl = TableResource(self.container.path, format='csv', encoding=encoding)
+        #                 # infer the columns scheme for frictionless resource
+        #                 fl.infer()
+        #                 pd = pandas.read_csv(self.container.path, encoding=encoding, on_bad_lines='skip')
+        #                 return [[fl, pd]]
+        #             except pandas.errors.ParserError as e:
+        #                 print(
+        #                     f"Table '{self.container.path}' couldn't be parsed to pandas dataframe")
+        #                 return []
+        #         else:
+        #             tables = []
+        #             m = 0
+        #             for match in matches:
+        #                 start_char = match.start()
+        #                 length = match.end() - match.start()
+        #
+        #                 # split the content based on provided index pairs
+        #                 segment = content[match.start():match.end()]
+        #
+        #                 # create new TableResource from the data segment
+        #                 resource = TableResource(data=StringIO(segment), format='csv')
+        #                 # create new DataFrame  from the data segment
+        #                 try:
+        #                     dataframe = pandas.read_csv(StringIO(segment), encoding=encoding, on_bad_lines='skip')
+        #                 except pandas.errors.ParserError as e:
+        #                     print(f"Error while trying to create pandas frame from table {m} of {num_matches} in '{self.container.path}'")
+        #                     print(e.message)
+        #                 tables.append([resource, dataframe])
+        #
+        #             return tables
 CrawlerFactory.registerCrawlerType(CSVcrawler)
 # FileSystemCrawlerFactory.registerFileType(CSVcrawler)
 
