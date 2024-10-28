@@ -63,13 +63,38 @@ def load_sp_datapackage(project):
             raise ("Failed to load project.")
 
 
-def get_dataset_concepts(dataset):
+def _get_agrovoc_dump():
+    import pickle
+
+    with open("agrov.dump", 'rb') as handle:
+        ret = pickle.load(handle)
+    optio = {r["concept"]["value"]:
+             r["label"]["value"] for r in ret["results"]["bindings"]}
+    return optio
+
+optio = _get_agrovoc_dump()
+
+def get_dataset_concepts(dataset, vocab = None):
     concepts = []
     for z in dataset.resources:
         for x in z.schema.fields:
             y = x.to_descriptor()
             if 'concept' in y:
-                concepts += [y['concept']]
+                if isinstance(y['concept'], list):
+                    concepts += [y['concept']]
+                else:
+                    concepts += [[y['concept']]]
+    if vocab:
+        labels = []
+        for z in concepts:
+            z_label = []
+            for y in z:
+                if 'agrovoc' in y:
+                    z_label += [vocab[y]]
+                else:
+                    z_label += [y]
+            labels += [z_label]
+        concepts = labels
     return(concepts)
 
 

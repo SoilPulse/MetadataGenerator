@@ -49,8 +49,8 @@
             "name": "plotlength",
             "type": "integer",
             "concept": [
-              "plot design http://aims.fao.org/aos/agrovoc/c_36811",
-              "length http://aims.fao.org/aos/agrovoc/c_4260"
+              "http://aims.fao.org/aos/agrovoc/c_36811",
+              "http://aims.fao.org/aos/agrovoc/c_4260"
             ],
             "unit": "m",
             "method": "own:SetByDesign"
@@ -59,8 +59,8 @@
             "name": "plotwidth",
             "type": "integer",
             "concept": [
-              "plot design http://aims.fao.org/aos/agrovoc/c_36811",
-              "width http://aims.fao.org/aos/agrovoc/c_8387"
+              "http://aims.fao.org/aos/agrovoc/c_36811",
+              "http://aims.fao.org/aos/agrovoc/c_8387"
             ],
             "unit": "m",
             "method": "own:SetByDesign"
@@ -383,8 +383,8 @@
             "name": "plotwidth",
             "type": "integer",
             "concept": [
-              "plot design http://aims.fao.org/aos/agrovoc/c_36811",
-              "width http://aims.fao.org/aos/agrovoc/c_8387"
+              "http://aims.fao.org/aos/agrovoc/c_36811",
+              "http://aims.fao.org/aos/agrovoc/c_8387"
             ],
             "unit": "m",
             "method": "own:SetByDesign"
@@ -393,8 +393,8 @@
             "name": "plotlength",
             "type": "integer",
             "concept": [
-              "plot design http://aims.fao.org/aos/agrovoc/c_36811",
-              "length http://aims.fao.org/aos/agrovoc/c_4260"
+              "http://aims.fao.org/aos/agrovoc/c_36811",
+              "http://aims.fao.org/aos/agrovoc/c_4260"
             ],
             "unit": "m",
             "method": "own:SetByDesign"
@@ -535,8 +535,8 @@
             "name": "plotwidth",
             "type": "integer",
             "concept": [
-              "plot design http://aims.fao.org/aos/agrovoc/c_36811",
-              "width http://aims.fao.org/aos/agrovoc/c_8387"
+              "http://aims.fao.org/aos/agrovoc/c_36811",
+              "http://aims.fao.org/aos/agrovoc/c_8387"
             ],
             "unit": "m",
             "method": "own:SetByDesign"
@@ -545,8 +545,8 @@
             "name": "plotlength",
             "type": "integer",
             "concept": [
-              "plot design http://aims.fao.org/aos/agrovoc/c_36811",
-              "length http://aims.fao.org/aos/agrovoc/c_4260"
+              "http://aims.fao.org/aos/agrovoc/c_36811",
+              "http://aims.fao.org/aos/agrovoc/c_4260"
             ],
             "unit": "m",
             "method": "own:SetByDesign"
