@@ -231,19 +231,18 @@ concepts = {'Site_number': '',
 
 # parse concepts to frictionless
 for x in ries.resources:
-    for field in x.schema.fields:
-        x = transform(x,
-                      steps = [
-                          steps.field_update(name = field.name,
-                                             descriptor = {
-                                                 'concept': concepts[field.name]
-                                                 }
-                                             )
-                          ]
-                      )
+    x = transform(x,
+              steps = [
+                      steps.field_update(name = field.name,
+                                         descriptor = {
+                                             'concept': concepts[field.name]
+                                             }
+                                         )
+                       for field in x.schema.fields
+                      ]
+                  )
 
 ries.validate()
-
 
 
 
