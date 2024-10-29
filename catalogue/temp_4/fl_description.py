@@ -72,6 +72,40 @@ x = transform(x,
                                     )
                  ]
              )
-ries.resources[2].validate()
+
+# set primary and foreign keys
+ries.resources[0].schema.primary_key = ["Site_number"]
+ries.resources[1].schema.primary_key = ["Site_number", "Experiment_number"]
+ries.resources[1].schema.foreign_keys = [
+    {'fields': ['Site_number'],
+     'reference': {
+         "resource": ries.resources[0].name,
+         "fields": [
+            "Site_number"
+            ]
+         }
+     }
+     ]
+ries.resources[2].schema.primary_key = ["Site_number", "Date_time"]
+ries.resources[2].schema.foreign_keys = [
+    {'fields': ['Site_number'],
+     'reference': {
+         "resource": ries.resources[0].name,
+         "fields": [
+            "Site_number"
+            ]
+         }
+     }#, # the following foreign key is correct in principal, but is invalid, as not all timesteps belong to an experiment
+#     {'fields': ['Site_number', 'Experiment_number'],
+#      'reference': {
+#          "resource": ries.resources[1].name,
+#          "fields": [
+#             "Site_number",
+#             'Experiment_number'
+#             ]
+#          }
+#      }
+     ]
+
 
 ries.to_json("catalogue\\temp_4\\primary_package.json")
