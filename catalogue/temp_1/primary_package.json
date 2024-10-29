@@ -194,7 +194,7 @@
           {
             "name": "cumq",
             "type": "number",
-            "concept": "http://aims.fao.org/aos/agrovoc/c_6697",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_c9214ebe",
             "unit": "",
             "method": "own:SumOfRunoffTimeseries"
           },
@@ -305,7 +305,7 @@
           {
             "name": "cumq",
             "type": "number",
-            "concept": "http://aims.fao.org/aos/agrovoc/c_6697",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_c9214ebe",
             "unit": "",
             "method": "own:SumOfRunoffTimeseries"
           },
