@@ -11,18 +11,19 @@ import json
 from pathlib import Path
 from frictionless import steps, transform, Detector
 
-
-#detector = Detector(field_missing_values=["", "NA"])
-#ries = Package("catalogue\\temp_4\\example_Ries.json", detector = detector)
+# load prepared package with defined comment rows of the three tables, but no schema
 ries = Package("catalogue\\temp_4\\example_Ries.json")
 
+# infer schema
 ries.infer()
 
+# parse metadata in files to frictionless
 for x in ries.resources:
-#if True:
-#    x = ries.resources[1]
+    # open files from unzipped files
     with open("catalogue\\temp_4\\"+x.path.replace(".zip","")+"/"+x.innerpath) as f:
         for z in f.readlines():
+            # comment rows starting with "# - " hold metadata on data columns
+            # units are in "[]"
             if "#	- " in z:
 #                print(z)
                 z = z.replace("#	- ", "")
