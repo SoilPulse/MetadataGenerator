@@ -15,7 +15,7 @@ import shutil
 
 import pandas.errors
 from frictionless import validate, formats
-from frictionless.resources import TableResource, Dialect
+from frictionless.resources import Resource, TableResource, Dialect
 from io import StringIO
 # import magic
 
@@ -205,8 +205,6 @@ class FileSystemContainer(ContainerHandler):
             cont.listOwnFiles(collection)
         return collection
 
-    def getCrawled(self):
-        pass
 
 ContainerHandlerFactory.registerContainerType(FileSystemContainer, FileSystemContainer.containerType)
 EntityKeywordsDB.registerKeywordsDB(FileSystemContainer.containerType, FileSystemContainer.keywordsDBname)
@@ -241,10 +239,11 @@ class SingleFileContainer(FileSystemContainer):
         else:
             self.encoding = kwargs.get("encoding")
 
-        # get crawler - use loaded type if any or pass the decision to general FileSystemCrawler
+        # get crawler - use loaded type if any
         if kwargs.get("crawler_type") is not None:
             # print(f"crawler_type: {kwargs.get('crawler_type')}")
             ctype = kwargs.get("crawler_type")
+        # or pass the decision to general FileSystemCrawler
         else:
             ctype = 'filesystem'
         try:
@@ -267,31 +266,33 @@ class SingleFileContainer(FileSystemContainer):
         # self.mimeType = magic.from_file(self.path)
         return
 
-    def getAnalyzed(self):
-        if self.crawler:
-            tables = self.crawler.analyze()
-            if tables:
-                # print(f"tables:\n{tables}")
-                # print("\n\n")
-                self.containers = tables
-            # print(f"table cont {self.id} containers: {self.containers}")
+    def getAnalyzed(self, cascade, force=False):
+        if super().getAnalyzed(cascade, force):
+            if self.crawler:
+                tables = self.crawler.analyze()
+                if tables:
+                    # print(f"tables:\n{tables}")
+                    # print("\n\n")
+                    self.containers = tables
+                # print(f"table cont {self.id} containers: {self.containers}")
 
-        for container in self.containers:
-            container.getAnalyzed()
+            for container in self.containers:
+                container.getAnalyzed(cascade, force)
+            self.wasAnalyzed = True
 
-    def getCrawled(self, cascade=True):
+    def getCrawled(self, cascade=True, force=False):
         """
         Executes the routines for scanning, recognizing and extracting metadata (and maybe data)
         """
-        if self.crawler:
-            tables = self.crawler.crawl()
-            if tables:
-                # print(f"tables:\n{tables}")
-                # print("\n\n")
-                pass
-        if cascade:
-            for container in self.containers:
-                container.getCrawled(cascade)
+        if super().getCrawled(cascade, force):
+            if self.crawler:
+                self.crawler.crawl()
+
+            if cascade:
+                for container in self.containers:
+                    container.getCrawled(cascade, force)
+
+            self.wasCrawled = True
         return
 
 ContainerHandlerFactory.registerContainerType(SingleFileContainer, SingleFileContainer.containerType)
@@ -311,12 +312,20 @@ class DirectoryContainer(FileSystemContainer):
         if cascade:
             self.containers = self.createTree(self.path, project_manager)
 
-    def getCrawled(self):
+    def getCrawled(self, cascade, force=False):
         """
         Invokes getCrawled on all of his containers
         """
-        for container in self.containers:
-            container.getCrawled()
+        super().getCrawled(cascade, force)
+
+        if cascade:
+            for container in self.containers:
+                container.getCrawled(cascade, force)
+
+        self.wasCrawled = True
+
+        return
+
 
 ContainerHandlerFactory.registerContainerType(DirectoryContainer, DirectoryContainer.containerType)
 
@@ -674,13 +683,44 @@ class CSVcrawler(Crawler):
     def __init__(self, container):
         super().__init__(container)
 
+
     def validate(self):
         return validate(self.container.path)
 
+    def get_frictionless_resource(self):
+        print(f"\ncreating CSV resource for '{self.container.path}' of container #{self.container.id},"
+              f" encoding '{self.container.encoding}'")
+
+        control = formats.CsvControl(delimiter=self.cell_sep, skip_initial_space=True)
+        resource = Resource(path=self.container.path, format='csv', control=control, encoding=self.container.encoding)
+        resource.infer()
+
+
+        print(f"container #{self.container.id}:\n{resource}")
+        return resource
+
+    def find_delimiters(self):
+        # read the file into a text
+        with open(self.container.path, 'r', encoding=self.container.encoding) as file:
+            try:
+                # read only first x characters to avoid reading big files
+                content = file.read(2000)
+            except UnicodeDecodeError as e:
+                print(f"Content of container '{self.container.name}' couldn't be analyzed due to encoding issues.")
+            else:
+                try:
+                    self.cell_sep, self.line_sep = detect_delimiters(content)
+                except:
+                    print(f"Searching for delimiters in container {self.container.name} failed.")
+                    self.cell_sep = None
+                    self.line_sep = None
+
     def analyze(self, report=True):
-        print(
-            f"\nanalyzing CSV '{self.container.path}' of container #{self.container.id}, encoding '{self.container.encoding}'") if report else None
-        #
+        print(f"\nanalyzing CSV '{self.container.path}' of container #{self.container.id}, "
+            f"encoding '{self.container.encoding}'") if report else None
+        # find delimiters and encoding
+        self.find_delimiters()
+
         tables = self.find_tables(3, report)
         if len(tables) == 0:
             print(f"\tfound no understandable tables") if report else None
@@ -696,7 +736,7 @@ class CSVcrawler(Crawler):
                 cont_args = {"name": f"table_{i}",
                              "fl_resource": tab[0],
                              "pd_dataframe": tab[1]}
-                # create new container from found TableResources
+                # create new container from found TableContainer
                 newCont = self.container.project.containerFactory.createHandler("table", self.container.project,
                                                                                 self.container, **cont_args)
                 table_conts.append(newCont)
@@ -707,46 +747,41 @@ class CSVcrawler(Crawler):
             self.container.isAnalyzed = True
             return table_conts
 
-    def crawl(self, forceRecrawl=False, report=True):
+    def crawl(self, report=True):
         """
-        Do the crawl - go through the file and detect defined elements
+        Do the crawl - go through the container and detect defined elements
 
         :return:
         """
-        if not self.container.wasCrawled or (not self.container.wasCrawled and forceRecrawl):
-            print(f"crawling CSV '{self.container.path}' of container #{self.container.id}, encoding '{self.container.encoding}'") if report else None
-            return {}
+        print(f"crawling CSV '{self.container.path}' of container #{self.container.id}, encoding '{self.container.encoding}'") if report else None
+        # search for string to concept translations
+        self.container.concepts = self.find_translations(self.container.project.globalConceptsVocabulary)
+        print(f"concept translations:\n{self.container.concepts}")
+        # search for string to method translations
+        self.container.methods = self.find_translations(self.container.project.globalMethodsVocabulary)
+        # search for string to unit translations
+        self.container.units = self.find_translations(self.container.project.globalUnitsVocabulary)
 
-        else:
-            print(f"Container {self.container.id} was already crawled.")
-            return None
+        return
 
-    def split_into_tables(self, content, cell_sep, line_sep):
+    def split_into_chunks(self, content, cell_sep, line_sep="\n"):
         """
-        Splits content into multiple tables based on sequences of detected cell separators and line breaks.
-        Only splits when multiple cell separators are followed by a line break. Empty cells within tables are ignored.
+        Splits the content into chunks where each chunk is separated by:
+        - At least one newline, followed by either:
+          - Another newline, or
+          - Any sequence of blank characters, cell delimiter characters, and newlines.
 
         :param content: The raw text of the CSV file.
-        :param cell_sep: The detected cell separator (e.g., ';', ',').
-        :param line_sep: The detected line separator (e.g., '\n').
-        :return: A list of coherent table segments.
+        :param cell_delimiters: A string containing cell delimiter characters (e.g., ';,').
+        :return: A list of content chunks.
         """
-        # First, split by multiple newlines
-        table_separator = r'\n{2,}'
-        tables = re.split(table_separator, content)
+        # Construct a regex pattern based on specified delimiters
+        pattern = rf'{line_sep}(?:{line_sep}|[{re.escape(cell_sep)}\s]*{line_sep})+'
+        # Split the content based on the pattern
+        chunks = re.split(pattern, content)
 
-        # List to hold valid table segments
-        valid_tables = []
-
-        for table in tables:
-            # Split each table segment by the cell separator and filter out empty lines
-            rows = [row.strip() for row in table.split('\n') if row.strip()]
-
-            # Check if the segment is valid
-            if rows and not all(cell_sep in row for row in rows):
-                valid_tables.append(table.strip())
-
-        return valid_tables
+        # Remove empty chunks and strip extra spaces/newlines from each chunk
+        return [chunk.strip() for chunk in chunks if chunk.strip()]
 
     def find_tables(self, min_lines=3, report = True):
         """
@@ -757,65 +792,37 @@ class CSVcrawler(Crawler):
         :return: list of TableResource objects (even for a single table)
         """
 
-        encoding = self.container.encoding
-
         # read the file into a text
-        with open(self.container.path, 'r', encoding=encoding) as file:
+        with open(self.container.path, 'r', encoding=self.container.encoding) as file:
             try:
                 content = file.read()
             except UnicodeDecodeError as e:
                 print(f"Container '{self.container.name}' couldn't be analyzed due to encoding issues.")
                 return []
 
-        # try detecting delimiters from file content
-        try:
-            cell_sep, line_sep = detect_delimiters(content)
-        except:
-            print(f"Searching for tables was interrupted due to exception in delimiters detection.")
-            return []
-        else:
-            print(f"\tCell delimiter: '{cell_sep}'") if report else None
+        # Split content into multiple table-like structures
+        table_segments = self.split_into_chunks(content, self.cell_sep, self.line_sep)
 
-            # Split content into multiple table-like structures
-            table_segments = self.split_into_tables(content, cell_sep, line_sep)
-
+        tables = []
         i = 1
         for segment in table_segments:
             print(f"found table segment {i}:\n{segment}")
             i += 1
-        return []
-
-        # Define a pattern to capture tables separated by empty lines or specific patterns (e.g., ;;)
-        pattern = r'(?:(?<!\w)[^\w\s]*(?:\w+\W*(?:\w+\W*)+\w+|\w+(?:\W+\w+)+\w+)\b(?:\W|$))'
-        matches = re.finditer(pattern, content)
-
-        tables = []
-
-        i = 1
-        for match in matches:
-            print(f"match #{i}")
-            start_char = match.start()
-            end_char = match.end()
-            segment = content[start_char:end_char]
-            print(f"segment:\n{segment}")
-            # Check if the segment contains enough lines to be considered a table
-            lines = segment.strip().split(line_sep)
-            if len([line for line in lines if line.strip()]) < min_lines:
-                continue
 
             # Create a TableResource and pandas DataFrame for each table segment
             try:
-                control = formats.CsvControl(delimiter=cell_sep, skip_initial_space=True)
+                control = formats.CsvControl(delimiter=self.cell_sep, skip_initial_space=True)
                 resource = TableResource(data=StringIO(segment), format='csv', control=control)
-                resource.infer()
+                # resource.infer()
 
-                dataframe = pd.read_csv(StringIO(segment), delimiter=cell_sep, encoding=encoding,
+                dataframe = pd.read_csv(StringIO(segment),
+                                        delimiter=self.cell_sep,
+                                        encoding=self.container.encoding,
                                         on_bad_lines='skip')
-
                 tables.append([resource, dataframe])
 
             except pd.errors.ParserError as e:
-                print(f"Error parsing table starting at character {start_char}: {e}")
+                print(f"Error parsing table to pandas dataframe: {e}")
 
         return tables
         # """

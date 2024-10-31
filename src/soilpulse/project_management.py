@@ -7,6 +7,7 @@ import sys
 import shutil
 import json
 from pathlib import Path
+from frictionless import Package, Resource
 
 from .metadata_scheme import MetadataStructureMap
 from .db_access import DBconnector
@@ -68,9 +69,10 @@ class ProjectManager:
         # global units vocabulary
         self.globalUnitsVocabulary = self.loadUnitsVocabularyFromFile(self.dbconnection.global_units_vocabulary)
 
-
         # dedicated directory for file saving
         self.temp_dir = None
+        # dedicated subdirectory for datasets files
+        self.datasets_dir = None
         # for now - some kind of licences definition and appropriate actions should be implemented
         self.keepFiles = False
 
@@ -85,7 +87,7 @@ class ProjectManager:
         # if ID is None establish a new project on the storage
         if kwargs.get("id") is None:
             try:
-                self.id, self.temp_dir = self.dbconnection.establishProjectRecord(user_id, self)
+                self.id, self.temp_dir, self.datasets_dir = self.dbconnection.establishProjectRecord(user_id, self)
             except DatabaseEntryError as e:
                 print("Failed to establish new Project record in the SoilPulse database.")
                 raise
@@ -581,30 +583,86 @@ class ProjectManager:
         # create the dataset and assign ID
         new_dataset = Dataset(name, self)
         new_dataset.id = id
+        # create dedicated directory for the dataset
+        new_dataset.createDedicatedDirectory()
         # append the dataset to the list of the project
         self.datasets.append(new_dataset)
 
         return new_dataset
 
-    def removeDataset(self, item):
+    def removeDataset(self, dataset):
         """
-        Removes Dataset object instance from dataset list
+        Removes Dataset object instance from project's datasets
+
+        :param dataset: Dataset handler object instance
         """
 
-        try:
-            did = self.datasets[item].id
-            dname = self.datasets[item].name
-            # remove record from DB
-            self.dbconnection.deleteDatasetRecord(self.datasets[item])
-            # remove dataset from the list
-            del self.datasets[item]
+        # find index of the dataset in projects datasets
+        index = None
+        i = 0
+        for ds in self.datasets:
+            if ds.id == dataset.id:
+                index = i
+                # break the loop when found
+                break
+            i += 1
 
-        except IndexError:
-            print(f"Can't remove dataset {item} - project {self.id} has only {len(self.datasets)} datasets.")
+        if index is None:
+            print(f"Specified dataset {dataset.id} - {dataset.name} can't be removed because it was not found in project {self.id}.")
         else:
-            print(f"dataset #{did} - '{dname}' was deleted from project")
+            self.removeDatasetByIndex(index)
         return
 
+    def removeDatasetByIndex(self, index):
+        """
+        Removes Dataset object instance from dataset list by index
+
+        :param index: index of the dataset in the self.datasets list
+        """
+        try:
+            dataset = self.datasets[index]
+        except IndexError:
+            print(f"Can't remove dataset by index {index} because the project currently contains only {len(self.datasets)} items.")
+        else:
+            # remove record from DB
+            self.dbconnection.deleteDatasetRecord(dataset)
+            # remove dataset from the list
+            del self.datasets[index]
+
+            print(f"dataset #{dataset.id} - '{dataset.name}' was deleted from project")
+            # remove also all dataset's file
+            if dataset.directory_path is not None:
+                if os.path.isdir(dataset.directory_path):
+                    shutil.rmtree(dataset.directory_path)
+        return
+
+    def removeDatasetByID(self, dataset_id):
+        """
+        Removes Dataset object instance from project's datasets based on its ID
+
+        :param dataset_id: Local (project scope) Dataset ID to be removed
+        """
+
+        # find index of the dataset in projects datasets
+        index = None
+        i = 0
+        for ds in self.datasets:
+            if ds.id == dataset_id:
+                index = i
+                # break the loop when found
+                break
+            i += 1
+
+        if index is None:
+            print(
+                f"Dataset with ID {dataset_id} can't be removed because it was not found in project {self.id}.")
+        else:
+            self.removeDatasetByIndex(index)
+        return
+
+    def removeAllDatasets(self):
+        for ds in self.datasets:
+            self.removeDataset(ds)
 
     def showContainerTree(self):
         """
@@ -780,6 +838,27 @@ class ProjectManager:
         with open(filepath, "w") as f:
             json.dump(output_data, f, ensure_ascii=False, indent=4)
 
+    def exportMethodsVocabularyToFile(self, vocabulary, filepath):
+        """
+        Saves string-methods vocabulary to a file
+        """
+        output_data = []
+        for string, methods in vocabulary.items():
+            output_data.append({"string": string, "method": [{"vocabulary": method['vocabulary'], "uri": method['uri']} for method in methods]})
+        with open(filepath, "w") as f:
+            json.dump(output_data, f, ensure_ascii=False, indent=4)
+
+
+    def exportUnitsVocabularyToFile(self, vocabulary, filepath):
+        """
+        Saves string-concepts vocabulary to a file
+        """
+        output_data = []
+        for string, units in vocabulary.items():
+            output_data.append({"string": string, "unit": [{"vocabulary": unit['vocabulary'], "uri": unit['uri']} for unit in units]})
+        with open(filepath, "w") as f:
+            json.dump(output_data, f, ensure_ascii=False, indent=4)
+
 
     def showConceptsVocabulary(self):
         print(f"\nString-concept vocabulary of project #{self.id}:")
@@ -804,9 +883,45 @@ class Dataset:
         self.project = project
         # container object instances that the dataset consists of
         self.containers = []
+        # directory to store files
+        self.directory_path = None
         # the instance of the metadata mapping
-        self.metadataMap = MetadataStructureMap()
+        self.metadata_map = MetadataStructureMap()
 
+    def load_sp_datapackage(self):
+        original_path = os.path.join(self.directory_path, "primary_package.json")
+        meta = self.project.publisher.getMetadata()
+        pipeline_path = os.path.join(self.directory_path, "to_publish", "pipe.txt")
+        output_path = os.path.join(self.directory_path, +"to_publish", "piped_package.json")
+        return
+
+    def get_frictionless_package(self, output_path=None):
+        def collect_tables(cont_list, tables=[]):
+            for cont in cont_list:
+                if cont.crawler.crawlerType == "csv":
+                    tables.append(cont.crawler.get_frictionless_resource())
+                #
+                # if len(cont.containers) > 0:
+                #     print(f" sub containers {len(cont.containers)}")
+                #     collect_tables(cont.containers, tables)
+
+            return tables
+
+        table_resources = collect_tables(self.containers)
+        package = Package(resources=table_resources)
+
+        if output_path:
+            package.to_json(output_path)  # Save as JSON
+        return package
+
+    def createDedicatedDirectory(self):
+        """
+        Creates directory for a dataset to store its files
+        """
+        path = os.path.join(self.project.temp_dir, self.project.datasets_dir, str(self.id))
+        if not os.path.isdir(path):
+            os.mkdir(path)
+        return path
 
     def addContainers(self, containers):
         """
@@ -869,9 +984,15 @@ class Dataset:
     def checkMetadataStructure(self):
         self.metadataMap.checkConsistency()
 
-    def getCrawled(self):
+    def getAnalyzed(self, cascade, force=False):
+        """Induces analysis of own containers."""
         for container in self.containers:
-            container.getCrawled()
+            container.getAnalyzed(cascade, force)
+        pass
+
+    def getCrawled(self, cascade, force=False):
+        for container in self.containers:
+            container.getCrawled(cascade, force)
 
 class SourceFile:
     def __init__(self, id, filename, size = None, source_url = None, checksum = None, checksum_type = None):
@@ -966,8 +1087,9 @@ class ContainerHandlerFactory:
             new_container = self.containerTypes[specialized_type](*args, **kwargs)
             # put it in the factory list
             self.containers.update({new_container.id: new_container})
-            print(f"type of weakref object: {type(weakref.ref(new_container))}")
-            return weakref.ref(new_container)
+            # print(f"type of weakref object: {type(weakref.ref(new_container))}")
+            # return weakref.ref(new_container)
+            return new_container
 
     def getContainerByID(cls, cid):
         """
@@ -1033,7 +1155,7 @@ class ContainerHandler:
         # was crawled flag
         self.wasCrawled = False
         # was analyzed flag
-        self.isAnalyzed = False
+        self.wasAnalyzed = False
 
         # dictionary of string-concept translations {the string: [{"vocabulary": vocabulary provider, "uri": URI of the concept}, ...]
         self.concepts = kwargs.get("concepts") if kwargs.get("concepts") is not None else {}
@@ -1166,13 +1288,21 @@ class ContainerHandler:
     def createTree(self, *args):
         pass
 
-    def getAnalyzed(self):
+    def getAnalyzed(self, cascade, force=False):
         """Induces further decomposition of the container into logical sub-elements."""
-        pass
+        if self.wasAnalyzed and not force:
+            print(f"Container {self.id} was already analyzed.")
+            return False
+        else:
+            return  True
 
-    def getCrawled(self, cascade):
+    def getCrawled(self, cascade, force=False):
         """Induces content search for metadata elements based on appropriate set of search rules and terms."""
-        pass
+        if self.wasCrawled and not force:
+            print(f"Container {self.id} was already crawled.")
+            return False
+        else:
+            return  True
 
     def assignCrawler(self, crawler):
         self.crawler = crawler
@@ -1655,7 +1785,7 @@ class Crawler:
         self.container.isAnalyzed = True
         return []
 
-    def crawl(self):
+    def crawl(self, force_recrawl=False):
         """
         Parses the container content and searches for metadata elements.
         :return: MetadataStructureMap
@@ -1663,6 +1793,28 @@ class Crawler:
         print(f"No crawling procedure defined for crawler type '{self.crawlerType}'")
 
         return
+
+    def find_translations(self, vocabulary):
+        results = []
+        # search in container name
+        container_name = self.container.name.lower()
+
+        for term, translations in vocabulary.items():
+            print(f"{container_name} - {term.lower()}")
+            start_index = container_name.find(term.lower())
+
+            if start_index != -1:
+                end_index = start_index + len(term.lower()) - 1
+                locator = {
+                    "attribute": "name",
+                    "start_char": start_index,
+                    "end_char": end_index,
+                }
+                results.append([{term: translations}, locator])
+
+        # here could be some other searching ... whatever it may be
+        return results
+
 
 CrawlerFactory.registerCrawlerType(Crawler)
 

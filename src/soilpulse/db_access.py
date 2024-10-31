@@ -47,7 +47,10 @@ class DBconnector:
     methods_vocabulary_filename = "_methods_vocabulary.json"
     # filename of global units vocabulary
     units_vocabulary_filename = "_units_vocabulary.json"
+    # prefix for directory project directory name - to distinguish between JSON saved projects and MySQL saved projects
     dirname_prefix = None
+    # subdirectory name for the datasets files
+    datasets_directory_name = "datasets"
 
     @classmethod
     def get_connector(cls, project_files_root):
@@ -135,7 +138,11 @@ class DBconnector:
             shutil.rmtree(project_dir)
         os.mkdir(project_dir)
 
-        return project_dir
+        # create directory for the datasets
+        datasets_dir = os.path.join(self.project_files_root, self.datasets_directory_name)
+        if not os.path.isdir(datasets_dir):
+            os.mkdir(datasets_dir)
+        return project_dir, datasets_dir
 
     def getDatasetsOfProject(self, project_id):
         pass
@@ -315,7 +322,7 @@ class MySQLConnector(DBconnector):
                 print(f"The name was modified to \"{project.name}\" and can be changed later.")
 
         project_id = newID
-        project_temp_dir = self.create_project_directory(project_id)
+        project_temp_dir, datasets_dir = self.create_project_directory(project_id)
 
         # insert line to `projects` table
         query = f"INSERT INTO {self.projectsTableName} (`name`, `doi`, `temp_dir`) VALUES (%s, %s, %s)"
@@ -343,7 +350,7 @@ class MySQLConnector(DBconnector):
         thecursor.execute(query, values)
         self.db_connection.commit()
         thecursor.close()
-        return project_id, project_temp_dir
+        return project_id, project_temp_dir, datasets_dir
 
     def updateProjectRecord(self, project, cascade=False):
         """
@@ -811,14 +818,17 @@ class MySQLConnector(DBconnector):
         if dataset_glob_id is not None:
             query = f"UPDATE {self.datasetsTableName} SET `name` = '{dataset.name}' "
             query += f"WHERE `id` = {dataset_glob_id}"
-
+            thecursor.execute(query)
+            self.db_connection.commit()
         # insert new dataset record if not yet in DB
         else:
             query = f"INSERT INTO {self.datasetsTableName} (`dataset_id`, `project_id`, `name`) "
             query += f"VALUES ({dataset.id}, {dataset.project.id}, '{dataset.name}')"
-
-        thecursor.execute(query)
-        self.db_connection.commit()
+            thecursor.execute(query)
+            self.db_connection.commit()
+            thecursor.execute("SELECT LAST_INSERT_ID()")
+            results = thecursor.fetchone()
+            dataset_glob_id = results[0]
 
         # update container links
         for container in dataset.containers:
@@ -862,6 +872,7 @@ class MySQLConnector(DBconnector):
             project.name = result["name"]
             project.doi = result["doi"]
             project.temp_dir = result["temp_dir"]
+            project.datasets_dir = os.path.join(project.temp_dir, self.datasets_directory_name)
 
             if result["keep_files"] == 0:
                 project.keepFiles = False
@@ -985,6 +996,7 @@ class MySQLConnector(DBconnector):
                     for cont in cont_res:
                         container_ids.append(cont['id'])
                     new_dataset.containers = project.getContainerByID(container_ids)
+                new_dataset.directory_path = os.path.join(project.temp_dir, self.datasets_directory_name, str(new_dataset.id))
         thecursor.close()
         return
 
@@ -1233,7 +1245,7 @@ class NullConnector(DBconnector):
         project_id = self.getNewProjectID()
         project.user_id = 0
         # assign the project files directory path
-        project_temp_dir = self.create_project_directory(project_id)
+        project_temp_dir, datasets_dir = self.create_project_directory(project_id)
 
         project.keepFiles = True
         # save attributes to a JSON file
@@ -1248,7 +1260,7 @@ class NullConnector(DBconnector):
                 f.write("[]")
                 f.close()
 
-        return project_id, project_temp_dir
+        return project_id, project_temp_dir, datasets_dir
 
     def updateProjectRecord(self, project, cascade=False):
         # write project dump
@@ -1306,6 +1318,7 @@ class NullConnector(DBconnector):
                 project.name = attributes["name"]
                 project.doi = attributes["doi"]
                 project.temp_dir = attributes["temp_dir"]
+                project.datasets_dir = os.path.join(project.temp_dir, self.datasets_directory_name)
 
                 if attributes["keep_files"] == 0:
                     project.keepFiles = False
@@ -1438,6 +1451,7 @@ class NullConnector(DBconnector):
         for dataset_record in datasets_serialized:
             new_dataset = project.createDataset(dataset_record['name'], dataset_record['id'])
             new_dataset.containers = project.getContainerByID(dataset_record['container IDs'])
+            new_dataset.directory_path = os.path.join(project.temp_dir, self.datasets_directory_name, str(new_dataset.id))
             datasets.append(new_dataset)
         return datasets
 

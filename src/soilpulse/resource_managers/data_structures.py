@@ -34,23 +34,25 @@ class TableContainer(ContainerHandler):
 
         self.crawler = TableCrawler(self)
 
-
         pass
 
-    def getAnalyzed(self):
-        if self.crawler:
-            columns = self.crawler.analyze()
-            if columns:
-                # print(f"tables:\n{tables}")
-                # print("\n\n")
-                self.containers = columns
-            # print(f"table cont {self.id} containers: {self.containers}")
+    def getAnalyzed(self, cascade, force=False):
+        if super().getAnalyzed(cascade, force):
+            if self.crawler:
+                columns = self.crawler.analyze()
+                if columns:
+                    # print(f"tables:\n{tables}")
+                    # print("\n\n")
+                    self.containers = columns
+                # print(f"table cont {self.id} containers: {self.containers}")
 
-        for container in self.containers:
-            container.getAnalyzed()
+            if cascade:
+                for container in self.containers:
+                    container.getAnalyzed(cascade, force)
+            self.wasAnalyzed = True
         return
 
-    def getCrawled(self, cascade=True):
+    def getCrawled(self, cascade=True, force=False):
         """
         Executes the routines for scanning, recognizing and extracting metadata (and maybe data)
         """
@@ -65,6 +67,9 @@ class TableContainer(ContainerHandler):
         if cascade:
             for container in self.containers:
                 container.getCrawled(cascade)
+        return
+
+    def getFrictionlessResource(self):
         return
 
 ContainerHandlerFactory.registerContainerType(TableContainer, TableContainer.containerType)
@@ -89,28 +94,22 @@ class TableCrawler(Crawler):
             cont_args = {"name": field.name, "data_type": field.type}
             # print(cont_args)
             # create new container from found TableResources
-            column_conts.append(
-                self.container.project.containerFactory.createHandler("column", self.container.project,
-                                                                      self.container, **cont_args))
+            new_column = self.container.project.containerFactory.createHandler("column", self.container.project,
+                                                                      self.container, **cont_args)
+            column_conts.append(new_column)
         print(f"\t\tfound {len(column_conts)} columns")
         # change flag of parent container
         self.container.wasCrawled = True
         return column_conts
 
-    def crawl(self, forceRecrawl=False, report=True):
+    def crawl(self, report=True):
         """
         Do the crawl - go through the file and detect defined elements
 
-        :param forceRecrawl: whether to crawl a container eventhough it was already crawled
         :return: list of table containers
         """
 
-        if not self.container.wasCrawled or (not self.container.wasCrawled and forceRecrawl):
-            print(f"")
-            return None
-        else:
-            print(f"Container {self.container.id} was already crawled.")
-            return None
+        return
 
 CrawlerFactory.registerCrawlerType(TableCrawler)
 
