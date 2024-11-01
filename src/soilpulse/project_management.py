@@ -6,6 +6,7 @@ import os
 import sys
 import shutil
 import json
+import weakref
 from pathlib import Path
 
 from .metadata_scheme import MetadataStructureMap
