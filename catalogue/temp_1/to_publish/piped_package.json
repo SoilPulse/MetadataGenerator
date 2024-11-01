@@ -217,11 +217,11 @@
           },
           {
             "name": "lat",
-            "type": "string"
+            "type": "number"
           },
           {
             "name": "lon",
-            "type": "string"
+            "type": "number"
           }
         ],
         "primaryKey": [

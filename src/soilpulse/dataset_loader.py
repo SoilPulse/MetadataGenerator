@@ -201,6 +201,7 @@ def merge_foreign_keys(dataset):
 TUBAF = load_sp_datapackage({"sourcedir": "catalogue/temp_1/"})
 multitable = load_sp_datapackage({"sourcedir": "catalogue/temp_2/"})
 
+Ries = load_sp_datapackage({"sourcedir": "catalogue/temp_4/"})
 view_sp_resource(TUBAF.resources[0], fields = ['SigP'], row_filters = ['SigP >9', 'SigP < 12']).to_pandas()
 get_dataset_concepts(TUBAF)
 

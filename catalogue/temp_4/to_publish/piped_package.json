@@ -1,0 +1,882 @@
+{
+  "resources": [
+    {
+      "name": "1_site_data",
+      "type": "table",
+      "path": "tables/1_site_data.csv",
+      "scheme": "file",
+      "format": "csv",
+      "mediatype": "text/csv",
+      "encoding": "utf-8",
+      "schema": {
+        "fields": [
+          {
+            "name": "Site_number",
+            "type": "integer",
+            "description": " ID number of experiment location ",
+            "unit": "-",
+            "concept": ""
+          },
+          {
+            "name": "Site_name",
+            "type": "string",
+            "description": " Name of experiment location ",
+            "unit": "-",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_330988"
+          },
+          {
+            "name": "Elevation",
+            "type": "integer",
+            "description": " Elevation ",
+            "unit": "mabovesealevel",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_316"
+          },
+          {
+            "name": "Slope",
+            "type": "integer",
+            "description": " Average slope at the experimental plot ",
+            "unit": "%",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_fa256eab"
+          },
+          {
+            "name": "Slope_aspect",
+            "type": "integer",
+            "description": " Slope aspect of the experimental plot ",
+            "unit": "Â°",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_1832474d"
+          },
+          {
+            "name": "Land_use",
+            "type": "string",
+            "description": " Land use at the experimental plot ",
+            "unit": "pasturearableland",
+            "concept": ""
+          },
+          {
+            "name": "Vegetation",
+            "type": "string",
+            "description": " Type of vegetation on the experimental plot ",
+            "unit": "-",
+            "concept": "https://agrovoc.fao.org/browse/agrovoc/en/page/c_8176"
+          },
+          {
+            "name": "Vegetation_height",
+            "type": "number",
+            "concept": "https://agrovoc.fao.org/browse/agrovoc/en/page/c_61f3cae5"
+          },
+          {
+            "name": "Plant_coverage",
+            "type": "number",
+            "description": " Estimated percentage of plant coverage ",
+            "unit": "%",
+            "concept": ""
+          },
+          {
+            "name": "Geology_GUEK300",
+            "type": "string",
+            "concept": ""
+          },
+          {
+            "name": "Sand_10cm",
+            "type": "number",
+            "description": " Fraction of sand in 10 cm depth ",
+            "unit": "%",
+            "concept": ""
+          },
+          {
+            "name": "Silt_10cm",
+            "type": "number",
+            "description": " Fraction of silt in 30 cm depth ",
+            "unit": "%",
+            "concept": ""
+          },
+          {
+            "name": "Clay_10cm",
+            "type": "number",
+            "description": " Fraction of clay in 50 cm depth ",
+            "unit": "%",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_15619"
+          },
+          {
+            "name": "Sand_30cm",
+            "type": "number",
+            "description": " Fraction of sand in 10 cm depth ",
+            "unit": "%",
+            "concept": ""
+          },
+          {
+            "name": "Silt_30cm",
+            "type": "number",
+            "description": " Fraction of silt in 30 cm depth ",
+            "unit": "%",
+            "concept": ""
+          },
+          {
+            "name": "Clay_30cm",
+            "type": "number",
+            "description": " Fraction of clay in 50 cm depth ",
+            "unit": "%",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_15619"
+          },
+          {
+            "name": "Sand_50cm",
+            "type": "number",
+            "description": " Fraction of sand in 10 cm depth ",
+            "unit": "%",
+            "concept": ""
+          },
+          {
+            "name": "Silt_50cm",
+            "type": "number",
+            "description": " Fraction of silt in 30 cm depth ",
+            "unit": "%",
+            "concept": ""
+          },
+          {
+            "name": "Clay_50cm",
+            "type": "number",
+            "description": " Fraction of clay in 50 cm depth ",
+            "unit": "%",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_15619"
+          },
+          {
+            "name": "Bulk_density_10cm",
+            "type": "string",
+            "description": " Bulk density in 10 cm depth ",
+            "unit": "g/cm3",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_7167"
+          },
+          {
+            "name": "Bulk_density_30cm",
+            "type": "string",
+            "description": " Bulk density in 30 cm depth ",
+            "unit": "g/cm3",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_7167"
+          },
+          {
+            "name": "Bulk_density_50cm",
+            "type": "string",
+            "description": " Bulk density in 50 cm depth ",
+            "unit": "g/cm3",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_7167"
+          },
+          {
+            "name": "Stone_content_10cm",
+            "type": "integer",
+            "description": " Estimated stone content from 0 to 10 cm depth ",
+            "unit": "%",
+            "concept": ""
+          },
+          {
+            "name": "Stone_content_30cm",
+            "type": "integer",
+            "description": " Estimated stone content from 10 to 30 cm depth ",
+            "unit": "%",
+            "concept": ""
+          },
+          {
+            "name": "MP_density_2mm_10cm",
+            "type": "string",
+            "description": " Macropore density of size 2-5 mm at 10 cm depth ",
+            "unit": "-/m2",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_35318"
+          },
+          {
+            "name": "MP_density_2mm_30cm",
+            "type": "string",
+            "description": " Macropore density of size 2-5 mm at 30 cm depth ",
+            "unit": "-/m2",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_35318"
+          },
+          {
+            "name": "MP_density_5mm_10cm",
+            "type": "string",
+            "description": " Macropore density of size >5 mm at 10 cm depth ",
+            "unit": "-/m2",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_35318"
+          },
+          {
+            "name": "MP_density_5mm_30cm",
+            "type": "string",
+            "description": " Macropore density of size >5 mm at 30 cm depth ",
+            "unit": "-/m2",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_35318"
+          },
+          {
+            "name": "SOM_10cm",
+            "type": "number",
+            "description": " Soil organic matter at 10 cm depth ",
+            "unit": "%",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_389fe908"
+          },
+          {
+            "name": "SOM_30cm",
+            "type": "number",
+            "description": " Soil organic matter at 30 cm depth ",
+            "unit": "%",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_389fe908"
+          },
+          {
+            "name": "SOM_50cm",
+            "type": "string",
+            "description": " Soil organic matter at 50 cm depth ",
+            "unit": "%",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_389fe908"
+          },
+          {
+            "name": "Total_porosity_10cm",
+            "type": "string",
+            "description": " Total porosity in 10 cm depth",
+            "unit": "cm3/cm3",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_7184"
+          },
+          {
+            "name": "Total_porosity_30cm",
+            "type": "string",
+            "description": " Total porosity in 30 cm depth",
+            "unit": "cm3/cm3",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_7184"
+          },
+          {
+            "name": "Total_porosity_50cm",
+            "type": "string",
+            "description": " Total porosity in 50 cm depth",
+            "unit": "cm3/cm3",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_7184"
+          },
+          {
+            "name": "lon",
+            "type": "number",
+            "description": "longitude",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_64a2abf9"
+          },
+          {
+            "name": "lat",
+            "type": "number",
+            "description": "latitude",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_64a2abf9"
+          }
+        ],
+        "missingValues": [
+          "",
+          "NA"
+        ],
+        "primaryKey": [
+          "Site_number"
+        ],
+        "foreignKeys": []
+      }
+    },
+    {
+      "name": "2_event_data",
+      "type": "table",
+      "path": "tables/2_event_data.csv",
+      "scheme": "file",
+      "format": "csv",
+      "mediatype": "text/csv",
+      "encoding": "utf-8",
+      "schema": {
+        "fields": [
+          {
+            "name": "Site_number",
+            "type": "integer",
+            "description": " ID number of experiment location ",
+            "unit": "1to23",
+            "concept": ""
+          },
+          {
+            "name": "Experiment_number",
+            "type": "integer",
+            "description": " ID number of experiment ",
+            "unit": "1to6",
+            "concept": ""
+          },
+          {
+            "name": "Experiment_start",
+            "type": "string",
+            "description": " Starting time of the experiment ",
+            "unit": "yyyy-mm-ddhh",
+            "concept": ""
+          },
+          {
+            "name": "Experiment_end",
+            "type": "string",
+            "description": " Ending time of the experiment ",
+            "unit": "yyyy-mm-ddhh",
+            "concept": ""
+          },
+          {
+            "name": "Land_use",
+            "type": "string",
+            "description": " Land use at the experimental plot ",
+            "unit": "pasturearableland",
+            "concept": ""
+          },
+          {
+            "name": "Experiment_duration",
+            "type": "integer",
+            "description": " Duration of experiment ",
+            "unit": "min",
+            "concept": ""
+          },
+          {
+            "name": "Return_period",
+            "type": "string",
+            "description": " Return period of the simulated rainfall event of the respective duration ",
+            "unit": "years",
+            "concept": ""
+          },
+          {
+            "name": "Target_intensity",
+            "type": "number",
+            "description": " Target intensity according to local rainfall statistics and maximum observed rainfall values ",
+            "unit": "mm/h",
+            "concept": ""
+          },
+          {
+            "name": "Data_quality_comment",
+            "type": "string",
+            "description": " Comment on data quality ",
+            "unit": "-",
+            "concept": ""
+          },
+          {
+            "name": "Selected_subplots",
+            "type": "string",
+            "description": " Subplot selected for evaluation of experiment results according to data quality comment ",
+            "unit": "-",
+            "concept": ""
+          },
+          {
+            "name": "P_RG_1",
+            "type": "number",
+            "description": " Observed rainfall during experiment at rainfall gauge 1 ",
+            "unit": "mm",
+            "concept": ""
+          },
+          {
+            "name": "P_RG_2",
+            "type": "number",
+            "description": " Observed rainfall during experiment at rainfall gauge 2 ",
+            "unit": "mm",
+            "concept": ""
+          },
+          {
+            "name": "P_RG_3",
+            "type": "number",
+            "description": " Observed rainfall during experiment at rainfall gauge 3 ",
+            "unit": "mm",
+            "concept": ""
+          },
+          {
+            "name": "P_RG_4",
+            "type": "number",
+            "description": " Observed rainfall during experiment at rainfall gauge 4 ",
+            "unit": "mm",
+            "concept": ""
+          },
+          {
+            "name": "P_RG_5",
+            "type": "number",
+            "description": " Observed rainfall during experiment at rainfall gauge 5 ",
+            "unit": "mm",
+            "concept": ""
+          },
+          {
+            "name": "P_RG_6",
+            "type": "number",
+            "description": " Observed rainfall during experiment at rainfall gauge 6 ",
+            "unit": "mm",
+            "concept": ""
+          },
+          {
+            "name": "P_C_1",
+            "type": "string",
+            "description": " Observed rainfall during experiment at rainfall collector 1 ",
+            "unit": "mm",
+            "concept": ""
+          },
+          {
+            "name": "P_C_2",
+            "type": "string",
+            "description": " Observed rainfall during experiment at rainfall collector 2 ",
+            "unit": "mm",
+            "concept": ""
+          },
+          {
+            "name": "P_C_3",
+            "type": "string",
+            "description": " Observed rainfall during experiment at rainfall collector 3 ",
+            "unit": "mm",
+            "concept": ""
+          },
+          {
+            "name": "P_C_4",
+            "type": "string",
+            "description": " Observed rainfall during experiment at rainfall collector 4 ",
+            "unit": "mm",
+            "concept": ""
+          },
+          {
+            "name": "P_C_5",
+            "type": "string",
+            "description": " Observed rainfall during experiment at rainfall collector 5 ",
+            "unit": "mm",
+            "concept": ""
+          },
+          {
+            "name": "P_C_6",
+            "type": "string",
+            "description": " Observed rainfall during experiment at rainfall collector 6 ",
+            "unit": "mm",
+            "concept": ""
+          },
+          {
+            "name": "P_C_7",
+            "type": "string",
+            "description": " Observed rainfall during experiment at rainfall collector 7 ",
+            "unit": "mm",
+            "concept": ""
+          },
+          {
+            "name": "P_C_8",
+            "type": "string",
+            "description": " Observed rainfall during experiment at rainfall collector 8 ",
+            "unit": "mm",
+            "concept": ""
+          },
+          {
+            "name": "P_C_9",
+            "type": "string",
+            "description": " Observed rainfall during experiment at rainfall collector 9 ",
+            "unit": "mm",
+            "concept": ""
+          },
+          {
+            "name": "P_C_10",
+            "type": "string",
+            "description": " Observed rainfall during experiment at rainfall collector 10 ",
+            "unit": "mm",
+            "concept": ""
+          },
+          {
+            "name": "P_C_11",
+            "type": "string",
+            "description": " Observed rainfall during experiment at rainfall collector 11 ",
+            "unit": "mm",
+            "concept": ""
+          },
+          {
+            "name": "P_subplot_A",
+            "type": "number",
+            "description": " Interpolated rainfall for subplot A ",
+            "unit": "mm",
+            "concept": ""
+          },
+          {
+            "name": "P_subplot_B",
+            "type": "number",
+            "description": " Interpolated rainfall for subplot B ",
+            "unit": "mm",
+            "concept": ""
+          },
+          {
+            "name": "P_subplot_C",
+            "type": "number",
+            "description": " Interpolated rainfall for subplot C ",
+            "unit": "mm",
+            "concept": ""
+          },
+          {
+            "name": "P_mean_selected",
+            "type": "string",
+            "description": " Mean interpolated rainfall for selected subplots according to data quality ",
+            "unit": "mm",
+            "concept": ""
+          },
+          {
+            "name": "Q_OF_subplot_A",
+            "type": "string",
+            "description": " Cumulative overland flow for the experiment at subplot A ",
+            "unit": "mm",
+            "concept": ""
+          },
+          {
+            "name": "Q_OF_subplot_B",
+            "type": "string",
+            "description": " Cumulative overland flow for the experiment at subplot B ",
+            "unit": "mm",
+            "concept": ""
+          },
+          {
+            "name": "Q_OF_subplot_C",
+            "type": "string",
+            "description": " Cumulative overland flow for the experiment at subplot C ",
+            "unit": "mm",
+            "concept": ""
+          },
+          {
+            "name": "Q_SSF_subplot_B",
+            "type": "string",
+            "description": " Cumulative subsurface up to 40 cm depth flow for the experiment at subplot B ",
+            "unit": "mm",
+            "concept": ""
+          },
+          {
+            "name": "Q_OF_mean_selected",
+            "type": "string",
+            "description": " Mean cumulative overland flow for selected subplots according to data quality ",
+            "unit": "mm",
+            "concept": ""
+          },
+          {
+            "name": "RC_OF_subplot_A",
+            "type": "string",
+            "description": " Overland flow coefficient for the experiment at subplot A ",
+            "unit": "mm",
+            "concept": "https://dbpedia.org/resource/Runoff_curve_number"
+          },
+          {
+            "name": "RC_OF_subplot_B",
+            "type": "string",
+            "description": " Overland flow coefficient for the experiment at subplot B ",
+            "unit": "mm",
+            "concept": "https://dbpedia.org/resource/Runoff_curve_number"
+          },
+          {
+            "name": "RC_OF_subplot_C",
+            "type": "string",
+            "description": " Overland flow coefficient for the experiment at subplot C ",
+            "unit": "mm",
+            "concept": "https://dbpedia.org/resource/Runoff_curve_number"
+          },
+          {
+            "name": "RC_SSF_subplot_B",
+            "type": "string",
+            "description": " Subsurface runoff coefficient for the experiment at subplot B ",
+            "unit": "mm",
+            "concept": "https://dbpedia.org/resource/Runoff_curve_number"
+          },
+          {
+            "name": "RC_OF_mean_selected",
+            "type": "string",
+            "description": " Mean surface runoff coefficient for selected subplots according to data quality ",
+            "unit": "mm",
+            "concept": "https://dbpedia.org/resource/Runoff_curve_number"
+          }
+        ],
+        "missingValues": [
+          "",
+          "NA"
+        ],
+        "primaryKey": [
+          "Site_number",
+          "Experiment_number"
+        ],
+        "foreignKeys": []
+      }
+    },
+    {
+      "name": "3_experiment_time_series",
+      "type": "table",
+      "path": "tables/3_experiment_time_series.csv",
+      "scheme": "file",
+      "format": "csv",
+      "mediatype": "text/csv",
+      "encoding": "utf-8",
+      "schema": {
+        "fields": [
+          {
+            "name": "Date_time",
+            "type": "datetime",
+            "description": " Date and time in Central European Summer Time (CEST) = UTC +2 hours ",
+            "format": "%Y-%m-%d %H:%M",
+            "unit": "yyyy-mm-ddhh",
+            "concept": ""
+          },
+          {
+            "name": "Site_number",
+            "type": "integer",
+            "description": " ID number of experiment location ",
+            "unit": "1to23",
+            "concept": ""
+          },
+          {
+            "name": "Experiment_number",
+            "type": "string",
+            "description": " ID number of experiment ",
+            "unit": "1to6",
+            "concept": ""
+          },
+          {
+            "name": "Land_use",
+            "type": "string",
+            "description": " Land use at the experimental plot ",
+            "unit": "-",
+            "concept": ""
+          },
+          {
+            "name": "Selected_subplots",
+            "type": "string",
+            "description": " Subplot selected for evaluation of experiment results according to data quality comment ",
+            "unit": "-",
+            "concept": ""
+          },
+          {
+            "name": "Experiment_duration",
+            "type": "string",
+            "description": " Duration of experiment ",
+            "unit": "min",
+            "concept": ""
+          },
+          {
+            "name": "Return_period",
+            "type": "string",
+            "description": " Return period of the simulated rainfall event of the respective duration ",
+            "unit": "years",
+            "concept": ""
+          },
+          {
+            "name": "Experiment_time_step_min",
+            "type": "string",
+            "description": " Consecutive time step vector in minutes since begin of experiment ",
+            "unit": "-",
+            "concept": ""
+          },
+          {
+            "name": "Experiment_time_step_plus10min",
+            "type": "string",
+            "description": " Consecutive time step vector in minutes since begin of experiment + 10 minutes for recession ",
+            "unit": "-",
+            "concept": ""
+          },
+          {
+            "name": "Solar_radiation",
+            "type": "number",
+            "description": " Incoming solar radiation ",
+            "unit": "W/m^2",
+            "concept": ""
+          },
+          {
+            "name": "Wind_direction",
+            "type": "integer",
+            "description": " Wind direction measured in 2 m height ",
+            "unit": "deg.",
+            "concept": ""
+          },
+          {
+            "name": "Wind_speed",
+            "type": "number",
+            "description": " Wind speed measured in 2 m height ",
+            "unit": "m/s",
+            "concept": ""
+          },
+          {
+            "name": "Air_temperature",
+            "type": "number",
+            "description": " Air temperature ",
+            "unit": "deg.C",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_230"
+          },
+          {
+            "name": "Relative_humidity",
+            "type": "number",
+            "description": " Relative humidity ",
+            "unit": "%",
+            "concept": ""
+          },
+          {
+            "name": "P_RG_1",
+            "type": "number",
+            "description": " Observed rainfall during experiment at rainfall gauge 1 ",
+            "unit": "mm",
+            "concept": ""
+          },
+          {
+            "name": "P_RG_2",
+            "type": "number",
+            "description": " Observed rainfall during experiment at rainfall gauge 2 ",
+            "unit": "mm",
+            "concept": ""
+          },
+          {
+            "name": "P_RG_3",
+            "type": "number",
+            "description": " Observed rainfall during experiment at rainfall gauge 3 ",
+            "unit": "mm",
+            "concept": ""
+          },
+          {
+            "name": "P_RG_4",
+            "type": "number",
+            "description": " Observed rainfall during experiment at rainfall gauge 4 ",
+            "unit": "mm",
+            "concept": ""
+          },
+          {
+            "name": "P_RG_5",
+            "type": "number",
+            "description": " Observed rainfall during experiment at rainfall gauge 5 ",
+            "unit": "mm",
+            "concept": ""
+          },
+          {
+            "name": "P_RG_6",
+            "type": "number",
+            "description": " Observed rainfall during experiment at rainfall gauge 6 ",
+            "unit": "mm",
+            "concept": ""
+          },
+          {
+            "name": "P_subplot_A",
+            "type": "number",
+            "description": " Interpolated rainfall for subplot A ",
+            "unit": "mm",
+            "concept": ""
+          },
+          {
+            "name": "P_subplot_B",
+            "type": "number",
+            "description": " Interpolated rainfall for subplot B ",
+            "unit": "mm",
+            "concept": ""
+          },
+          {
+            "name": "P_subplot_C",
+            "type": "number",
+            "description": " Interpolated rainfall for subplot C ",
+            "unit": "mm",
+            "concept": ""
+          },
+          {
+            "name": "P_mean_selected",
+            "type": "number",
+            "description": " Mean interpolated rainfall for selected subplots according to data quality ",
+            "unit": "mm",
+            "concept": ""
+          },
+          {
+            "name": "SM1_5cm",
+            "type": "string",
+            "concept": ""
+          },
+          {
+            "name": "SM1_10cm",
+            "type": "string",
+            "concept": ""
+          },
+          {
+            "name": "SM1_20cm",
+            "type": "string",
+            "concept": ""
+          },
+          {
+            "name": "SM1_30cm",
+            "type": "string",
+            "concept": ""
+          },
+          {
+            "name": "SM1_40cm",
+            "type": "string",
+            "concept": ""
+          },
+          {
+            "name": "SM2_5cm",
+            "type": "string",
+            "concept": ""
+          },
+          {
+            "name": "SM2_10cm",
+            "type": "string",
+            "concept": ""
+          },
+          {
+            "name": "SM2_20cm",
+            "type": "string",
+            "concept": ""
+          },
+          {
+            "name": "SM2_30cm",
+            "type": "string",
+            "concept": ""
+          },
+          {
+            "name": "SM2_40cm",
+            "type": "string",
+            "concept": ""
+          },
+          {
+            "name": "WT1_height",
+            "type": "string",
+            "description": " Depth of water table at piezometer WT1 ",
+            "unit": "cm",
+            "concept": ""
+          },
+          {
+            "name": "WT2_height",
+            "type": "string",
+            "description": " Depth of water table at piezometer WT2 ",
+            "unit": "cm",
+            "concept": ""
+          },
+          {
+            "name": "Q_OF_subplot_A",
+            "type": "number",
+            "description": " Cumulative overland flow for the experiment at subplot A ",
+            "unit": "mm",
+            "concept": ""
+          },
+          {
+            "name": "Q_OF_subplot_B",
+            "type": "number",
+            "description": " Cumulative overland flow for the experiment at subplot B ",
+            "unit": "mm",
+            "concept": ""
+          },
+          {
+            "name": "Q_OF_subplot_C",
+            "type": "number",
+            "description": " Cumulative overland flow for the experiment at subplot C ",
+            "unit": "mm",
+            "concept": ""
+          },
+          {
+            "name": "Q_SSF_subplot_B",
+            "type": "number",
+            "description": " Cumulative subsurface up to 40 cm depth flow for the experiment at subplot B ",
+            "unit": "mm",
+            "concept": ""
+          },
+          {
+            "name": "Q_OF_mean_selected",
+            "type": "number",
+            "description": " Mean cumulative overland flow for selected subplots according to data quality ",
+            "unit": "mm",
+            "concept": ""
+          }
+        ],
+        "missingValues": [
+          "",
+          "NA"
+        ],
+        "primaryKey": [
+          "Site_number",
+          "Date_time"
+        ],
+        "foreignKeys": [
+          {
+            "fields": [
+              "Site_number"
+            ],
+            "reference": {
+              "resource": "1_site_data",
+              "fields": [
+                "Site_number"
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

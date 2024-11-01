@@ -6,6 +6,8 @@
             steps.table_normalize(),
             steps.field_filter(names=["No","coordinates"]),
             steps.field_split(name="coordinates", to_names=["lat", "lon"], pattern=" \| "),
+            steps.field_update(name = 'lat', descriptor={'type': 'number'}),
+            steps.field_update(name = 'lon', descriptor={'type': 'number'})
             ]
     ),
     steps.resource_transform(
