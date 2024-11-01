@@ -1,5 +1,5 @@
 Welcome to SoilPulse's documentation!
-===================================
+=====================================
 
 SoilPulse is a Python library for those who want a to become data enthusiasts.
 
