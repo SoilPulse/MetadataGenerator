@@ -252,7 +252,7 @@ class SingleFileContainer(FileSystemContainer):
             print(e)
         else:
             if cascade:
-                self.getAnalyzed()
+                self.getAnalyzed(cascade=True)
 
         if not os.path.exists(self.path):
             print(f"\tfile of container '{self.name}' was not found.")
@@ -683,6 +683,8 @@ class CSVcrawler(Crawler):
     def __init__(self, container):
         super().__init__(container)
 
+        self.cell_sep = None
+        self.line_sep = None
 
     def validate(self):
         return validate(self.container.path)
@@ -691,7 +693,13 @@ class CSVcrawler(Crawler):
         print(f"\ncreating CSV resource for '{self.container.path}' of container #{self.container.id},"
               f" encoding '{self.container.encoding}'")
 
-        control = formats.CsvControl(delimiter=self.cell_sep, skip_initial_space=True)
+        # if the container was not analyzed for any reasons it doesn't have cell_sep attribute yet
+        if not hasattr(self, "cell_sep") or not hasattr(self, "line_sep"):
+            self.find_delimiters()
+        if self.cell_sep is not None:
+            control = formats.CsvControl(delimiter=self.cell_sep, skip_initial_space=True)
+        else:
+            control = formats.CsvControl(skip_initial_space=True)
         resource = Resource(path=self.container.path, format='csv', control=control, encoding=self.container.encoding)
         resource.infer()
 
@@ -720,32 +728,35 @@ class CSVcrawler(Crawler):
             f"encoding '{self.container.encoding}'") if report else None
         # find delimiters and encoding
         self.find_delimiters()
+        if self.cell_sep is not None:
+            tables = self.find_tables(3, report)
+            if len(tables) == 0:
+                print(f"\tfound no understandable tables") if report else None
+                return None
+            else:
+                print(
+                    f"\tfound {len(tables)} understandable table structure{'s' if len(tables) > 1 else ''}") if report else None
+                table_conts = []
+                i = 1
+                for tab in tables:
+                    # print(tab[0])
+                    # print(tab[1])
+                    cont_args = {"name": f"table_{i}",
+                                 "fl_resource": tab[0],
+                                 "pd_dataframe": tab[1]}
+                    # create new container from found TableContainer
+                    newCont = self.container.project.containerFactory.createHandler("table", self.container.project,
+                                                                                    self.container, **cont_args)
+                    table_conts.append(newCont)
 
-        tables = self.find_tables(3, report)
-        if len(tables) == 0:
-            print(f"\tfound no understandable tables") if report else None
-            return None
-        else:
-            print(
-                f"\tfound {len(tables)} understandable table structure{'s' if len(tables) > 1 else ''}") if report else None
-            table_conts = []
-            i = 1
-            for tab in tables:
-                # print(tab[0])
-                # print(tab[1])
-                cont_args = {"name": f"table_{i}",
-                             "fl_resource": tab[0],
-                             "pd_dataframe": tab[1]}
-                # create new container from found TableContainer
-                newCont = self.container.project.containerFactory.createHandler("table", self.container.project,
-                                                                                self.container, **cont_args)
-                table_conts.append(newCont)
+                    # print(newCont.fl_resource.schema)
+                    i += 1
+                # change flag of parent container
+                self.container.isAnalyzed = True
 
-                # print(newCont.fl_resource.schema)
-                i += 1
-            # change flag of parent container
-            self.container.isAnalyzed = True
-            return table_conts
+                return table_conts
+        print(f"\tcell separator was not found. The file content is probably not a table.") if report else None
+        return None
 
     def crawl(self, report=True):
         """
@@ -775,13 +786,16 @@ class CSVcrawler(Crawler):
         :param cell_delimiters: A string containing cell delimiter characters (e.g., ';,').
         :return: A list of content chunks.
         """
-        # Construct a regex pattern based on specified delimiters
-        pattern = rf'{line_sep}(?:{line_sep}|[{re.escape(cell_sep)}\s]*{line_sep})+'
-        # Split the content based on the pattern
-        chunks = re.split(pattern, content)
+        if cell_sep is not None:
+            # Construct a regex pattern based on specified delimiters
+            pattern = rf'{line_sep}(?:{line_sep}|[{re.escape(cell_sep)}\s]*{line_sep})+'
+            # Split the content based on the pattern
+            chunks = re.split(pattern, content)
 
-        # Remove empty chunks and strip extra spaces/newlines from each chunk
-        return [chunk.strip() for chunk in chunks if chunk.strip()]
+            # Remove empty chunks and strip extra spaces/newlines from each chunk
+            return [chunk.strip() for chunk in chunks if chunk.strip()]
+        else:
+            return content
 
     def find_tables(self, min_lines=3, report = True):
         """
@@ -800,31 +814,43 @@ class CSVcrawler(Crawler):
                 print(f"Container '{self.container.name}' couldn't be analyzed due to encoding issues.")
                 return []
 
-        # Split content into multiple table-like structures
-        table_segments = self.split_into_chunks(content, self.cell_sep, self.line_sep)
+        if hasattr(self, "cell_sep"):
+            if self.cell_sep is not None:
+                # Split content into multiple table-like structures
+                table_segments = self.split_into_chunks(content, self.cell_sep, self.line_sep)
 
-        tables = []
-        i = 1
-        for segment in table_segments:
-            print(f"found table segment {i}:\n{segment}")
-            i += 1
+                tables = []
+                i = 1
+                for segment in table_segments:
+                    print(f"found table segment {i}:\n{segment}")
+                    i += 1
 
-            # Create a TableResource and pandas DataFrame for each table segment
-            try:
-                control = formats.CsvControl(delimiter=self.cell_sep, skip_initial_space=True)
-                resource = TableResource(data=StringIO(segment), format='csv', control=control)
-                # resource.infer()
+                    # Create a TableResource and pandas DataFrame for each table segment
+                    try:
+                        control = formats.CsvControl(delimiter=self.cell_sep, skip_initial_space=True)
+                        # wrap the segment in StringIO to simulate a file-like object
+                        segment_io = StringIO(segment)
+                        segment_io.name = self.container.path
+                        resource = TableResource(data=segment_io, scheme="text", format='csv', control=control)
+                        if resource.validate().valid:
+                            resource.infer()
 
-                dataframe = pd.read_csv(StringIO(segment),
-                                        delimiter=self.cell_sep,
-                                        encoding=self.container.encoding,
-                                        on_bad_lines='skip')
-                tables.append([resource, dataframe])
+                            dataframe = pd.read_csv(segment_io,
+                                                    delimiter=self.cell_sep,
+                                                    encoding=self.container.encoding,
+                                                    on_bad_lines='skip')
+                            tables.append([resource, dataframe])
 
-            except pd.errors.ParserError as e:
-                print(f"Error parsing table to pandas dataframe: {e}")
 
-        return tables
+                    except pd.errors.ParserError as e:
+                        print(f"Error parsing table to pandas dataframe: {e}")
+
+                return tables
+            else:
+                return [None, None]
+
+        else:
+            return [None, None]
         # """
         # Searches for coherent tables by regular expression.
         # Returns frictionless TableResource objects of all tables found in the file.

@@ -139,7 +139,7 @@ class DBconnector:
         os.mkdir(project_dir)
 
         # create directory for the datasets
-        datasets_dir = os.path.join(self.project_files_root, self.datasets_directory_name)
+        datasets_dir = os.path.join(project_dir, self.datasets_directory_name)
         if not os.path.isdir(datasets_dir):
             os.mkdir(datasets_dir)
         return project_dir, datasets_dir

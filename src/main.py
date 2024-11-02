@@ -194,7 +194,7 @@ def load_project_test_datasets(dbcon, user_id, project_id):
         # project.removeAllDatasets()
 
         # show the whole container tree
-        # project.showContainerTree()
+        project.showContainerTree()
 
         # CREATE AND WORK WITH DATASET
         # new empty dataset is created and added to the ResourceManager
@@ -224,6 +224,7 @@ def load_project_test_datasets(dbcon, user_id, project_id):
         project.updateDBrecord()
 
     return
+
 
 def load_project_upload_files(dbcon, user_id, project_id):
     """
@@ -338,8 +339,8 @@ if __name__ == "__main__":
     # project3.updateDBrecord()
 
     # load_project_test_datasets(dbcon, user_id, 1)
-    load_project_test_concepts(dbcon, user_id, 1)
-    # load_project_upload_files(dbcon, user_id, 1)
+    # load_project_test_concepts(dbcon, user_id, 1)
+    load_project_upload_files(dbcon, user_id, 19)
     # load_project_remove_container(dbcon, user_id, 1)
     # load_project_test_multitable(dbcon, user_id, 1)
     # load_existing_project(dbcon, user_id, 2)

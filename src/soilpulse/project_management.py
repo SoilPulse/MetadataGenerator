@@ -89,7 +89,7 @@ class ProjectManager:
             try:
                 self.id, self.temp_dir, self.datasets_dir = self.dbconnection.establishProjectRecord(user_id, self)
             except DatabaseEntryError as e:
-                print("Failed to establish new Project record in the SoilPulse database.")
+                print("Failed to establish new Project record in SoilPulse database.")
                 raise
             except NameNotUniqueError:
                 print(f"Project with name \"{kwargs.get('name')}\" already exists. Use unique names for your projects!")
@@ -176,8 +176,6 @@ class ProjectManager:
         Changes the DOI of a project with all appropriate actions
         - reads the registration agency and publisher response metadata and assigns them to the ProjectManager
         - check for files bound to the DOI record
-        - download the files (unpack archives if necessary)
-        - create container tree from files
         - remove old files if there were any
 
         """
@@ -195,31 +193,37 @@ class ProjectManager:
             self.doi = doi
             # populate the registration agency
             self.registrationAgency = ProjectManager.getRegistrationAgencyOfDOI(doi)
-            # populate the metadata properties
-            self.DOImetadata = self.getDOImetadata(doi)
-            # append the DOI metadata JSON container to the ProjectManagers containers
-            DOIcont = self.containerFactory.createHandler("json", name=doi_metadata_key, project_manager=self, parent_container=None, content=self.DOImetadata, path=None)
-            self.containerTree.append(DOIcont)
-            DOIcont.saveAsFile(self.temp_dir, doi_metadata_key.replace(" ", "_")+".json")
+            if self.registrationAgency is not None:
+                # populate the metadata properties
+                self.DOImetadata = self.getDOImetadata(doi)
+                if self.DOImetadata:
+                    # append the DOI metadata JSON container to the ProjectManagers containers
+                    DOIcont = self.containerFactory.createHandler("json", name=doi_metadata_key, project_manager=self, parent_container=None, content=self.DOImetadata, path=None)
+                    self.containerTree.append(DOIcont)
+                    DOIcont.saveAsFile(self.temp_dir, doi_metadata_key.replace(" ", "_")+".json")
 
-            # populate publisher with Publisher class instance
-            try:
-                self.publisher = self.getPublisher(self.DOImetadata)
-            except NotImplementedError:
-                print("Publisher instance could not be created:")
-                print("No other data publisher than Zenodo implemented so far.")
+                    # populate publisher with Publisher class instance
+                    try:
+                        self.publisher = self.getPublisher(self.DOImetadata)
+                    except NotImplementedError:
+                        print("Publisher instance could not be created:")
+                        print("No other data publisher than Zenodo implemented so far.")
+                    else:
+                        self.publisherMetadata = self.getPublisherMetadata()
+
+                        # append the publisher metadata JSON container to the ProjectManagers containers
+                        publisherCont = self.containerFactory.createHandler("json", name=publisher_metadata_key, project_manager=self, parent_container=None, content=self.publisherMetadata, path=None)
+                        self.containerTree.append(publisherCont)
+                        publisherCont.saveAsFile(self.temp_dir, publisher_metadata_key.replace(" ", "_")+".json")
+
+                        # get downloadable files information from publisher
+                        self.publishedFiles = self.publisher.getFileInfo()
+                else:
+                    print("DOI metadata were not retrieved.")
             else:
-                self.publisherMetadata = self.getPublisherMetadata()
-
-                # append the publisher metadata JSON container to the ProjectManagers containers
-                publisherCont = self.containerFactory.createHandler("json", name=publisher_metadata_key, project_manager=self, parent_container=None, content=self.publisherMetadata, path=None)
-                self.containerTree.append(publisherCont)
-                publisherCont.saveAsFile(self.temp_dir, publisher_metadata_key.replace(" ", "_")+".json")
-
-                # get downloadable files information from publisher
-                self.publishedFiles = self.publisher.getFileInfo()
+                print("DOI metadata were not retrieved.")
         else:
-            return
+            print("Empty DOI provided. DOI metadata were not retrieved.")
         return
 
     def getAllFilesList(self):
@@ -300,7 +304,7 @@ class ProjectManager:
         """
         if not DOI_metadata:
             try:
-                DOImetadata = self.getDOImetadata(self.__doi)
+                DOImetadata = self.getDOImetadata(self.doi)
             except DOIdataRetrievalException as e:
                 print("Error occurred while retrieving DOI record metadata.")
                 print(e.message)
@@ -375,12 +379,16 @@ class ProjectManager:
 
             except requests.exceptions.ConnectionError:
                 print(" A connection error occurred. Check your internet connection.")
+                return None
             except requests.exceptions.Timeout:
                 print(" The request timed out.")
+                return None
             except requests.exceptions.HTTPError as e:
                 print(" HTTP Error:", e)
+                return None
             except requests.exceptions.RequestException as e:
                 print(" An error occurred:", e)
+                return None
             else:
                 if 'error' in output.keys():
                     raise DOIdataRetrievalException(f"Registration agency '{ProjectManager.getRegistrationAgencyOfDOI(doi)}' didn't respond. Error {output['status']}: {output['error']}")
@@ -470,6 +478,7 @@ class ProjectManager:
             # create new container from the file with all related actions
             newContainer = self.containerFactory.createHandler('filesystem', self, None, name=filename,
                                                                path=target_file_path, cascade=True)
+            newContainer.getAnalyzed(cascade=True)
             self.containerTree.append(newContainer)
             # add new file path to uploaded files list
             self.uploadedFiles.append(newContainer.path)

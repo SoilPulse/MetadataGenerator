@@ -90,13 +90,16 @@ class TableCrawler(Crawler):
         #
         column_conts = []
         # print(self.container.fl_resource.schema)
-        for field in self.container.fl_resource.schema.fields:
-            cont_args = {"name": field.name, "data_type": field.type}
-            # print(cont_args)
-            # create new container from found TableResources
-            new_column = self.container.project.containerFactory.createHandler("column", self.container.project,
-                                                                      self.container, **cont_args)
-            column_conts.append(new_column)
+        try:
+            for field in self.container.fl_resource.schema.fields:
+                cont_args = {"name": field.name, "data_type": field.type}
+                # print(cont_args)
+                # create new container from found TableResources
+                new_column = self.container.project.containerFactory.createHandler("column", self.container.project,
+                                                                          self.container, **cont_args)
+                column_conts.append(new_column)
+        except:
+            print(self.container.fl_resource)
         print(f"\t\tfound {len(column_conts)} columns")
         # change flag of parent container
         self.container.wasCrawled = True
