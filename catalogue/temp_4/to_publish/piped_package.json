@@ -391,77 +391,77 @@
           },
           {
             "name": "P_C_1",
-            "type": "string",
+            "type": "number",
             "description": " Observed rainfall during experiment at rainfall collector 1 ",
             "unit": "mm",
             "concept": ""
           },
           {
             "name": "P_C_2",
-            "type": "string",
+            "type": "number",
             "description": " Observed rainfall during experiment at rainfall collector 2 ",
             "unit": "mm",
             "concept": ""
           },
           {
             "name": "P_C_3",
-            "type": "string",
+            "type": "number",
             "description": " Observed rainfall during experiment at rainfall collector 3 ",
             "unit": "mm",
             "concept": ""
           },
           {
             "name": "P_C_4",
-            "type": "string",
+            "type": "number",
             "description": " Observed rainfall during experiment at rainfall collector 4 ",
             "unit": "mm",
             "concept": ""
           },
           {
             "name": "P_C_5",
-            "type": "string",
+            "type": "number",
             "description": " Observed rainfall during experiment at rainfall collector 5 ",
             "unit": "mm",
             "concept": ""
           },
           {
             "name": "P_C_6",
-            "type": "string",
+            "type": "number",
             "description": " Observed rainfall during experiment at rainfall collector 6 ",
             "unit": "mm",
             "concept": ""
           },
           {
             "name": "P_C_7",
-            "type": "string",
+            "type": "number",
             "description": " Observed rainfall during experiment at rainfall collector 7 ",
             "unit": "mm",
             "concept": ""
           },
           {
             "name": "P_C_8",
-            "type": "string",
+            "type": "number",
             "description": " Observed rainfall during experiment at rainfall collector 8 ",
             "unit": "mm",
             "concept": ""
           },
           {
             "name": "P_C_9",
-            "type": "string",
+            "type": "number",
             "description": " Observed rainfall during experiment at rainfall collector 9 ",
             "unit": "mm",
             "concept": ""
           },
           {
             "name": "P_C_10",
-            "type": "string",
+            "type": "number",
             "description": " Observed rainfall during experiment at rainfall collector 10 ",
             "unit": "mm",
             "concept": ""
           },
           {
             "name": "P_C_11",
-            "type": "string",
+            "type": "number",
             "description": " Observed rainfall during experiment at rainfall collector 11 ",
             "unit": "mm",
             "concept": ""
@@ -489,77 +489,77 @@
           },
           {
             "name": "P_mean_selected",
-            "type": "string",
+            "type": "number",
             "description": " Mean interpolated rainfall for selected subplots according to data quality ",
             "unit": "mm",
             "concept": ""
           },
           {
             "name": "Q_OF_subplot_A",
-            "type": "string",
+            "type": "number",
             "description": " Cumulative overland flow for the experiment at subplot A ",
             "unit": "mm",
             "concept": ""
           },
           {
             "name": "Q_OF_subplot_B",
-            "type": "string",
+            "type": "number",
             "description": " Cumulative overland flow for the experiment at subplot B ",
             "unit": "mm",
             "concept": ""
           },
           {
             "name": "Q_OF_subplot_C",
-            "type": "string",
+            "type": "number",
             "description": " Cumulative overland flow for the experiment at subplot C ",
             "unit": "mm",
             "concept": ""
           },
           {
             "name": "Q_SSF_subplot_B",
-            "type": "string",
+            "type": "number",
             "description": " Cumulative subsurface up to 40 cm depth flow for the experiment at subplot B ",
             "unit": "mm",
             "concept": ""
           },
           {
             "name": "Q_OF_mean_selected",
-            "type": "string",
+            "type": "number",
             "description": " Mean cumulative overland flow for selected subplots according to data quality ",
             "unit": "mm",
             "concept": ""
           },
           {
             "name": "RC_OF_subplot_A",
-            "type": "string",
+            "type": "number",
             "description": " Overland flow coefficient for the experiment at subplot A ",
             "unit": "mm",
             "concept": "https://dbpedia.org/resource/Runoff_curve_number"
           },
           {
             "name": "RC_OF_subplot_B",
-            "type": "string",
+            "type": "number",
             "description": " Overland flow coefficient for the experiment at subplot B ",
             "unit": "mm",
             "concept": "https://dbpedia.org/resource/Runoff_curve_number"
           },
           {
             "name": "RC_OF_subplot_C",
-            "type": "string",
+            "type": "number",
             "description": " Overland flow coefficient for the experiment at subplot C ",
             "unit": "mm",
             "concept": "https://dbpedia.org/resource/Runoff_curve_number"
           },
           {
             "name": "RC_SSF_subplot_B",
-            "type": "string",
+            "type": "number",
             "description": " Subsurface runoff coefficient for the experiment at subplot B ",
             "unit": "mm",
             "concept": "https://dbpedia.org/resource/Runoff_curve_number"
           },
           {
             "name": "RC_OF_mean_selected",
-            "type": "string",
+            "type": "number",
             "description": " Mean surface runoff coefficient for selected subplots according to data quality ",
             "unit": "mm",
             "concept": "https://dbpedia.org/resource/Runoff_curve_number"
@@ -573,7 +573,19 @@
           "Site_number",
           "Experiment_number"
         ],
-        "foreignKeys": []
+        "foreignKeys": [
+          {
+            "fields": [
+              "Site_number"
+            ],
+            "reference": {
+              "resource": "1_site_data",
+              "fields": [
+                "Site_number"
+              ]
+            }
+          }
+        ]
       }
     },
     {

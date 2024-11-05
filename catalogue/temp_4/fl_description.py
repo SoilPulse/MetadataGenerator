@@ -48,19 +48,19 @@ for x in ries.resources:
     x.schema.missing_values += ['NA']
 
 # type adjustments, as falsely infered by fl
-x = ries.resources[2]
 numeric_list = [x.name for x in ries.resources[2].schema.fields if "Q_" in x.name or "P_" in x.name]
 print(numeric_list)
-for z in numeric_list:
-    x = transform(x,
-                  steps = [
-                      steps.field_update(name = z,
-                                         descriptor = {
-                                             'type': "number"
-                                             }
-                                         )
-                      ]
-                  )
+x = ries.resources[2]
+x = transform(x,
+             steps = [
+                     steps.field_update(name = z,
+                                        descriptor = {
+                                        'type': "number"
+                                        }
+                                    )
+                     for z in numeric_list
+                     ]
+             )
 x = transform(x,
              steps = [
                  steps.field_update(name = "Date_time",
@@ -72,6 +72,20 @@ x = transform(x,
                                     )
                  ]
              )
+
+numeric_list = [x.name for x in ries.resources[1].schema.fields if "Q_" in x.name or "P_" in x.name or "RC_" in x.name]
+print(numeric_list)
+x = ries.resources[1]
+x = transform(x,
+             steps = [
+                 steps.field_update(name = z,
+                                    descriptor = {
+                                        'type': "number"
+                                        }
+                                    )
+                     for z in numeric_list
+                     ]
+                 )
 
 # set primary and foreign keys
 ries.resources[0].schema.primary_key = ["Site_number"]
@@ -247,3 +261,12 @@ ries.validate()
 
 
 ries.to_json("catalogue\\temp_4\\primary_package.json")
+
+# do data transformation
+
+with open('catalogue\\temp_4\\to_publish\\pipe.txt', 'r') as f:
+    pipe = Pipeline(steps=eval(f.read()))
+
+ries.transform(pipe)
+ries.validate()
+ries.to_json("catalogue\\temp_4\\to_publish\\piped_package.json")
