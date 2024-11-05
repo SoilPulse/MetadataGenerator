@@ -783,7 +783,7 @@ class CSVcrawler(Crawler):
         for segment in table_segments:
             print(f"found table segment {i}:\n{segment}")
             i += 1
-        return []
+        # return []
 
         # Define a pattern to capture tables separated by empty lines or specific patterns (e.g., ;;)
         pattern = r'(?:(?<!\w)[^\w\s]*(?:\w+\W*(?:\w+\W*)+\w+|\w+(?:\W+\w+)+\w+)\b(?:\W|$))'
