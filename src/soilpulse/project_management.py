@@ -1784,23 +1784,23 @@ class Crawler:
         """
         return True
 
-    def analyze(self):
+    def analyze(self, report=False):
         """
         Analyzes inner structure of the container
         :return: list of containers - container tree
         """
 
         print(f"No content analysis procedure defined for crawler type '{self.crawlerType}'")
-        self.container.isAnalyzed = True
+        self.container.wasAnalyzed = True
         return []
 
-    def crawl(self, force_recrawl=False):
+    def crawl(self, report=False):
         """
         Parses the container content and searches for metadata elements.
         :return: MetadataStructureMap
         """
         print(f"No crawling procedure defined for crawler type '{self.crawlerType}'")
-
+        self.container.wasCrawled = True
         return
 
     def find_translations(self, vocabulary):

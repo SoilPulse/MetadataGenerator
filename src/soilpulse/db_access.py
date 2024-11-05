@@ -399,10 +399,30 @@ class MySQLConnector(DBconnector):
         if cascade:
             # save containers and their strings translations
             if len(project.containerTree) > 0:
+                # list of container ids that are no longer held in the in memory instance of ProjectManager
+                orphans = []
                 for cont in project.containerTree:
-                    self.updateContainerRecord(cont, cascade)
+                    orphans.extend(self.updateContainerRecord(cont, cascade, []))
                 print(f"\tcontainers saved")
                 print(f"\tvocabularies saved")
+
+                # deleting orphaned container entries (containers that were deleted in memory)
+                # TODO first get all files that are related to the orphaned containers and delete them
+
+                thecursor = self.db_connection.cursor()
+                query = f"DELETE FROM {self.containersTableName} " \
+                        f"WHERE `id_local` NOT IN ({', '.join([str(o) for o in orphans])}) " \
+                        f"AND `project_id` = {project.id}"
+                thecursor.execute(query)
+                self.db_connection.commit()
+                # print the number of deleted rows if any
+                deleted_rows = thecursor.rowcount
+                if deleted_rows > 0:
+                    print(f"\t{deleted_rows} orphaned containers deleted")
+
+                thecursor.close()
+
+
             else:
                 print(f"\t(no containers to save)")
 
@@ -546,7 +566,17 @@ class MySQLConnector(DBconnector):
         return
 
 
-    def updateContainerRecord(self, container, cascade=False):
+    def updateContainerRecord(self, container, cascade=False, cont_updated=[]):
+        """
+        Updates DB entry of the container and its related entities (concepts, unit, methods)
+        On cascade=True recursively invokes update on all sub-containers
+        Records list of updated container ids in cont_updated
+
+        :param container: the container instance to be updated
+        :param cascade: whether or not to update the sub-containers' records too
+        :param cont_updated: list of IDs of updated containers
+        """
+
         thecursor = self.db_connection.cursor()
 
         # set the general core of properties to be stored
@@ -568,6 +598,7 @@ class MySQLConnector(DBconnector):
             values = list(arglist.values())
             values.extend([container.id, container.project.id])
 
+
         # insert new record if not yet in DB
         else:
             arglist.update({"id_local": container.id, "project_id": container.project.id})
@@ -579,9 +610,12 @@ class MySQLConnector(DBconnector):
 
             values = list(arglist.values())
 
+
         thecursor.execute(query, values)
         self.db_connection.commit()
         thecursor.close()
+        # add this container to updated list
+        cont_updated.append(container.id)
 
         # update concepts records of container
         self.updateConceptsOfContainer(container)
@@ -593,8 +627,8 @@ class MySQLConnector(DBconnector):
         # update sub-containers records if desired
         if cascade:
             for cont in container.containers:
-                self.updateContainerRecord(cont, cascade)
-        return
+                self.updateContainerRecord(cont, cascade, cont_updated)
+        return cont_updated
 
     def updateConceptsOfContainer(self, container):
         """

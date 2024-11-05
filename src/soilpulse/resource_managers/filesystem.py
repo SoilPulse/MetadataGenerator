@@ -266,10 +266,10 @@ class SingleFileContainer(FileSystemContainer):
         # self.mimeType = magic.from_file(self.path)
         return
 
-    def getAnalyzed(self, cascade, force=False):
+    def getAnalyzed(self, cascade=True, force=False):
         if super().getAnalyzed(cascade, force):
             if self.crawler:
-                tables = self.crawler.analyze()
+                tables = self.crawler.analyze(report=False)
                 if tables:
                     # print(f"tables:\n{tables}")
                     # print("\n\n")
@@ -723,7 +723,7 @@ class CSVcrawler(Crawler):
                     self.cell_sep = None
                     self.line_sep = None
 
-    def analyze(self, report=True):
+    def analyze(self, report=False):
         print(f"\nanalyzing CSV '{self.container.path}' of container #{self.container.id}, "
             f"encoding '{self.container.encoding}'") if report else None
         # find delimiters and encoding
@@ -787,8 +787,24 @@ class CSVcrawler(Crawler):
         :return: A list of content chunks.
         """
         if cell_sep is not None:
-            # Construct a regex pattern based on specified delimiters
-            pattern = rf'{line_sep}(?:{line_sep}|[{re.escape(cell_sep)}\s]*{line_sep})+'
+            # Define pattern to capture table breaks based on specific newline and delimiter structure
+            pattern = rf'({line_sep}{{2,}})|({line_sep}[{re.escape(cell_sep)}\s]*{line_sep})'
+            print(f"Regex pattern used for splitting: {pattern}\n")
+
+            # Previewing content for debugging
+            print(f"Content preview with indexes:")
+            for i, char in enumerate(content[:200]):
+                print(f"{i}: '{char}'", end=", " if (i + 1) % 10 != 0 else "\n")
+
+            # Confirm pattern matches
+            matches = re.finditer(pattern, content)
+            found = False
+            for i, match in enumerate(matches, 1):
+                found = True
+                print(f"Match {i}: '{match.group()}' at position {match.start()}-{match.end()}")
+            if not found:
+                print("No matches found.\n")
+
             # Split the content based on the pattern
             chunks = re.split(pattern, content)
 
@@ -822,16 +838,24 @@ class CSVcrawler(Crawler):
                 tables = []
                 i = 1
                 for segment in table_segments:
-                    print(f"found table segment {i}:\n{segment}")
-                    i += 1
-
                     # Create a TableResource and pandas DataFrame for each table segment
                     try:
-                        control = formats.CsvControl(delimiter=self.cell_sep, skip_initial_space=True)
+                        control = formats.CsvControl(skip_initial_space=True)
+                        # set cell delimiter by crawler delimiter if not None
+                        if self.cell_sep is not None:
+                            control.delimiter = self.cell_sep
+
                         # wrap the segment in StringIO to simulate a file-like object
                         segment_io = StringIO(segment)
                         segment_io.name = self.container.path
-                        resource = TableResource(data=segment_io, scheme="text", format='csv', control=control)
+                        resource = TableResource(data=segment_io,
+                                                 scheme="text",
+                                                 format='csv',
+                                                 control=control)
+                        # set resource encoding by container encoding if not None
+                        if self.container.encoding is not None:
+                            resource.encoding = self.container.encoding
+
                         if resource.validate().valid:
                             resource.infer()
 
@@ -840,11 +864,13 @@ class CSVcrawler(Crawler):
                                                     encoding=self.container.encoding,
                                                     on_bad_lines='skip')
                             tables.append([resource, dataframe])
-
-
+                        else:
+                            print(f"\tfound segment {i} is not a valid table structure")
+                            if report:
+                                print(f"{segment}\n{40*'='}\n{resource.validate()}")
                     except pd.errors.ParserError as e:
                         print(f"Error parsing table to pandas dataframe: {e}")
-
+                    i += 1
                 return tables
             else:
                 return [None, None]

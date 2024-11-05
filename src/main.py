@@ -285,20 +285,23 @@ def load_project_test_multitable(dbcon, user_id, project_id):
     """
     project = load_existing_project(dbcon, user_id, project_id)
     if project is None:
-        print("Can't test container removing because the project was not loaded from the storage.")
+        print("Can't test multitable file analysis because the project was not loaded from the storage.")
     else:
         # show project details
         print(str(project))
         #
-        # show the whole container tree
-        project.showContainerTree()
-
-        project.getContainerByID(1018).getAnalyzed()
+        # reference a container to work with
+        cont = project.getContainerByID(715)
+        cont.showContents()
+        cont.getAnalyzed(force=True)
         # show paths of files and related containers
         # project.showFilesStructure()
 
+        # show the whole container tree
+        project.showContainerTree()
+
         # update database record
-        # project.updateDBrecord()
+        project.updateDBrecord()
     return
 
 if __name__ == "__main__":
@@ -340,9 +343,9 @@ if __name__ == "__main__":
 
     # load_project_test_datasets(dbcon, user_id, 1)
     # load_project_test_concepts(dbcon, user_id, 1)
-    load_project_upload_files(dbcon, user_id, 19)
+    # load_project_upload_files(dbcon, user_id, 19)
     # load_project_remove_container(dbcon, user_id, 1)
-    # load_project_test_multitable(dbcon, user_id, 1)
+    load_project_test_multitable(dbcon, user_id, 3)
     # load_existing_project(dbcon, user_id, 2)
 
 
