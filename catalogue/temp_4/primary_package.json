@@ -552,35 +552,35 @@
             "type": "number",
             "description": " Overland flow coefficient for the experiment at subplot A ",
             "unit": "mm",
-            "concept": "own:runoff_coefficient"
+            "concept": "https://dbpedia.org/resource/Runoff_curve_number"
           },
           {
             "name": "RC_OF_subplot_B",
             "type": "number",
             "description": " Overland flow coefficient for the experiment at subplot B ",
             "unit": "mm",
-            "concept": "own:runoff_coefficient"
+            "concept": "https://dbpedia.org/resource/Runoff_curve_number"
           },
           {
             "name": "RC_OF_subplot_C",
             "type": "number",
             "description": " Overland flow coefficient for the experiment at subplot C ",
             "unit": "mm",
-            "concept": "own:runoff_coefficient"
+            "concept": "https://dbpedia.org/resource/Runoff_curve_number"
           },
           {
             "name": "RC_SSF_subplot_B",
             "type": "number",
             "description": " Subsurface runoff coefficient for the experiment at subplot B ",
             "unit": "mm",
-            "concept": "own:runoff_coefficient"
+            "concept": "https://dbpedia.org/resource/Runoff_curve_number"
           },
           {
             "name": "RC_OF_mean_selected",
             "type": "number",
             "description": " Mean surface runoff coefficient for selected subplots according to data quality ",
             "unit": "mm",
-            "concept": "own:runoff_coefficient"
+            "concept": "https://dbpedia.org/resource/Runoff_curve_number"
           }
         ],
         "missingValues": [
