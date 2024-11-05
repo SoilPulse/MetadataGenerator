@@ -966,8 +966,9 @@ class ContainerHandlerFactory:
             new_container = self.containerTypes[specialized_type](*args, **kwargs)
             # put it in the factory list
             self.containers.update({new_container.id: new_container})
-            print(f"type of weakref object: {type(weakref.ref(new_container))}")
-            return weakref.ref(new_container)
+ #           print(f"type of weakref object: {type(weakref.ref(new_container))}")
+#            return weakref.ref(new_container)
+            return new_container
 
     def getContainerByID(cls, cid):
         """
