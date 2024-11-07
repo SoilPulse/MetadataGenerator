@@ -176,7 +176,7 @@ def merge_foreign_keys(dataset):
                                     steps.table_normalize(),
                                     steps.table_join(
                                         resource=x['reference']['resource'],
-                                        field_name=x['fields'],
+                                        field_name=x['fields'][0],
 #                                        mode = 'outer'
                                         )
                                     ]
@@ -189,7 +189,7 @@ def merge_foreign_keys(dataset):
                                     steps.table_normalize(),
                                     steps.table_join(
                                         resource=x['reference']['resource'],
-                                        field_name=x['fields'],
+                                        field_name=x['fields'][0],
 #                                        mode = 'outer'
                                         )
                                     ]
