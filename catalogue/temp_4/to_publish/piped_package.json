@@ -872,8 +872,8 @@
           "NA"
         ],
         "primaryKey": [
-          "Site_number",
-          "Date_time"
+          "Date_time",
+          "Site_number"
         ],
         "foreignKeys": [
           {
