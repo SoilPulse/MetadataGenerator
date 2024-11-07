@@ -12,7 +12,7 @@
         "fields": [
           {
             "name": "soilloss",
-            "type": "string",
+            "type": "number",
             "unit": "kg",
             "method": "cumulative soil loss of whole experiment",
             "concept": "http://aims.fao.org/aos/agrovoc/c_8dab65bc"
@@ -224,6 +224,7 @@
             "type": "number"
           }
         ],
+		"missingValues": ["NA", ""],
         "primaryKey": [
           "No"
         ]
