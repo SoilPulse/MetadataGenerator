@@ -8,6 +8,7 @@ import shutil
 import json
 from pathlib import Path
 from frictionless import Package, Resource
+import re
 
 from .metadata_scheme import MetadataStructureMap
 from .db_access import DBconnector
@@ -673,7 +674,7 @@ class ProjectManager:
         for ds in self.datasets:
             self.removeDataset(ds)
 
-    def showContainerTree(self):
+    def showContainerTree(self, show_concepts=True, show_methods=True, show_units=True):
         """
         Induces printing contents of the whole container tree
         """
@@ -681,7 +682,7 @@ class ProjectManager:
         print(f"{self.name}\ncontainer tree:")
         print(80 * "-")
         for container in self.containerTree:
-            container.showContents(0)
+            container.showContents(show_concepts=show_concepts, show_methods=show_methods, show_units=show_units)
         print(80 * "=" + 2 * "\n")
 
 
@@ -907,12 +908,13 @@ class Dataset:
     def get_frictionless_package(self, output_path=None):
         def collect_tables(cont_list, tables=[]):
             for cont in cont_list:
-                if cont.crawler.crawlerType == "csv":
-                    tables.append(cont.crawler.get_frictionless_resource())
-                #
-                # if len(cont.containers) > 0:
-                #     print(f" sub containers {len(cont.containers)}")
-                #     collect_tables(cont.containers, tables)
+                if cont.crawler is not None:
+                    if cont.crawler.crawlerType == "csv":
+                        tables.append(cont.crawler.get_frictionless_resource())
+                    #
+                    # if len(cont.containers) > 0:
+                    #     print(f" sub containers {len(cont.containers)}")
+                    #     collect_tables(cont.containers, tables)
 
             return tables
 
@@ -930,6 +932,7 @@ class Dataset:
         path = os.path.join(self.project.temp_dir, self.project.datasets_dir, str(self.id))
         if not os.path.isdir(path):
             os.mkdir(path)
+        self.directory_path = path
         return path
 
     def addContainers(self, containers):
@@ -993,15 +996,15 @@ class Dataset:
     def checkMetadataStructure(self):
         self.metadataMap.checkConsistency()
 
-    def getAnalyzed(self, cascade, force=False):
+    def getAnalyzed(self, cascade=True, force=False, report=False):
         """Induces analysis of own containers."""
         for container in self.containers:
-            container.getAnalyzed(cascade, force)
+            container.getAnalyzed(cascade, force, report)
         pass
 
-    def getCrawled(self, cascade, force=False):
+    def getCrawled(self, cascade=True, force=False, report=False):
         for container in self.containers:
-            container.getCrawled(cascade, force)
+            container.getCrawled(cascade, force, report)
 
 class SourceFile:
     def __init__(self, id, filename, size = None, source_url = None, checksum = None, checksum_type = None):
@@ -1211,25 +1214,25 @@ class ContainerHandler:
             if hasattr(self, "concepts"):
                 print("  " * (depth + 1) + "concepts:") if len(self.concepts) > 0 else None
                 for string, concepts in self.concepts.items():
-                    print("  "*(depth+2)+string+": "+"; ".join([f"'{conc['uri']}' ('{conc['vocabulary']}')'" for conc in concepts]))
+                    print("  "*(depth+2)+string+": "+"; ".join([f"'{conc['uri']}' ('{conc['vocabulary']}')" for conc in concepts]))
 
         if show_methods:
             if hasattr(self, "methods"):
                 print("  " * (depth + 1) + "methods:") if len(self.methods) > 0 else None
                 for string, methods in self.methods.items():
-                    print("  "*(depth+2)+string+": "+"; ".join([f"'{meth['uri']}' ('{meth['vocabulary']}')'" for meth in methods]))
+                    print("  "*(depth+2)+string+": "+"; ".join([f"'{meth['uri']}' ('{meth['vocabulary']}')" for meth in methods]))
 
         if show_units:
             if hasattr(self, "units"):
                 print("  " * (depth + 1) + "units:") if len(self.units) > 0 else None
                 for string, units in self.units.items():
-                    print("  "*(depth+2)+string+": "+"; ".join([f"'{unit['uri']}' ('{unit['vocabulary']}')'" for unit in units]))
+                    print("  "*(depth+2)+string+": "+"; ".join([f"'{unit['uri']}' ('{unit['vocabulary']}')" for unit in units]))
 
         # invoke showContents of sub-containers
         if len(self.containers) > 0:
             depth += 1
             for cont in self.containers:
-                cont.showContents(depth)
+                cont.showContents(depth, ind, show_concepts, show_methods, show_units)
 
     def updateDBrecord(self, db_connection, cascade=True):
         """
@@ -1297,7 +1300,7 @@ class ContainerHandler:
     def createTree(self, *args):
         pass
 
-    def getAnalyzed(self, cascade, force=False):
+    def getAnalyzed(self, cascade=True, force=False, report=False):
         """Induces further decomposition of the container into logical sub-elements."""
         if self.wasAnalyzed and not force:
             print(f"Container {self.id} was already analyzed.")
@@ -1305,13 +1308,13 @@ class ContainerHandler:
         else:
             return  True
 
-    def getCrawled(self, cascade, force=False):
+    def getCrawled(self, cascade=True, force=False, report=False):
         """Induces content search for metadata elements based on appropriate set of search rules and terms."""
         if self.wasCrawled and not force:
             print(f"Container {self.id} was already crawled.")
             return False
         else:
-            return  True
+            return True
 
     def assignCrawler(self, crawler):
         self.crawler = crawler
@@ -1805,24 +1808,31 @@ class Crawler:
 
     def find_translations(self, vocabulary):
         results = []
+        results_for_now = {}
         # search in container name
         container_name = self.container.name.lower()
-
+        # iterate over each term in the vocabulary to find matches in container name
         for term, translations in vocabulary.items():
-            print(f"{container_name} - {term.lower()}")
-            start_index = container_name.find(term.lower())
+            term_pattern = re.compile(re.escape(term.lower()))
+            matches = term_pattern.finditer(container_name)
 
-            if start_index != -1:
-                end_index = start_index + len(term.lower()) - 1
+            for match in matches:
+                start_index = match.start()
+                end_index = match.end() - 1
                 locator = {
                     "attribute": "name",
                     "start_char": start_index,
                     "end_char": end_index,
                 }
+
                 results.append([{term: translations}, locator])
 
+                results_for_now.update({term: translations})
+
         # here could be some other searching ... whatever it may be
-        return results
+
+        # hotfix - return only dictionary without locators as they need some more thinking ...
+        return results_for_now
 
 
 CrawlerFactory.registerCrawlerType(Crawler)

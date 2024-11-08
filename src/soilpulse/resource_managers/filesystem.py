@@ -12,10 +12,11 @@ from collections import Counter
 import chardet
 import pandas as pd
 import shutil
+import copy
 
 import pandas.errors
 from frictionless import validate, formats
-from frictionless.resources import Resource, TableResource, Dialect
+from frictionless.resources import Resource, TableResource, Package
 from io import StringIO
 # import magic
 
@@ -145,7 +146,7 @@ class FileSystemContainer(ContainerHandler):
             self.dateLastModified = kwargs.get("date_last_modified")
 
 
-    def showContents(self, depth=0, ind=". "):
+    def showContents(self, depth=0, ind=". ", show_concepts=True, show_methods=True, show_units=True):
         """
         Print basic info about the container and invokes showContents on all of its containers.
 
@@ -165,7 +166,7 @@ class FileSystemContainer(ContainerHandler):
         if self.containers:
             depth += 1
             for cont in self.containers:
-                cont.showContents(depth)
+                cont.showContents(depth, ind, show_concepts, show_methods, show_units)
 
     def getFileSize(self):
         return os.stat(self.path).st_size if os.path.isfile(self.path) else None
@@ -266,10 +267,10 @@ class SingleFileContainer(FileSystemContainer):
         # self.mimeType = magic.from_file(self.path)
         return
 
-    def getAnalyzed(self, cascade=True, force=False):
+    def getAnalyzed(self, cascade=True, force=False, report=False):
         if super().getAnalyzed(cascade, force):
             if self.crawler:
-                tables = self.crawler.analyze(report=False)
+                tables = self.crawler.analyze(report=report)
                 if tables:
                     # print(f"tables:\n{tables}")
                     # print("\n\n")
@@ -277,20 +278,20 @@ class SingleFileContainer(FileSystemContainer):
                 # print(f"table cont {self.id} containers: {self.containers}")
 
             for container in self.containers:
-                container.getAnalyzed(cascade, force)
+                container.getAnalyzed(cascade, force, report)
             self.wasAnalyzed = True
 
-    def getCrawled(self, cascade=True, force=False):
+    def getCrawled(self, cascade=True, force=False, report=False):
         """
         Executes the routines for scanning, recognizing and extracting metadata (and maybe data)
         """
         if super().getCrawled(cascade, force):
             if self.crawler:
-                self.crawler.crawl()
+                self.crawler.crawl(report)
 
             if cascade:
                 for container in self.containers:
-                    container.getCrawled(cascade, force)
+                    container.getCrawled(cascade, force, report)
 
             self.wasCrawled = True
         return
@@ -312,17 +313,31 @@ class DirectoryContainer(FileSystemContainer):
         if cascade:
             self.containers = self.createTree(self.path, project_manager)
 
-    def getCrawled(self, cascade, force=False):
+    def getAnalyzed(self, cascade=True, force=False, report=False):
+        """
+        Invokes getAnalyzed on all of his containers
+        """
+
+        if super().getAnalyzed(cascade, force):
+            if cascade:
+                for container in self.containers:
+                    container.getAnalyzed(cascade, force, report)
+
+            self.wasAnalyzed = True
+
+        return
+
+    def getCrawled(self, cascade=True, force=False, report=False):
         """
         Invokes getCrawled on all of his containers
         """
-        super().getCrawled(cascade, force)
 
-        if cascade:
-            for container in self.containers:
-                container.getCrawled(cascade, force)
+        if super().getCrawled(cascade, force):
+            if cascade:
+                for container in self.containers:
+                    container.getCrawled(cascade, force, report)
 
-        self.wasCrawled = True
+            self.wasCrawled = True
 
         return
 
@@ -470,7 +485,7 @@ class ArchiveFileContainer(FileSystemContainer):
         return output_tree
 
 
-    def getCrawled(self):
+    def getCrawled(self, cascade=True, force=False):
         """
         Executes the routines for scanning, recognizing and extracting metadata (and maybe data)
         """
@@ -739,11 +754,11 @@ class CSVcrawler(Crawler):
                 table_conts = []
                 i = 1
                 for tab in tables:
-                    # print(tab[0])
-                    # print(tab[1])
+                    # print(tab)
+
                     cont_args = {"name": f"table_{i}",
-                                 "fl_resource": tab[0],
-                                 "pd_dataframe": tab[1]}
+                                 "fl_resource": tab,
+                                 "pd_dataframe": None}
                     # create new container from found TableContainer
                     newCont = self.container.project.containerFactory.createHandler("table", self.container.project,
                                                                                     self.container, **cont_args)
@@ -761,17 +776,19 @@ class CSVcrawler(Crawler):
     def crawl(self, report=True):
         """
         Do the crawl - go through the container and detect defined elements
+        The results of the crawl are directly assigned to crawler's parent container attributes
 
         :return:
         """
+
         print(f"crawling CSV '{self.container.path}' of container #{self.container.id}, encoding '{self.container.encoding}'") if report else None
-        # search for string to concept translations
-        self.container.concepts = self.find_translations(self.container.project.globalConceptsVocabulary)
-        print(f"concept translations:\n{self.container.concepts}")
-        # search for string to method translations
-        self.container.methods = self.find_translations(self.container.project.globalMethodsVocabulary)
-        # search for string to unit translations
-        self.container.units = self.find_translations(self.container.project.globalUnitsVocabulary)
+        # # search for string to concept translations
+        # self.container.concepts = self.find_translations(self.container.project.globalConceptsVocabulary)
+        # print(f"concept translations:\n{self.container.concepts}")
+        # # search for string to method translations
+        # self.container.methods = self.find_translations(self.container.project.globalMethodsVocabulary)
+        # # search for string to unit translations
+        # self.container.units = self.find_translations(self.container.project.globalUnitsVocabulary)
 
         return
 
@@ -789,12 +806,12 @@ class CSVcrawler(Crawler):
         if cell_sep is not None:
             # Define pattern to capture table breaks based on specific newline and delimiter structure
             pattern = rf'({line_sep}{{2,}})|({line_sep}[{re.escape(cell_sep)}\s]*{line_sep})'
-            print(f"Regex pattern used for splitting: {pattern}\n")
-
-            # Previewing content for debugging
-            print(f"Content preview with indexes:")
-            for i, char in enumerate(content[:200]):
-                print(f"{i}: '{char}'", end=", " if (i + 1) % 10 != 0 else "\n")
+            # print(f"Regex pattern used for splitting: {pattern}\n")
+            #
+            # # Previewing content for debugging
+            # print(f"Content preview with indexes:")
+            # for i, char in enumerate(content[:200]):
+            #     print(f"{i}: '{char}'", end=", " if (i + 1) % 10 != 0 else "\n")
 
             # Confirm pattern matches
             matches = re.finditer(pattern, content)
@@ -803,7 +820,8 @@ class CSVcrawler(Crawler):
                 found = True
                 print(f"Match {i}: '{match.group()}' at position {match.start()}-{match.end()}")
             if not found:
-                print("No matches found.\n")
+                # print("No signs of multiple tables found.\n")
+                return None
 
             # Split the content based on the pattern
             chunks = re.split(pattern, content)
@@ -811,7 +829,7 @@ class CSVcrawler(Crawler):
             # Remove empty chunks and strip extra spaces/newlines from each chunk
             return [chunk.strip() for chunk in chunks if chunk.strip()]
         else:
-            return content
+            return None
 
     def find_tables(self, min_lines=3, report = True):
         """
@@ -832,51 +850,46 @@ class CSVcrawler(Crawler):
 
         if hasattr(self, "cell_sep"):
             if self.cell_sep is not None:
-                # Split content into multiple table-like structures
+                # try to split content into multiple tables
                 table_segments = self.split_into_chunks(content, self.cell_sep, self.line_sep)
+                # create more tables from the content if found
+                if table_segments is not None:
+                    resources = self.create_tables_from_segments(table_segments)
+                    return resources
 
-                tables = []
-                i = 1
-                for segment in table_segments:
-                    # Create a TableResource and pandas DataFrame for each table segment
+                # or use the whole file for resource creation
+                else:
+                    # print(f"container path: {self.container.path}")
+                    # create the resource from parent container file
+                    # check the file structure
+                    # - .validate() does not work properly because of wrong field type casting
+                    # - .describe() is used instead which has better guesses on the fields schema
                     try:
-                        control = formats.CsvControl(skip_initial_space=True)
-                        # set cell delimiter by crawler delimiter if not None
-                        if self.cell_sep is not None:
-                            control.delimiter = self.cell_sep
+                        report = Resource.describe(os.path.normpath(self.container.path), format="csv")
+                    except Exception as e:
+                        print(f"frictionless.Resource.describe() failed for file '{self.container.path}':", e)
+                        return None
 
-                        # wrap the segment in StringIO to simulate a file-like object
-                        segment_io = StringIO(segment)
-                        segment_io.name = self.container.path
-                        resource = TableResource(data=segment_io,
-                                                 scheme="text",
-                                                 format='csv',
-                                                 control=control)
+                    # create the control object for frictionless resource creation
+                    control = formats.CsvControl(skip_initial_space=True)
+                    # set cell delimiter by crawler delimiter if not None
+                    if self.cell_sep is not None:
+                        control.delimiter = self.cell_sep
+
+                    resource = TableResource(path=self.container.path,
+                                             scheme='file',
+                                             format='csv',
+                                             control=control)
+                    resource.infer()
+                    # print(f"resource: {resource}")
+
+                    if len(resource.schema.fields) > 0:
                         # set resource encoding by container encoding if not None
                         if self.container.encoding is not None:
                             resource.encoding = self.container.encoding
+                        return [resource]
 
-                        if resource.validate().valid:
-                            resource.infer()
-
-                            dataframe = pd.read_csv(segment_io,
-                                                    delimiter=self.cell_sep,
-                                                    encoding=self.container.encoding,
-                                                    on_bad_lines='skip')
-                            tables.append([resource, dataframe])
-                        else:
-                            print(f"\tfound segment {i} is not a valid table structure")
-                            if report:
-                                print(f"{segment}\n{40*'='}\n{resource.validate()}")
-                    except pd.errors.ParserError as e:
-                        print(f"Error parsing table to pandas dataframe: {e}")
-                    i += 1
-                return tables
-            else:
-                return [None, None]
-
-        else:
-            return [None, None]
+        return None
         # """
         # Searches for coherent tables by regular expression.
         # Returns frictionless TableResource objects of all tables found in the file.
@@ -957,6 +970,65 @@ class CSVcrawler(Crawler):
         #                 tables.append([resource, dataframe])
         #
         #             return tables
+
+    def create_tables_from_segments(self, segments):
+        # for now raise an error
+        raise NotImplementedError("Spliting single csv file into multiple tables is not implemented yet.")
+        # solve the spliting in the future ...
+        tables = []
+        i = 1
+        for segment in segments:
+            # Create a TableResource and pandas DataFrame for each table segment
+            try:
+                control = formats.CsvControl(skip_initial_space=True)
+                # set cell delimiter by crawler delimiter if not None
+                if self.cell_sep is not None:
+                    control.delimiter = self.cell_sep
+
+                # wrap the segment in StringIO to simulate a file-like object
+                segment_io = StringIO(segment)
+                segment_io.name = self.container.path
+
+                resource = TableResource(data=segment_io,
+                                         scheme="text",
+                                         format='csv',
+                                         control=control)
+
+                # run validation without type checks
+                # report = resource.validate()
+
+                report = resource.describe()
+                print(f"resource.describe():\n{report}")
+
+                if len(report.scheme) > 0:
+                    # set resource encoding by container encoding if not None
+                    if self.container.encoding is not None:
+                        resource.encoding = self.container.encoding
+
+                    resource.infer()
+
+                    dataframe = pd.read_csv(segment_io,
+                                            delimiter=self.cell_sep,
+                                            encoding=self.container.encoding,
+                                            on_bad_lines='skip')
+
+                    tables.append([resource, dataframe])
+                else:
+                    print(f"\tfound segment {i} is not a valid table structure")
+                    if report:
+                        print(f"{segment}\n{40 * '='}\n{resource.validate()}")
+                        num_type_errors = 0
+                        for task in report.tasks:
+                            for error in task['errors']:
+                                if error['type'] == "type-error":
+                                    num_type_errors += 1
+                        print(f"total number of errors: {report['stats']['errors']}")
+                        print(f"number of type errors: {num_type_errors}")
+            except pd.errors.ParserError as e:
+                print(f"Error parsing table to pandas dataframe: {e}")
+            i += 1
+        return tables
+
 CrawlerFactory.registerCrawlerType(CSVcrawler)
 # FileSystemCrawlerFactory.registerFileType(CSVcrawler)
 

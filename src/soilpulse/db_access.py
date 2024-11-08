@@ -399,10 +399,10 @@ class MySQLConnector(DBconnector):
         if cascade:
             # save containers and their strings translations
             if len(project.containerTree) > 0:
-                # list of container ids that are no longer held in the in memory instance of ProjectManager
-                orphans = []
+                # list of container ids that are part of the in memory instance of ProjectManager
+                happy_containers = []
                 for cont in project.containerTree:
-                    orphans.extend(self.updateContainerRecord(cont, cascade, []))
+                    happy_containers.extend(self.updateContainerRecord(cont, cascade, []))
                 print(f"\tcontainers saved")
                 print(f"\tvocabularies saved")
 
@@ -411,7 +411,7 @@ class MySQLConnector(DBconnector):
 
                 thecursor = self.db_connection.cursor()
                 query = f"DELETE FROM {self.containersTableName} " \
-                        f"WHERE `id_local` NOT IN ({', '.join([str(o) for o in orphans])}) " \
+                        f"WHERE `id_local` NOT IN ({', '.join([str(o) for o in happy_containers])}) " \
                         f"AND `project_id` = {project.id}"
                 thecursor.execute(query)
                 self.db_connection.commit()
