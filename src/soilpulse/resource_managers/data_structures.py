@@ -181,21 +181,37 @@ class ColumnCrawler(Crawler):
 
         :return:
         """
+        print(f"crawling column '{self.container.name}' of container #{self.container.id}") if report else None
 
-        print(
-            f"crawling column '{self.container.name}' of container #{self.container.id}") if report else None
-        # search for string to concept translations
-        self.container.concepts = self.find_translations(self.container.project.globalConceptsVocabulary)
-        # print(f"\tfound concept translations:\n\t{self.container.concepts}") if len(self.container.concepts) > 0 else None
+        all_translations = []
+        # search for string to concept translations in all registered global concept vocabularies
+        for vocab in self.container.project.globalConceptsVocabularies:
+            all_translations.extend(self.find_translations(vocab))
+        for translation in all_translations:
+            for string, concepts in translation.items():
+                for concept in concepts:
+                    self.container.addStringConcept(string, concept)
+
         # search for string to method translations
-        self.container.methods = self.find_translations(self.container.project.globalMethodsVocabulary)
-        # print(f"\tfound methods translations:\n\t{self.container.methods}") if len(self.container.methods) > 0 else None
+        all_translations = []
+        for vocab in self.container.project.globalMethodsVocabularies:
+            all_translations.extend(self.find_translations(vocab))
+        for translation in all_translations:
+            for string, methods in translation.items():
+                for method in methods:
+                    self.container.addStringMethod(string, method)
+
         # search for string to unit translations
-        self.container.units = self.find_translations(self.container.project.globalUnitsVocabulary)
-        # print(f"\tfound units translations:\n\t{self.container.units}") if len(self.container.units) > 0 else None
+        found_units = []
+        for vocab in self.container.project.globalUnitsVocabularies:
+            found_units.extend(self.find_translations(vocab))
+        for translation in all_translations:
+            for string, units in translation.items():
+                for unit in units:
+                    self.container.addStringUnit(string, unit)
 
         # change flag of parent container
         self.container.wasCrawled = True
         return
 
-CrawlerFactory.registerCrawlerType(TableCrawler)
+CrawlerFactory.registerCrawlerType(ColumnCrawler)

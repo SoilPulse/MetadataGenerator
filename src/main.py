@@ -13,14 +13,6 @@ from soilpulse.metadata_scheme import *
 from soilpulse.db_access import EntityKeywordsDB, DBconnector, MySQLConnector, NullConnector
 
 
-from pathlib import Path
-
-soilpulse_root_dir_name = "SoilPulse"
-project_files_dir_name = "project_files"
-project_files_root = Path(Path.home(), soilpulse_root_dir_name, project_files_dir_name)
-
-project_files_root.mkdir(parents=True, exist_ok=True)
-
 def establish_new_project(dbcon, user_id, **example):
     """
     use case function
@@ -202,12 +194,12 @@ def load_project_test_datasets(dbcon, user_id, project_id):
         # # add some containers from the ResourceManager - will be done through the GUI
         # newDataset.addContainers(project.getContainerByID([771, 956, 992]))
 
-        # # new empty dataset is created and added to the ResourceManager
-        # newDataset = project.createDataset("Test dataset 2")
-        # # add some containers from the ResourceManager - will be done through the GUI
-        # newDataset.addContainers(project.getContainerByID([715]))
-        # newDataset.getAnalyzed(force=True, report=False)
-        # newDataset.getCrawled(force=True, report=True)
+        # new empty dataset is created and added to the ResourceManager
+        newDataset = project.createDataset("Test dataset 2")
+        # add some containers from the ResourceManager - will be done through the GUI
+        newDataset.addContainers(project.getContainerByID([771, 956, 992]))
+        newDataset.getAnalyzed(force=True, report=False)
+        newDataset.getCrawled(force=True, report=True)
         #
         # # update database record
         # project.updateDBrecord()
@@ -218,16 +210,16 @@ def load_project_test_datasets(dbcon, user_id, project_id):
         #     dataset.showContents(show_containers=True)
         #
         ds = project.datasets[0]
-        ds.showContents()
-        ds.getAnalyzed()
-        ds.getCrawled()
-        package = ds.get_frictionless_package(os.path.join(ds.directory_path, "primary_package.json"))
+        # ds.showContents()
+        # ds.getAnalyzed()
+        # ds.getCrawled()
+        # package = ds.get_frictionless_package(os.path.join(ds.directory_path, "primary_package.json"))
         ds.showContents()
 
-        print(package)
+        # print(package)
 
         # update database record
-        # project.updateDBrecord()
+        project.updateDBrecord()
 
     return
 
@@ -323,9 +315,9 @@ if __name__ == "__main__":
     example_6 = {"name": "", "doi": ""}
 
     # database connection to load/save projects and their structure
-    # dbcon = DBconnector.get_connector(project_files_root)
-    dbcon = MySQLConnector(project_files_root)
-    # dbcon = NullConnector(project_files_root)
+    # dbcon = DBconnector.get_connector()
+    dbcon = MySQLConnector()
+    # dbcon = NullConnector()
 
 
     # checkout user - needed for proper manipulation of project if MySQL server is not reachable
@@ -347,7 +339,7 @@ if __name__ == "__main__":
     # project3.showContainerTree()
     # project3.updateDBrecord()
 
-    load_project_test_datasets(dbcon, user_id, 3)
+    load_project_test_datasets(dbcon, user_id, 1)
     # load_project_test_concepts(dbcon, user_id, 3)
     # load_project_upload_files(dbcon, user_id, 19)
     # load_project_remove_container(dbcon, user_id, 1)

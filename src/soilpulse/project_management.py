@@ -25,6 +25,9 @@ class ProjectManager:
     Gathers all source files either from remote sources (download from URL) or local sources (upload from local computer).
 
     """
+    concepts_vocabulary_filename = "_project_concepts"
+    methods_vocabulary_filename = "_project_methods"
+    units_vocabulary_filename = "_project_units"
 
     def __init__(self, db_connection, user_id, **kwargs):
         self.initialized = False
@@ -64,11 +67,11 @@ class ProjectManager:
         self.unitsVocabulary = {}
 
         # global concepts vocabulary
-        self.globalConceptsVocabulary = self.loadConceptsVocabularyFromFile(self.dbconnection.global_concepts_vocabulary)
+        self.globalConceptsVocabularies = self.dbconnection.loadConceptsVocabularies()
         # global methods vocabulary
-        self.globalMethodsVocabulary = self.loadMethodsVocabularyFromFile(self.dbconnection.global_methods_vocabulary)
+        self.globalMethodsVocabularies = self.dbconnection.loadMethodsVocabularies()
         # global units vocabulary
-        self.globalUnitsVocabulary = self.loadUnitsVocabularyFromFile(self.dbconnection.global_units_vocabulary)
+        self.globalUnitsVocabularies = self.dbconnection.loadUnitsVocabularies()
 
         # dedicated directory for file saving
         self.temp_dir = None
@@ -792,6 +795,20 @@ class ProjectManager:
         # no need to save the vocabulary to file as it is saved when project is saved
         return
 
+
+    def updateGlobalConceptsVocabularyFromProject(self):
+        """
+        Adds string-concepts translations from project's vocabulary to global vocabulary if not already there
+        """
+        # global string-concept translations file path
+        vocabulary_file = os.path.join(self.dbconnection.project_files_root, self.dbconnection.concepts_vocabulary_filename)
+        # load the JSON file to vocabulary structure
+        target_vocabulary = self.loadConceptsVocabularyFromFile(vocabulary_file)
+
+        updateVocabulary(target_vocabulary, self.conceptsVocabulary)
+        self.exportConceptsVocabularyToFile(vocabulary_file)
+        return
+
     def loadVocabularyFromFile(self, input_file, type):
         """
         Loads string-* translations JSON file
@@ -811,7 +828,8 @@ class ProjectManager:
         """
         Loads string-concepts translations JSON file
         """
-        return self.loadVocabularyFromFile(input_file, 'concept')
+
+        return self.loadVocabularyFromFile(input_file, 'method')
 
     def loadMethodsVocabularyFromFile(self, input_file):
         """
@@ -825,18 +843,6 @@ class ProjectManager:
         """
         return self.loadVocabularyFromFile(input_file, 'unit')
 
-    def updateGlobalConceptsVocabularyFromProject(self):
-        """
-        Adds string-concepts translations from project's vocabulary to global vocabulary if not already there
-        """
-        # global string-concept translations file path
-        vocabulary_file = os.path.join(self.dbconnection.project_files_root, self.dbconnection.concepts_vocabulary_filename)
-        # load the JSON file to vocabulary structure
-        target_vocabulary = self.loadConceptsVocabularyFromFile(vocabulary_file)
-
-        updateVocabulary(target_vocabulary, self.conceptsVocabulary)
-        self.exportConceptsVocabularyToFile(vocabulary_file)
-        return
 
     def exportConceptsVocabularyToFile(self, vocabulary, filepath):
         """
@@ -977,13 +983,13 @@ class Dataset:
             self.showContainerTree()
         print(80 * "=" + "\n")
 
-    def showContainerTree(self):
+    def showContainerTree(self, show_concepts=True, show_methods=True, show_units=True):
         """
         Induces printing contents of the dataset's container tree
         """
         print(f"---- container tree: ----")
         for container in self.containers:
-            container.showContents(0)
+            container.showContents(0, show_concepts=show_concepts, show_methods=show_methods, show_units=show_units)
 
     def getSerializationDictionary(self):
         return {"id": self.id, "name": self.name, "container IDs": [c.id for c in self.containers]}
@@ -1208,25 +1214,35 @@ class ContainerHandler:
         t = ind * depth
         # print attributes of this container
         pContID = self.parentContainer.id if self.parentContainer is not None else "root"
-        # print(f"{t}{self.id} - {self.name} ({self.containerType}) [{len(self.containers)}] {'{'+self.crawler.crawlerType+'}'}  >{pContID}")
         print(f"{t}{self.id} - {self.name} ({self.containerType}) [{len(self.containers)}] >{pContID}")
         if show_concepts:
             if hasattr(self, "concepts"):
                 print("  " * (depth + 1) + "concepts:") if len(self.concepts) > 0 else None
                 for string, concepts in self.concepts.items():
-                    print("  "*(depth+2)+string+": "+"; ".join([f"'{conc['uri']}' ('{conc['vocabulary']}')" for conc in concepts]))
+                    add = "  " * (depth + 2) + string + ": "
+                    i = 0
+                    for conc in concepts:
+                        if i > 0:
+                            add += "; "
+                        if conc.get('term'):
+                            add += f"'{conc['term']}' "
+                        if conc.get('locator'):
+                            add += f"[{conc['locator']['start_char']}:{conc['locator']['end_char']}] "
+                        add += f"{conc['uri']} ({conc['vocabulary']})"
+                        i += 1
+                    print(add)
 
         if show_methods:
             if hasattr(self, "methods"):
                 print("  " * (depth + 1) + "methods:") if len(self.methods) > 0 else None
                 for string, methods in self.methods.items():
-                    print("  "*(depth+2)+string+": "+"; ".join([f"'{meth['uri']}' ('{meth['vocabulary']}')" for meth in methods]))
+                    print("  "*(depth+2)+string+": "+"; ".join([f"'{meth['uri']}' ({meth['vocabulary']})" for meth in methods]))
 
         if show_units:
             if hasattr(self, "units"):
                 print("  " * (depth + 1) + "units:") if len(self.units) > 0 else None
                 for string, units in self.units.items():
-                    print("  "*(depth+2)+string+": "+"; ".join([f"'{unit['uri']}' ('{unit['vocabulary']}')" for unit in units]))
+                    print("  "*(depth+2)+string+": "+"; ".join([f"'{unit['uri']}' ({unit['vocabulary']})" for unit in units]))
 
         # invoke showContents of sub-containers
         if len(self.containers) > 0:
@@ -1330,7 +1346,7 @@ class ContainerHandler:
         :param concept: concept to be added
         :return: None
         """
-        print(f"adding concept {concept} of string '{string}'")
+        # print(f"adding concept {concept} of string '{string}'")
 
         # get all concepts assigned to the input string
         this_string_concepts = self.concepts.get(string)
@@ -1355,7 +1371,7 @@ class ContainerHandler:
         :param method: method to be added
         :return: None
         """
-        print(f"adding method {method} of string '{string}'")
+        # print(f"adding method {method} of string '{string}'")
         # get all methods assigned to the input string
         this_string_methods = self.methods.get(string)
         # if the string has no method assigned yet
@@ -1379,7 +1395,7 @@ class ContainerHandler:
         :param unit: unit to be added
         :return: None
         """
-        print(f"adding unit {unit} of string '{string}'")
+        # print(f"adding unit {unit} of string '{string}'")
 
         # get all methods assigned to the input string
         this_string_units = self.units.get(string)
@@ -1807,15 +1823,14 @@ class Crawler:
         return
 
     def find_translations(self, vocabulary):
-        results = []
-        results_for_now = {}
+        results_for_now = []
         # search in container name
         container_name = self.container.name.lower()
         # iterate over each term in the vocabulary to find matches in container name
-        for term, translations in vocabulary.items():
+        for term, translation in vocabulary.items():
             term_pattern = re.compile(re.escape(term.lower()))
             matches = term_pattern.finditer(container_name)
-
+            found_meanings = []
             for match in matches:
                 start_index = match.start()
                 end_index = match.end() - 1
@@ -1824,11 +1839,10 @@ class Crawler:
                     "start_char": start_index,
                     "end_char": end_index,
                 }
-
-                results.append([{term: translations}, locator])
-
-                results_for_now.update({term: translations})
-
+                translation.update({"term": term})
+                translation.update({"locator": locator})
+                found_meanings.append(translation)
+            results_for_now.append({container_name: found_meanings}) if len(found_meanings) > 0 else None
         # here could be some other searching ... whatever it may be
 
         # hotfix - return only dictionary without locators as they need some more thinking ...

@@ -148,10 +148,13 @@ class FileSystemContainer(ContainerHandler):
 
     def showContents(self, depth=0, ind=". ", show_concepts=True, show_methods=True, show_units=True):
         """
-        Print basic info about the container and invokes showContents on all of its containers.
+        Prints structured info about the container and invokes showContents on all of its containers
 
-        :param depth: current depth of showKeyValueStructure recursion
+        :param depth: current depth of showContent recursion
         :param ind: string of a single level indentation
+        :param show_concepts: whether to show also the string-concepts translations
+        :param show_methods: whether to show also the string-methods translations
+        :param show_units: whether to show also the string-units translations
         """
         t = ind * depth
         dateFormat = "%d.%m.%Y"
@@ -160,10 +163,37 @@ class FileSystemContainer(ContainerHandler):
             print(f"{t}{self.id} - {self.name} ({self.containerType}, {self.getFileSizeFormated()}, {self.dateCreated.strftime(dateFormat) }/{self.dateLastModified.strftime(dateFormat)}) [{len(self.containers)}]  >{pContID}")
         except AttributeError as e:
             print(f"{t}{self.id} - {self.name}")
-        if self.containers is None:
-            print(f"{t}\tself.containers is None")
+        if show_concepts:
+            if hasattr(self, "concepts"):
+                print("  " * (depth + 1) + "concepts:") if len(self.concepts) > 0 else None
+                for string, concepts in self.concepts.items():
+                    add = "  " * (depth + 2) + string + ": "
+                    i = 0
+                    for conc in concepts:
+                        if i > 0:
+                            add += "; "
+                        if conc.get('term'):
+                            add += f"'{conc['term']}' "
+                        if conc.get('locator'):
+                            add += f"[{conc['locator']['start_char']}:{conc['locator']['end_char']}] "
+                        add += f"{conc['uri']} ({conc['vocabulary']})"
+                        i += 1
+                    print(add)
 
-        if self.containers:
+        if show_methods:
+            if hasattr(self, "methods"):
+                print("  " * (depth + 1) + "methods:") if len(self.methods) > 0 else None
+                for string, methods in self.methods.items():
+                    print("  "*(depth+2)+string+": "+"; ".join([f"'{meth['uri']}' ({meth['vocabulary']})" for meth in methods]))
+
+        if show_units:
+            if hasattr(self, "units"):
+                print("  " * (depth + 1) + "units:") if len(self.units) > 0 else None
+                for string, units in self.units.items():
+                    print("  "*(depth+2)+string+": "+"; ".join([f"'{unit['uri']}' ({unit['vocabulary']})" for unit in units]))
+
+        # invoke showContents of sub-containers
+        if len(self.containers) > 0:
             depth += 1
             for cont in self.containers:
                 cont.showContents(depth, ind, show_concepts, show_methods, show_units)
@@ -745,6 +775,9 @@ class CSVcrawler(Crawler):
         self.find_delimiters()
         if self.cell_sep is not None:
             tables = self.find_tables(3, report)
+            if tables is None:
+                print(f"\tcontainer {self.container.id} couldn't be properly analyzed")
+                return
             if len(tables) == 0:
                 print(f"\tfound no understandable tables") if report else None
                 return None
@@ -865,7 +898,7 @@ class CSVcrawler(Crawler):
                     # - .validate() does not work properly because of wrong field type casting
                     # - .describe() is used instead which has better guesses on the fields schema
                     try:
-                        report = Resource.describe(os.path.normpath(self.container.path), format="csv")
+                        report = Resource.describe(os.path.normpath(self.container.path), format="csv", encoding=self.container.encoding)
                     except Exception as e:
                         print(f"frictionless.Resource.describe() failed for file '{self.container.path}':", e)
                         return None
@@ -879,6 +912,7 @@ class CSVcrawler(Crawler):
                     resource = TableResource(path=self.container.path,
                                              scheme='file',
                                              format='csv',
+                                             encoding = self.container.encoding,
                                              control=control)
                     resource.infer()
                     # print(f"resource: {resource}")

@@ -10,6 +10,7 @@ import unicodedata
 import os
 import re
 import shutil
+from pathlib import Path
 
 from .exceptions import DatabaseFetchError, DatabaseEntryError, NameNotUniqueError, DeserializationError, ContainerStructureError
 
@@ -40,13 +41,21 @@ def generate_project_unique_name(existing_names, name):
     return new_name
 
 class DBconnector:
+    soilpulse_root_dir_name = "SoilPulse"
+    project_files_dir_name = "project_files"
+    project_files_root = Path(Path.home(), soilpulse_root_dir_name, project_files_dir_name)
+    project_files_root.mkdir(parents=True, exist_ok=True)
+
+    vocabularies_dir_name = "vocabularies"
+    vocabularies_root = Path(Path.home(), soilpulse_root_dir_name, vocabularies_dir_name)
+    vocabularies_root.mkdir(parents=True, exist_ok=True)
 
     # filename of global concepts vocabulary
-    concepts_vocabulary_filename = "_concepts_vocabulary.json"
+    concepts_vocabulary_filenames = ["_concepts_vocabulary_1.json", "_concepts_vocabulary_2.json"]
     # filename of global methods vocabulary
-    methods_vocabulary_filename = "_methods_vocabulary.json"
+    methods_vocabulary_filenames = ["_methods_vocabulary_1.json"]
     # filename of global units vocabulary
-    units_vocabulary_filename = "_units_vocabulary.json"
+    units_vocabulary_filenames = ["_units_vocabulary_1.json"]
     # prefix for directory project directory name - to distinguish between JSON saved projects and MySQL saved projects
     dirname_prefix = None
     # subdirectory name for the datasets files
@@ -65,29 +74,8 @@ class DBconnector:
             return NullConnector(project_files_root)
 
     def __init__(self, project_files_root):
-        # the top directory for project directories
-        self.project_files_root = project_files_root
-        # global concepts vocabulary file path
-        self.global_concepts_vocabulary = os.path.join(self.project_files_root, self.concepts_vocabulary_filename)
-        # global methods vocabulary file path
-        self.global_methods_vocabulary = os.path.join(self.project_files_root, self.methods_vocabulary_filename)
-        # global units vocabulary file path
-        self.global_units_vocabulary = os.path.join(self.project_files_root, self.units_vocabulary_filename)
+        pass
 
-
-        # create empty vocabulary files if don't exist to prevent future problems ...
-        if not os.path.isfile(self.global_concepts_vocabulary):
-            with open(self.global_concepts_vocabulary, 'a') as f:
-                f.write("[]")
-                f.close()
-        if not os.path.isfile(self.global_methods_vocabulary):
-            with open(self.global_methods_vocabulary, 'a') as f:
-                f.write("[]")
-                f.close()
-        if not os.path.isfile(self.global_units_vocabulary):
-            with open(self.global_units_vocabulary, 'a') as f:
-                f.write("[]")
-                f.close()
     def getNewProjectID(self):
         """
         Finds a correct ID that should be assigned to next new project.
@@ -147,6 +135,48 @@ class DBconnector:
     def getDatasetsOfProject(self, project_id):
         pass
 
+    def loadVocabularyFromFile(self, input_file, type):
+        """
+        Loads string-* translations JSON file
+
+        :param input_file: path of vocabulary file to load from
+        :param type: type of vocabulary 'concept'/'method'/'unit'
+        """
+
+        # load the input JSON file
+        str_dict = {}
+        with open(input_file, 'r') as f:
+            for str in json.load(f):
+                str_dict.update({str['string']: str[type]})
+        return str_dict
+
+    def loadConceptsVocabularies(self):
+        """
+        Loads string-concepts translations JSON file
+        """
+        vocabs = []
+        for vocab_filename in self.concepts_vocabulary_filenames:
+            vocabs.append(self.loadVocabularyFromFile(os.path.join(self.vocabularies_root, vocab_filename), 'concept'))
+        return vocabs
+
+    def loadMethodsVocabularies(self):
+        """
+        Loads string-method translations JSON file
+        """
+        vocabs = []
+        for vocab_filename in self.methods_vocabulary_filenames:
+            vocabs.append(self.loadVocabularyFromFile(os.path.join(self.vocabularies_root, vocab_filename), 'method'))
+        return vocabs
+
+    def loadUnitsVocabularies(self):
+        """
+        Loads string-unit translations JSON file
+        """
+        vocabs = []
+        for vocab_filename in self.units_vocabulary_filenames:
+            vocabs.append(self.loadVocabularyFromFile(os.path.join(self.vocabularies_root, vocab_filename), 'unit'))
+        return vocabs
+
 class MySQLConnector(DBconnector):
     """
     Provides methods to access and manipulate the SoilPulse database storage of MetadataMappings and possibly the data storage as well
@@ -176,8 +206,7 @@ class MySQLConnector(DBconnector):
     unitsVocabularyTableName = "`units_vocabulary`"
 
 
-    def __init__(self, project_files_root = None):
-        super().__init__(project_files_root)
+    def __init__(self):
         print("\nconnecting to MySQL ...")
 
         try:
@@ -652,7 +681,6 @@ class MySQLConnector(DBconnector):
                     if count == 0:
                         query = f"INSERT INTO {self.conceptsContainersTableName} (`container_id`, `translation_id`) " \
                                   f"VALUES {cont_glob_id, trans_id}"
-                        print(query)
                         thecursor.execute(query)
                         self.db_connection.commit()
                     thecursor.close()
@@ -680,7 +708,6 @@ class MySQLConnector(DBconnector):
                     if count == 0:
                         query = f"INSERT INTO {self.methodsContainersTableName} (`container_id`, `translation_id`) " \
                                   f"VALUES {cont_glob_id, trans_id}"
-                        print(query)
                         thecursor.execute(query)
                         self.db_connection.commit()
                     thecursor.close()
@@ -708,7 +735,6 @@ class MySQLConnector(DBconnector):
                     if count == 0:
                         query = f"INSERT INTO {self.unitsContainersTableName} (`container_id`, `translation_id`) " \
                                   f"VALUES {cont_glob_id, trans_id}"
-                        print(query)
                         thecursor.execute(query)
                         self.db_connection.commit()
                     thecursor.close()
@@ -1228,8 +1254,8 @@ class NullConnector(DBconnector):
     # filename with saved datasets definition
     datasets_attr_filename = "_datasets.json"
 
-    def __init__(self, project_files_root):
-        super().__init__(project_files_root)
+    def __init__(self):
+        pass
 
     def getUserNameByID(self, user_id):
         return ["Local", "User"]
@@ -1323,19 +1349,19 @@ class NullConnector(DBconnector):
         # update project vocabularies
         # update the projects vocabulary by concepts of containers
         project.updateConceptsVocabularyFromContents()
-        with open(os.path.join(project.temp_dir, self.concepts_vocabulary_filename), "w") as f:
+        with open(os.path.join(project.temp_dir, project.concepts_vocabulary_filename), "w") as f:
             json.dump(project.conceptsVocabulary, f, ensure_ascii=False, indent=4)
         print(f"\tconcepts vocabulary saved")
 
         # update the projects vocabulary by methods of containers
         project.updateMethodsVocabularyFromContents()
-        with open(os.path.join(project.temp_dir, self.methods_vocabulary_filename), "w") as f:
+        with open(os.path.join(project.temp_dir, project.methods_vocabulary_filename), "w") as f:
             json.dump(project.methodsVocabulary, f, ensure_ascii=False, indent=4)
         print(f"\tmethods vocabulary saved")
 
         # update the projects vocabulary by units of containers
         project.updateUnitsVocabularyFromContents()
-        with open(os.path.join(project.temp_dir, self.units_vocabulary_filename), "w") as f:
+        with open(os.path.join(project.temp_dir, project.units_vocabulary_filename), "w") as f:
             json.dump(project.unitsVocabulary, f, ensure_ascii=False, indent=4)
         print(f"\tunits vocabulary saved")
 
@@ -1461,11 +1487,9 @@ class NullConnector(DBconnector):
                     # load concepts
                     if container_data.get("concepts"):
                         newCont.concepts = container_data.get("concepts")
-                        print(f"newCont.concepts: {newCont.concepts}")
                     # load methods
                     if container_data.get("methods"):
                         newCont.methods = container_data.get("methods")
-
                     # load units
                     if container_data.get("units"):
                         newCont.units = container_data.get("units")
