@@ -186,7 +186,7 @@ def load_project_test_datasets(dbcon, user_id, project_id):
         # project.removeAllDatasets()
 
         # show the whole container tree
-        project.showContainerTree(show_concepts=False, show_methods=False, show_units=False)
+        # project.showContainerTree(show_concepts=False, show_methods=False, show_units=False)
 
         # CREATE AND WORK WITH DATASET
         # new empty dataset is created and added to the ResourceManager
@@ -195,12 +195,21 @@ def load_project_test_datasets(dbcon, user_id, project_id):
         # newDataset.addContainers(project.getContainerByID([771, 956, 992]))
 
         # new empty dataset is created and added to the ResourceManager
-        newDataset = project.createDataset("Test dataset 2")
+        newDataset = project.createDataset("Test dataset 3")
         # add some containers from the ResourceManager - will be done through the GUI
         newDataset.addContainers(project.getContainerByID([771, 956, 992]))
         newDataset.getAnalyzed(force=True, report=False)
-        newDataset.getCrawled(force=True, report=True)
+        newDataset.getCrawled(force=True, report=False)
+
         #
+        # t1 = project.getContainerByID(1097)
+        # t1.steps = t1.load_transformation_steps_from_file("d:\\downloads\\steps_ready2.txt")
+        # t1.showContents()
+        # t2 = project.getContainerByID(1132)
+        # t2.showContents()
+        # t3 = project.getContainerByID(1167)
+        # t3.showContents()
+
         # # update database record
         # project.updateDBrecord()
         #
@@ -213,13 +222,13 @@ def load_project_test_datasets(dbcon, user_id, project_id):
         # ds.showContents()
         # ds.getAnalyzed()
         # ds.getCrawled()
-        # package = ds.get_frictionless_package(os.path.join(ds.directory_path, "primary_package.json"))
+        package = ds.get_frictionless_package(os.path.join(ds.directory_path, "primary_package.json"))
         ds.showContents()
 
         # print(package)
 
         # update database record
-        project.updateDBrecord()
+        # project.updateDBrecord()
 
     return
 

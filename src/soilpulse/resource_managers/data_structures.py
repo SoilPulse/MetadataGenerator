@@ -2,10 +2,14 @@
 # -*- coding: utf-8 -*-
 
 import os
-import pandas
+
 import frictionless
+import pandas
+from frictionless import Field, system, steps
 
 from ..project_management import ContainerHandler, ContainerHandlerFactory, Pointer, Crawler, CrawlerFactory
+import json
+
 
 class TableContainer(ContainerHandler):
     containerType = 'table'
@@ -30,13 +34,18 @@ class TableContainer(ContainerHandler):
         # self.cellDelimiter = kwargs.get("cell_delimiter")
         # self.decimalSeparator = kwargs.get("decimal_separator")
         self.fl_resource = kwargs.get("fl_resource")
+        self.steps = []
+        self.fl_resource_trans = None
+
         self.pd_dataframe = kwargs.get("pd_dataframe")
 
         self.crawler = TableCrawler(self)
 
+
+
         pass
 
-    def getAnalyzed(self, cascade, force=False, report=False):
+    def getAnalyzed(self, cascade=True, force=False, report=False):
         if super().getAnalyzed(cascade, force):
             if self.crawler:
                 columns = self.crawler.analyze(report)
@@ -65,7 +74,67 @@ class TableContainer(ContainerHandler):
                     container.getCrawled(cascade, force, report)
         return
 
-    def getFrictionlessResource(self):
+    def get_frictionless_resource(self):
+        """
+        Compose and update the frictionless Resource definition based on column subcontainers.
+        Incorporates concepts, methods & units to fields scheme
+        """
+
+        fields = []
+        for cont in self.containers:
+            # procedure valid for column containers only
+            if isinstance(cont, ColumnContainer):
+                descriptor = {
+                    "name": cont.name,
+                    "type": cont.dataType,
+                    "concepts": cont.concepts or [],
+                    "methods": cont.methods or [],
+                    "units": cont.units or []
+                }
+                fields.append(descriptor)
+
+        # Assign the descriptors to the schema fields
+        self.fl_resource.schema.fields = [Field.from_descriptor(descriptor) for descriptor in fields]
+
+                #
+                # # if there are any concepts/ methods/ units
+                # for field in self.fl_resource.schema.fields:
+                #     if field.name == column_cont.name:
+                #         # and insert into field definition
+                #         if column_cont.concepts:
+                #             print(f"=====================\n{column_cont.concepts}\n=========================")
+                #             field.concepts = column_cont.concepts
+                #         if column_cont.methods:
+                #             field.methods = column_cont.methods
+                #         if column_cont.units:
+                #             field.units = column_cont.units
+                # if column_cont.concepts or column_cont.methods or column_cont.units:
+                #     pass
+                    # find the field object in schema
+            #
+            #     if column_cont.concepts:
+            #         print(f"column_cont.concepts:\n{column_cont.concepts}")
+            #         field.update({"concepts": column_cont.concepts})
+            #     fields.append(field)
+            # # print(f"schema: {type(self.fl_resource.schema)}\n{self.fl_resource.schema}")
+            # self.fl_resource.schema.fields = fields
+        return self.fl_resource
+
+    def load_transformation_steps_from_file(self, path):
+        with open(path, 'r') as f:
+            self.steps = eval(f.read())
+        print(f"loaded transformation steps for table container {self.name}:\n {self.steps}")
+        return
+
+    def set_transformation_steps(self, steps_json):
+        """Set the transformation steps from a JSON string or dictionary."""
+        if isinstance(steps_json, str):
+            self.steps = json.loads(steps_json)
+        elif isinstance(steps_json, list):
+            self.steps = steps_json
+        else:
+            raise ValueError("Steps must be a JSON string or list of dictionaries.")
+        print(f"loaded transformation steps for table container {self.name}:\n {self.steps}")
         return
 
 ContainerHandlerFactory.registerContainerType(TableContainer, TableContainer.containerType)
@@ -155,6 +224,21 @@ class ColumnContainer(ContainerHandler):
                     container.getCrawled(cascade, force, report)
         return
 
+    def get_frictionless_field(self):
+       # return EnrichedField(
+       #      name=self.name,
+       #      field_type=self.dataType,
+       #      concepts=self.concepts,
+       #      methods=self.methods,
+       #      units=self.units,
+       #  )
+        descriptor = {"name": self.name, "type": self.dataType}
+        descriptor["concepts"] = self.concepts or []
+        descriptor["methods"] = self.methods or []
+        descriptor["units"] = self.units or []
+        return Field.from_descriptor(descriptor)
+
+
 ContainerHandlerFactory.registerContainerType(ColumnContainer, ColumnContainer.containerType)
 
 class ColumnCrawler(Crawler):
@@ -165,7 +249,6 @@ class ColumnCrawler(Crawler):
 
     def __init__(self, container):
         super().__init__(container)
-
         # print(f"Column crawler created for container #{self.container.id} '{self.container.name}'")
 
     def analyze(self, report=True):
@@ -215,3 +298,24 @@ class ColumnCrawler(Crawler):
         return
 
 CrawlerFactory.registerCrawlerType(ColumnCrawler)
+
+#
+# class EnrichedField(Field):
+#     def __init__(self, name, field_type="any", concepts=None, methods=None, units=None, **kwargs):
+#         # Construct descriptor with standard and custom attributes
+#         descriptor = {"name": name, "type": field_type, **kwargs}
+#         if concepts is not None:
+#             descriptor["concepts"] = concepts
+#         if methods is not None:
+#             descriptor["methods"] = methods
+#         if units is not None:
+#             descriptor["units"] = units
+#
+#         # Pass descriptor to the parent class
+#         super().__init__(name=name)
+#
+# # replace frictionless default Field class with EnrichedField class
+# def custom_field_factory(descriptor):
+#     return EnrichedField(descriptor)
+# # register the custom field factory globally
+# system.create_field = custom_field_factory

@@ -787,12 +787,16 @@ class CSVcrawler(Crawler):
                 table_conts = []
                 i = 1
                 for tab in tables:
-                    # print(tab)
-
-                    cont_args = {"name": f"table_{i}",
+                    # get rid of the file extension
+                    name = ".".join(os.path.basename(self.container.path).split(".")[:-1])
+                    # append table index if there are more tables in the file
+                    name += f"_{i}" if len(tables) > 1 else ""
+                    # assign the container name as resource name as well
+                    tab.name = name
+                    # create new TableContainer from the table
+                    cont_args = {"name": name,
                                  "fl_resource": tab,
                                  "pd_dataframe": None}
-                    # create new container from found TableContainer
                     newCont = self.container.project.containerFactory.createHandler("table", self.container.project,
                                                                                     self.container, **cont_args)
                     table_conts.append(newCont)
@@ -909,14 +913,15 @@ class CSVcrawler(Crawler):
                     if self.cell_sep is not None:
                         control.delimiter = self.cell_sep
 
-                    resource = TableResource(path=self.container.path,
+                    resource = TableResource(path=os.path.normpath(self.container.path),
                                              scheme='file',
                                              format='csv',
-                                             encoding = self.container.encoding,
+                                             encoding=self.container.encoding,
                                              control=control)
                     resource.infer()
                     # print(f"resource: {resource}")
 
+                    # workaround to recognize a valid table even if the .validate() would produce false
                     if len(resource.schema.fields) > 0:
                         # set resource encoding by container encoding if not None
                         if self.container.encoding is not None:
