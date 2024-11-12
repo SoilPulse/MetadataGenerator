@@ -897,12 +897,14 @@ class Dataset:
         self.name = name
         # project reference
         self.project = project
-        # container object instances that the dataset consists of
+        # container object instances that are members of the dataset
         self.containers = []
         # directory to store files
         self.directory_path = None
         # the instance of the metadata mapping
         self.metadata_map = MetadataStructureMap()
+        # transformation steps for the frictionless package
+        self.steps = []
 
     def load_sp_datapackage(self):
         original_path = os.path.join(self.directory_path, "primary_package.json")
@@ -914,22 +916,26 @@ class Dataset:
     def get_frictionless_package(self, output_path=None):
         def collect_tables(cont_list, tables=[]):
             for cont in cont_list:
-                if cont.crawler is not None:
-                    if cont.crawler.crawlerType == "csv":
-                        tables.append(cont.crawler.get_frictionless_resource())
-                    #
-                    # if len(cont.containers) > 0:
-                    #     print(f" sub containers {len(cont.containers)}")
-                    #     collect_tables(cont.containers, tables)
-
+                if hasattr(cont, "fl_resource"):
+                   if cont.fl_resource is not None:
+                        tables.append(cont.get_frictionless_resource())
+                if len(cont.containers) > 0:
+                    collect_tables(cont.containers, tables=tables)
             return tables
 
         table_resources = collect_tables(self.containers)
         package = Package(resources=table_resources)
 
+        print(f"output package:\n{package.to_descriptor()}")
         if output_path:
             package.to_json(output_path)  # Save as JSON
         return package
+
+    def load_transformation_steps(self, path):
+        with open(path, 'r') as f:
+            self.steps = eval(f.read())
+        print(f"loaded transformation steps for dataset #{self.id} - '{self.name}':\n {self.steps}")
+        return
 
     def createDedicatedDirectory(self):
         """
