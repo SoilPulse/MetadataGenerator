@@ -18,4 +18,4 @@
  - Publishing with fritionless
 
 ## Example datasets
- - [Example datasets](example_datasets\README.md)
+ - [Example datasets](example_datasets/README.md)
