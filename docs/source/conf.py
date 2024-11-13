@@ -13,7 +13,9 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
     'sphinx.ext.intersphinx',
+    'IPython.sphinxext.ipython_console_highlighting',
     'nbsphinx',
+    'myst_parser',
 ]
 
 intersphinx_mapping = {
