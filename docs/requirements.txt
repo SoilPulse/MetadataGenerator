@@ -1,4 +1,13 @@
+--extra-index-url https://test.pypi.org/simple/
+
 mysql-connector-python
 sphinx==7.1.2
 sphinx-rtd-theme==1.3.0rc1
 nbsphinx
+
+requests
+mysql-connector-python
+frictionless
+SPARQLWrapper
+pandas
+chardet
