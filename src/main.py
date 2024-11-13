@@ -160,6 +160,9 @@ def load_project_test_concepts(dbcon, user_id, project_id):
 
         # crawl the dataset containers only
         ds = project.datasets[0]
+        ds.removeAllConcepts()
+        ds.removeAllMethods()
+        ds.removeAllUnits()
         ds.getAnalyzed(cascade=True, force=True)
         ds.getCrawled(cascade=True, force=True)
         # show the datasets
@@ -223,9 +226,10 @@ def load_project_test_datasets(dbcon, user_id, project_id):
         # ds.getAnalyzed()
         # ds.getCrawled()
         package = ds.get_frictionless_package(os.path.join(ds.directory_path, "primary_package.json"))
-        ds.showContents()
 
-        # print(package)
+        ds.showContents(show_concepts=True, show_methods=False, show_units=False)
+
+        # print(f"\npackage with concepts/methods/units:\n {package}")
 
         # update database record
         # project.updateDBrecord()
@@ -310,6 +314,22 @@ def load_project_test_multitable(dbcon, user_id, project_id):
         # update database record
         project.updateDBrecord()
     return
+
+def create_vocabulary_from_agrovoc_dump(path):
+    import pickle
+    # load the dump pickle
+    with open(path, 'rb') as handle:
+        ret = pickle.load(handle)
+    # transform to vocabulary structure
+    output_vocab = []
+    for r in ret["results"]["bindings"]:
+        output_vocab.append({"string": r["label"]["value"],
+                            "concept": {"vocabulary": "AGROVOC", "uri": r["concept"]["value"]}})
+    out_path = os.path.join(os.path.dirname(path), "agrovoc.json")
+    # dump the result to json
+    with open(out_path, "w", encoding='utf8') as f:
+        json.dump(output_vocab, f, ensure_ascii=False, indent=4)
+    return output_vocab
 
 if __name__ == "__main__":
     # user identifier that will be later managed by some login framework in streamlit

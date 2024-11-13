@@ -67,11 +67,11 @@ class ProjectManager:
         self.unitsVocabulary = {}
 
         # global concepts vocabulary
-        self.globalConceptsVocabularies = self.dbconnection.loadConceptsVocabularies()
+        self.globalConceptsVocabularies = self.dbconnection.concepts_vocabularies
         # global methods vocabulary
-        self.globalMethodsVocabularies = self.dbconnection.loadMethodsVocabularies()
+        self.globalMethodsVocabularies = self.dbconnection.methods_vocabularies
         # global units vocabulary
-        self.globalUnitsVocabularies = self.dbconnection.loadUnitsVocabularies()
+        self.globalUnitsVocabularies = self.dbconnection.units_vocabularies
 
         # dedicated directory for file saving
         self.temp_dir = None
@@ -926,7 +926,6 @@ class Dataset:
         table_resources = collect_tables(self.containers)
         package = Package(resources=table_resources)
 
-        print(f"output package:\n{package.to_descriptor()}")
         if output_path:
             package.to_json(output_path)  # Save as JSON
         return package
@@ -982,11 +981,11 @@ class Dataset:
     def getContainerIDsList(self):
         return [c.id for c in self.containers]
 
-    def showContents(self, show_containers=True):
+    def showContents(self, show_containers=True, show_concepts=True, show_methods=True, show_units=True):
         print(f"\n==== {self.name} " + 60 * "=" + f" #{self.id}")
 
         if show_containers:
-            self.showContainerTree()
+            self.showContainerTree(show_concepts, show_methods, show_units)
         print(80 * "=" + "\n")
 
     def showContainerTree(self, show_concepts=True, show_methods=True, show_units=True):
@@ -1017,6 +1016,18 @@ class Dataset:
     def getCrawled(self, cascade=True, force=False, report=False):
         for container in self.containers:
             container.getCrawled(cascade, force, report)
+
+    def removeAllConcepts(self):
+        for container in self.containers:
+            container.removeAllConcepts(cascade=True)
+
+    def removeAllMethods(self):
+        for container in self.containers:
+            container.removeAllMethods(cascade=True)
+
+    def removeAllUnits(self):
+        for container in self.containers:
+            container.removeAllUnits(cascade=True)
 
 class SourceFile:
     def __init__(self, id, filename, size = None, source_url = None, checksum = None, checksum_type = None):
@@ -1525,28 +1536,40 @@ class ContainerHandler:
                 self.units.pop(string)
                 print(f"\tstring {string} removed as well")
         return
-    def removeAllConcepts(self):
+    def removeAllConcepts(self, cascade=False):
         """
-        Removes all string-concept assigned to container
+        Removes all string-concept assigned to container and all sub-containers recursively if desired
         :return: None
         """
         self.concepts = {}
+        # cascade through if desired
+        if cascade:
+            for sub_cont in self.containers:
+                sub_cont.removeAllConcepts(cascade)
         return None
 
-    def removeAllMethods(self):
+    def removeAllMethods(self, cascade=False):
         """
-        Removes all string-method translation assigned to container
+        Removes all string-method translation assigned to container and all sub-containers recursively if desired
         :return: None
         """
         self.methods = {}
+        # cascade through if desired
+        if cascade:
+            for sub_cont in self.containers:
+                sub_cont.removeAllMethods(cascade)
         return None
 
-    def removeAllUnits(self):
+    def removeAllUnits(self, cascade=False):
         """
-        Removes all string-unit translations assigned to container
+        Removes all string-unit translations assigned to container and all sub-containers recursively if desired
         :return: None
         """
         self.units = {}
+        # cascade through if desired
+        if cascade:
+            for sub_cont in self.containers:
+                sub_cont.removeAllUnits(cascade)
         return None
 
     def collectConcepts(self, collection={}, cascade=True):
@@ -1828,26 +1851,28 @@ class Crawler:
         self.container.wasCrawled = True
         return
 
-    def find_translations(self, vocabulary):
+    def find_translations(self, vocabulary, full_matches_only=False):
         results_for_now = []
         # search in container name
-        container_name = self.container.name.lower()
+        container_name = self.container.name.lower().strip(" _-")
         # iterate over each term in the vocabulary to find matches in container name
         for term, translation in vocabulary.items():
-            term_pattern = re.compile(re.escape(term.lower()))
+            term_pattern = re.compile(re.escape(term.lower().strip(" _-")))
             matches = term_pattern.finditer(container_name)
             found_meanings = []
             for match in matches:
                 start_index = match.start()
                 end_index = match.end() - 1
-                locator = {
-                    "attribute": "name",
-                    "start_char": start_index,
-                    "end_char": end_index,
-                }
-                translation.update({"term": term})
-                translation.update({"locator": locator})
-                found_meanings.append(translation)
+                # filter out matches shorter than 3 characters
+                if end_index - start_index > 2:
+                    locator = {
+                        "attribute": "name",
+                        "start_char": start_index,
+                        "end_char": end_index,
+                    }
+                    translation.update({"term": term})
+                    translation.update({"locator": locator})
+                    found_meanings.append(translation)
             results_for_now.append({container_name: found_meanings}) if len(found_meanings) > 0 else None
         # here could be some other searching ... whatever it may be
 

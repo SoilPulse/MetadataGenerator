@@ -51,7 +51,7 @@ class DBconnector:
     vocabularies_root.mkdir(parents=True, exist_ok=True)
 
     # filename of global concepts vocabulary
-    concepts_vocabulary_filenames = ["_concepts_vocabulary_1.json", "_concepts_vocabulary_2.json"]
+    concepts_vocabulary_filenames = ["agrovoc.json", "_concepts_vocabulary_2.json"]
     # filename of global methods vocabulary
     methods_vocabulary_filenames = ["_methods_vocabulary_1.json"]
     # filename of global units vocabulary
@@ -62,19 +62,23 @@ class DBconnector:
     datasets_directory_name = "datasets"
 
     @classmethod
-    def get_connector(cls, project_files_root):
+    def get_connector(cls):
         """
         Returns DBconnector subclass instance that links to storage where project structural information will be stored.
         If running MySQL server with soilpulse DB is found MySQLconnector is return otherwise NullConnector
         """
         try:
-            return MySQLConnector(project_files_root)
+            return MySQLConnector()
         except Exception:
             print("\nSoilPulse MySQL database instance couldn't be reached.\nFalling back to local filesystem.")
-            return NullConnector(project_files_root)
+            return NullConnector()
 
-    def __init__(self, project_files_root):
-        pass
+    def __init__(self):
+        # load the vocabularies to memory
+        self.concepts_vocabularies = self.loadConceptsVocabularies()
+        self.methods_vocabularies = self.loadMethodsVocabularies()
+        self.units_vocabularies = self.loadUnitsVocabularies()
+
 
     def getNewProjectID(self):
         """
@@ -155,8 +159,15 @@ class DBconnector:
         Loads string-concepts translations JSON file
         """
         vocabs = []
+        loaded = []
         for vocab_filename in self.concepts_vocabulary_filenames:
-            vocabs.append(self.loadVocabularyFromFile(os.path.join(self.vocabularies_root, vocab_filename), 'concept'))
+            try:
+                vocabs.append(self.loadVocabularyFromFile(os.path.join(self.vocabularies_root, vocab_filename), 'concept'))
+            except:
+                print(f"failed to load concept vocabulary '{os.path.join(self.vocabularies_root, vocab_filename)}'")
+            else:
+                loaded.append(vocab_filename)
+        print(f"successfully loaded concept vocabularies: {', '.join([str(v) for v in loaded])}")
         return vocabs
 
     def loadMethodsVocabularies(self):
@@ -164,8 +175,15 @@ class DBconnector:
         Loads string-method translations JSON file
         """
         vocabs = []
+        loaded = []
         for vocab_filename in self.methods_vocabulary_filenames:
-            vocabs.append(self.loadVocabularyFromFile(os.path.join(self.vocabularies_root, vocab_filename), 'method'))
+            try:
+                vocabs.append(self.loadVocabularyFromFile(os.path.join(self.vocabularies_root, vocab_filename), 'method'))
+            except:
+                print(f"failed to load method vocabulary '{os.path.join(self.vocabularies_root, vocab_filename)}'")
+            else:
+                loaded.append(vocab_filename)
+        print(f"successfully loaded methods vocabularies: {', '.join([str(v) for v in loaded])}")
         return vocabs
 
     def loadUnitsVocabularies(self):
@@ -173,8 +191,15 @@ class DBconnector:
         Loads string-unit translations JSON file
         """
         vocabs = []
+        loaded = []
         for vocab_filename in self.units_vocabulary_filenames:
-            vocabs.append(self.loadVocabularyFromFile(os.path.join(self.vocabularies_root, vocab_filename), 'unit'))
+            try:
+                vocabs.append(self.loadVocabularyFromFile(os.path.join(self.vocabularies_root, vocab_filename), 'unit'))
+            except:
+                print(f"failed to load unit vocabulary '{os.path.join(self.vocabularies_root, vocab_filename)}'")
+            else:
+                loaded.append(vocab_filename)
+        print(f"successfully loaded unit vocabularies: {', '.join([str(v) for v in loaded])}")
         return vocabs
 
 class MySQLConnector(DBconnector):
@@ -227,6 +252,8 @@ class MySQLConnector(DBconnector):
         else:
             print ("successfully connected to SoilPulse MySQL database\n")
             pass
+
+        super().__init__()
 
     def __del__(self):
         pass
@@ -1255,6 +1282,7 @@ class NullConnector(DBconnector):
     datasets_attr_filename = "_datasets.json"
 
     def __init__(self):
+        super().__init__()
         pass
 
     def getUserNameByID(self, user_id):

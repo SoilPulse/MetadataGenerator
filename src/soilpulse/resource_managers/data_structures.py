@@ -30,9 +30,7 @@ class TableContainer(ContainerHandler):
     def __init__(self, project_manager, parent_container, **kwargs):
     # dictionary of attribute names to be used for DB save/update - current values need to be obtained at right time before saving
         super().__init__(project_manager, parent_container, **kwargs)
-        # self.lineDelimiter = kwargs.get("line_delimiter")
-        # self.cellDelimiter = kwargs.get("cell_delimiter")
-        # self.decimalSeparator = kwargs.get("decimal_separator")
+        self.primary_key_container = None
         self.fl_resource = kwargs.get("fl_resource")
         self.steps = []
         self.fl_resource_trans = None
@@ -40,8 +38,6 @@ class TableContainer(ContainerHandler):
         self.pd_dataframe = kwargs.get("pd_dataframe")
 
         self.crawler = TableCrawler(self)
-
-
 
         pass
 
@@ -84,40 +80,34 @@ class TableContainer(ContainerHandler):
         for cont in self.containers:
             # procedure valid for column containers only
             if isinstance(cont, ColumnContainer):
+                # extract list of uris from container's concepts
+                concepts = []
+                for str, concs in cont.concepts.items():
+                    for conc in concs:
+                        concepts.append(conc["uri"])
+                # extract list of uris from container's methods
+                methods = []
+                for str, meths in cont.methods.items():
+                    for meth in meths:
+                        methods.append(meth["uri"])
+                # extract list of uris from container's units
+                units = []
+                for str, unts in cont.units.items():
+                    for unt in unts:
+                        units.append(unt["uri"])
                 descriptor = {
                     "name": cont.name,
                     "type": cont.dataType,
-                    "concepts": cont.concepts or [],
-                    "methods": cont.methods or [],
-                    "units": cont.units or []
+                    "concepts": concepts,
+                    "methods": methods,
+                    "units": units
                 }
                 fields.append(descriptor)
 
-        # Assign the descriptors to the schema fields
+        # create list of Field objects and replace the schema fields
         self.fl_resource.schema.fields = [Field.from_descriptor(descriptor) for descriptor in fields]
-
-                #
-                # # if there are any concepts/ methods/ units
-                # for field in self.fl_resource.schema.fields:
-                #     if field.name == column_cont.name:
-                #         # and insert into field definition
-                #         if column_cont.concepts:
-                #             print(f"=====================\n{column_cont.concepts}\n=========================")
-                #             field.concepts = column_cont.concepts
-                #         if column_cont.methods:
-                #             field.methods = column_cont.methods
-                #         if column_cont.units:
-                #             field.units = column_cont.units
-                # if column_cont.concepts or column_cont.methods or column_cont.units:
-                #     pass
-                    # find the field object in schema
-            #
-            #     if column_cont.concepts:
-            #         print(f"column_cont.concepts:\n{column_cont.concepts}")
-            #         field.update({"concepts": column_cont.concepts})
-            #     fields.append(field)
-            # # print(f"schema: {type(self.fl_resource.schema)}\n{self.fl_resource.schema}")
-            # self.fl_resource.schema.fields = fields
+        if self.primary_key_container:
+            self.fl_resource.scema.primaryKey = self.primary_key_container.name
         return self.fl_resource
 
     def load_transformation_steps_from_file(self, path):
@@ -196,6 +186,7 @@ class ColumnContainer(ContainerHandler):
         super().__init__(project_manager, parent_container, **kwargs)
         self.dataType = kwargs.get("data_type")
         self.crawler = ColumnCrawler(self)
+        self.foreignKeys = None
 
         pass
 
