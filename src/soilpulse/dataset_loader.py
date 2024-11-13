@@ -98,7 +98,7 @@ def get_dataset_concepts(dataset, vocab = None):
     return(concepts)
 
 
-def view_sp_resource(resource, fields = None, row_filters = []):
+def view_sp_resource(resource, fields = None, row_filters = [], rename_to_concepts = True):
     view = resource.to_copy()
     view = transform(
         view,
@@ -117,6 +117,26 @@ def view_sp_resource(resource, fields = None, row_filters = []):
                 steps.field_filter(names=fields),
             ]
             )
+#     if rename_to_concepts:
+#         view = view2.to_copy()
+#         view = transform(
+#             view,
+#             steps=[
+#                 steps.field_update(name=field.name,
+#                                    descriptor = {
+#                                        'name': field.to_descriptor()['concept']})
+# #                for field in view.schema.fields
+#             ]
+#             )
+#         row_filters_new = []
+#         for y in row_filters:
+#             print(y)
+#             for field in view.schema.fields:
+#                 if field.name in y:
+#                     row_filters_new += [y.replace(
+#                         field.name,
+#                         field.to_descriptor()['concept'])]
+
     for x in row_filters:
         view = transform(
             view,
