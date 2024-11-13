@@ -17,3 +17,5 @@ Contents
 .. toctree::
 
    soilpulse
+   requirement_template
+   README
