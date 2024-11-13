@@ -36,7 +36,7 @@ jobs:
     - name: startandwaitforMYSQL
       if: matrix.os == 'ubuntu-latest'
       run: |
-        cd SP_MYSQL
+        cd database
         docker compose up -d --wait --wait-timeout 240
         sleep 30
 
