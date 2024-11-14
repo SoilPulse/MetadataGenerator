@@ -1,7 +1,7 @@
 # coding = utf-8
 # -*- coding: utf-8 -*-
 
-from ..project_management import ContainerHandler, ContainerHandlerFactory, Pointer, Crawler
+from ..project_management import ContainerHandler, ContainerHandlerFactory, Crawler
 from ..db_access import EntityKeywordsDB
 
 
@@ -28,9 +28,6 @@ class XMLContainer(ContainerHandler):
 
 ContainerHandlerFactory.registerContainerType(XMLContainer, XMLContainer.containerType)
 EntityKeywordsDB.registerKeywordsDB(XMLContainer.containerType, XMLContainer.keywordsDBname)
-
-class XMLPointer(Pointer):
-    pass
 
 class XMLcrawler(Crawler):
     def __init__(self, container):

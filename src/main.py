@@ -7,6 +7,7 @@ from soilpulse.project_management import *
 from soilpulse.resource_managers.filesystem import *
 from soilpulse.resource_managers.mysql import *
 from soilpulse.resource_managers.xml import *
+from soilpulse.resource_managers.data_structures import *
 from soilpulse.resource_managers.json import *
 from soilpulse.data_publishers import *
 from soilpulse.metadata_scheme import *

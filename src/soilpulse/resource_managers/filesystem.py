@@ -631,9 +631,13 @@ class CSVcrawler(Crawler):
                     cont_args = {"name": name,
                                  "fl_resource": tab,
                                  "pd_dataframe": None}
-                    newCont = self.container.project.containerFactory.createHandler("table", self.container.project,
+                    try:
+                        newCont = self.container.project.containerFactory.createHandler("table", self.container.project,
                                                                                     self.container, **cont_args)
-                    table_conts.append(newCont)
+                    except ValueError as e:
+                        print(f"Failed to create a container because of wrong container type.")
+                    else:
+                        table_conts.append(newCont)
 
                     # print(newCont.fl_resource.schema)
                     i += 1

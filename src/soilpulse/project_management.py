@@ -11,7 +11,6 @@ from frictionless import Package, Resource
 import re
 
 from .metadata_scheme import MetadataStructureMap
-from .db_access import DBconnector
 from .exceptions import DOIdataRetrievalException, LocalFileManipulationError, ContainerStructureError, DatabaseEntryError, NameNotUniqueError, DatabaseFetchError, DeserializationError
 
 # general variables
@@ -1768,7 +1767,7 @@ class CrawlerFactory:
         Creates and returns instance of Crawler subclass based on registered types and their specialization procedures
         """
         # if 'crawler_type' is in kwargs and is not None - e.a. loading the container from DB
-        if kwargs.get("crawler_type") is not None:
+        if kwargs.get("crawler_type"):
             specialized_type = kwargs.pop("crawler_type")
             return cls.crawlerTypes[specialized_type](container, *args, **kwargs)
 
@@ -1927,7 +1926,6 @@ class Crawler:
         # here could be some other searching ... whatever it may be
 
         return results
-
 
 CrawlerFactory.registerCrawlerType(Crawler)
 

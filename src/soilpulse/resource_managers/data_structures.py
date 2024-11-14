@@ -1,14 +1,10 @@
 # coding = utf-8
 # -*- coding: utf-8 -*-
 
-import os
-
-import frictionless
-import pandas
 from frictionless import Field, system, steps
 import time
 
-from ..project_management import ContainerHandler, ContainerHandlerFactory, Pointer, Crawler, CrawlerFactory
+from ..project_management import ContainerHandler, ContainerHandlerFactory, Crawler, CrawlerFactory
 import json
 
 

@@ -3,13 +3,9 @@
 
 import json
 import os
-import pprint
 
-from ..project_management import ContainerHandler, ContainerHandlerFactory, Pointer, Crawler, CrawlerFactory
+from ..project_management import ContainerHandler, ContainerHandlerFactory, Crawler, CrawlerFactory
 from ..db_access import EntityKeywordsDB
-# just for the standalone functions - will be changed
-# from ..resource_management import *
-
 
 class JSONContainer(ContainerHandler):
     containerType = 'json'
@@ -115,15 +111,6 @@ class JSONContainer(ContainerHandler):
 
 ContainerHandlerFactory.registerContainerType(JSONContainer, JSONContainer.containerType)
 EntityKeywordsDB.registerKeywordsDB(JSONContainer.containerType, JSONContainer.keywordsDBname)
-
-class JSONPointer(Pointer):
-
-    pointerType = type
-
-    def __init__(self, filename, startChar, numChars):
-
-        pass
-
 
 class JSONcrawler(Crawler):
     """
