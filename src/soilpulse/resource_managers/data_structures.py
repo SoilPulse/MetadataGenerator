@@ -6,6 +6,7 @@ import os
 import frictionless
 import pandas
 from frictionless import Field, system, steps
+import time
 
 from ..project_management import ContainerHandler, ContainerHandlerFactory, Pointer, Crawler, CrawlerFactory
 import json
@@ -42,6 +43,9 @@ class TableContainer(ContainerHandler):
         pass
 
     def getAnalyzed(self, cascade=True, force=False, report=False):
+        """
+        Induces further decomposition of the table container into column containers.
+        """
         if super().getAnalyzed(cascade, force):
             if self.crawler:
                 columns = self.crawler.analyze(report)
@@ -59,7 +63,7 @@ class TableContainer(ContainerHandler):
 
     def getCrawled(self, cascade=True, force=False, report=False):
         """
-        Executes the routines for scanning, recognizing and extracting metadata (and maybe data)
+        Induces content search for metadata elements based on appropriate set of search rules and terms.
         """
         if super().getCrawled(cascade, force):
             if self.crawler:
@@ -72,7 +76,7 @@ class TableContainer(ContainerHandler):
 
     def get_frictionless_resource(self):
         """
-        Compose and update the frictionless Resource definition based on column subcontainers.
+        Compose and update the frictionless Resource definition based on column sub-containers.
         Incorporates concepts, methods & units to fields scheme
         """
 
@@ -111,6 +115,9 @@ class TableContainer(ContainerHandler):
         return self.fl_resource
 
     def load_transformation_steps_from_file(self, path):
+        """
+        Loads a file content and tries to evaluate it as a steps definition for transformation Pipeline
+        """
         with open(path, 'r') as f:
             self.steps = eval(f.read())
         print(f"loaded transformation steps for table container {self.name}:\n {self.steps}")
@@ -141,6 +148,9 @@ class TableCrawler(Crawler):
         # print(f"Table crawler created for container #{self.container.id} '{self.container.name}'")
 
     def analyze(self, report=True):
+        """
+        Creates column sub-containers for the table
+        """
         print(f"\tanalyzing table '{self.container.name}' container #{self.container.id}") if report else None
         #
         column_conts = []
@@ -191,6 +201,9 @@ class ColumnContainer(ContainerHandler):
         pass
 
     def getAnalyzed(self, cascade=True, force=False, report=False):
+        """
+        Induces further decomposition of the table container into column containers.
+        """
         if super().getAnalyzed(cascade, force):
             if self.crawler:
                 self.crawler.analyze(report)
@@ -257,32 +270,62 @@ class ColumnCrawler(Crawler):
         """
         print(f"crawling column '{self.container.name}' of container #{self.container.id}") if report else None
 
-        all_translations = []
-        # search for string to concept translations in all registered global concept vocabularies
-        for vocab in self.container.project.globalConceptsVocabularies:
-            all_translations.extend(self.find_translations(vocab))
+        # search for string to concept translations in project dictionary
+        start_time = time.time()
+        # print(f"searching '{self.container.name}' for string-concept translations in project's dictionary")
+        all_translations = self.find_translations_in_dictionary(self.container.project.conceptsTranslations, full_match_only=True)
         for translation in all_translations:
             for string, concepts in translation.items():
                 for concept in concepts:
                     self.container.addStringConcept(string, concept)
-
-        # search for string to method translations
-        all_translations = []
-        for vocab in self.container.project.globalMethodsVocabularies:
-            all_translations.extend(self.find_translations(vocab))
+        # search for string to method translations in project dictionary
+        # print(f"searching '{self.container.name}' for string-method translations in project's dictionary")
+        all_translations = self.find_translations_in_dictionary(self.container.project.methodsTranslations, full_match_only=True)
         for translation in all_translations:
             for string, methods in translation.items():
                 for method in methods:
                     self.container.addStringMethod(string, method)
-
-        # search for string to unit translations
-        found_units = []
-        for vocab in self.container.project.globalUnitsVocabularies:
-            found_units.extend(self.find_translations(vocab))
+        # search for string to unit translations in project dictionary
+        # print(f"searching '{self.container.name}' for string-unit translations in project's dictionary")
+        all_translations = self.find_translations_in_dictionary(self.container.project.unitsTranslations, full_match_only=True)
         for translation in all_translations:
             for string, units in translation.items():
                 for unit in units:
                     self.container.addStringUnit(string, unit)
+        execution_time = time.time() - start_time
+        # print(f"\texecution time: {execution_time:.3f} seconds\n")
+
+        # search for string to concept translations in all registered global concept vocabularies
+        start_time = time.time()
+        all_translations = []
+        # print(f"searching vocabularies for string-concept translations of '{self.container.name}'")
+        for vocab in self.container.project.globalConceptsVocabularies.values():
+            all_translations.extend(self.find_translations_in_vocabulary(vocab, full_match_only=True))
+        for translation in all_translations:
+            for string, concepts in translation.items():
+                for concept in concepts:
+                    self.container.addStringConcept(string, concept)
+        # search for string to method translations
+        all_translations = []
+        # print(f"searching vocabularies for string-method translations of '{self.container.name}'")
+        for vocab in self.container.project.globalMethodsVocabularies.values():
+            all_translations.extend(self.find_translations_in_vocabulary(vocab, full_match_only=True))
+        for translation in all_translations:
+            for string, methods in translation.items():
+                for method in methods:
+                    self.container.addStringMethod(string, method)
+        # search for string to unit translations
+        found_units = []
+        # print(f"searching vocabularies for string-unit translations of '{self.container.name}'")
+        for vocab in self.container.project.globalUnitsVocabularies.values():
+            found_units.extend(self.find_translations_in_vocabulary(vocab, full_match_only=True))
+        for translation in all_translations:
+            for string, units in translation.items():
+                for unit in units:
+                    self.container.addStringUnit(string, unit)
+
+        execution_time = time.time() - start_time
+        # print(f"\texecution time: {execution_time:.3f} seconds")
 
         # change flag of parent container
         self.container.wasCrawled = True

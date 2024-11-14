@@ -48,7 +48,7 @@ def establish_new_project(dbcon, user_id, **example):
             # setting of files 'licensing' - this property should be available through GUI
             project.keepFiles = True
             # show the whole container tree
-            project.showContainerTree()
+            # project.showContainerTree()
 
             project.updateDBrecord()
 
@@ -97,30 +97,42 @@ def load_project_test_concepts(dbcon, user_id, project_id):
         # show project details
         # print(str(project))
 
-        #show paths of files and related containers
+        # show the whole container tree
+        # project.showContainerTree(show_concepts=True, show_methods=True, show_units=True)
+
+        # show paths of files and related containers
         # project.showFilesStructure()
 
         # upload vocabulary of concepts, methods and units from files
-        # project.updateConceptsVocabularyFromFile(os.path.join(project_files_root, "test_import_concepts.json"))
-        # # project.exportConceptsVocabularyToFile(project.conceptsVocabulary, os.path.join(project_files_root, "_concepts_vocabulary.json"))
-        # project.updateMethodsVocabularyFromFile(os.path.join(project_files_root, "test_import_methods.json"))
-        # # project.exportMethodsVocabularyToFile(project.methodsVocabulary, os.path.join(project_files_root, "_methods_vocabulary.json"))
-        # project.updateUnitsVocabularyFromFile(os.path.join(project_files_root, "test_import_units.json"))
-        # # project.exportUnitsVocabularyToFile(project.unitsVocabulary, os.path.join(project_files_root, "_units_vocabulary.json"))
-        # # project.showConceptsVocabulary()
-        # print(f"project.globalConceptsVocabulary:\n {project.globalConceptsVocabulary}")
+        project.updateConceptsTranslationsFromFile("d:\\downloads\\test_import_concepts.json")
+        # project.exportTranslationsDictionaryToFile(project.conceptsTranslations, "d:\\downloads\\test_import_concepts2.json")
+        project.updateMethodsTranslationsFromFile("d:\\downloads\\test_import_methods.json")
+        # project.exportTranslationsDictionaryToFile(project.methodsTranslations, "d:\\downloads\\test_import_methods2.json")
+        project.updateUnitsTranslationsFromFile("d:\\downloads\\test_import_units.json")
+        # project.exportTranslationsDictionaryToFile(project.unitsTranslations, "d:\\downloads\\test_import_units2.json")
+        # project.showDictionaries()
 
-        # # do whatever the automated crawling is capable of
-        # newDataset.getCrawled()
+        ready2 = project.getContainerByID(771)
+        # ready2.removeAllConcepts(cascade=True)
+        # ready2.removeAllMethods(cascade=True)
+        # ready2.removeAllUnits(cascade=True)
+        # print(ready2)
+        #
+        # # show the whole container tree
+        # project.showContainerTree(show_concepts=True, show_methods=True, show_units=True)
 
+        ready2.getCrawled()
+        print(ready2.concepts)
+
+        project.exportTranslationsDictionaryToFile(project.conceptsTranslations, os.path.join(project.temp_dir, project.dbconnection.concepts_translations_filename))
         # and do some manual tweaking
         # like removing all concepts from container
-        project.getContainerByID(776).removeAllConcepts()
-        project.getContainerByID(778).removeAllConcepts()
-        project.getContainerByID(776).removeAllMethods()
-        project.getContainerByID(778).removeAllMethods()
-        project.getContainerByID(776).removeAllUnits()
-        project.getContainerByID(778).removeAllUnits()
+        # project.getContainerByID(776).removeAllConcepts()
+        # project.getContainerByID(778).removeAllConcepts()
+        # project.getContainerByID(776).removeAllMethods()
+        # project.getContainerByID(778).removeAllMethods()
+        # project.getContainerByID(776).removeAllUnits()
+        # project.getContainerByID(778).removeAllUnits()
         #
         # # assigning a concept to container
         # project.getContainerByID(776).addStringConcept(project.getContainerByID(776).name, {"vocabulary": "AGROVOC", "uri": "http://aims.fao.org/aos/agrovoc/c_64a2abf9"})
@@ -158,15 +170,12 @@ def load_project_test_concepts(dbcon, user_id, project_id):
         #     # ... so it's removed
         # project.getContainerByID(778).removeUnitOfString(project.getContainerByID(778).name, {"vocabulary": "pint", "uri": "<minions>"})
 
-        # crawl the dataset containers only
-        ds = project.datasets[0]
-        ds.removeAllConcepts()
-        ds.removeAllMethods()
-        ds.removeAllUnits()
-        ds.getAnalyzed(cascade=True, force=True)
-        ds.getCrawled(cascade=True, force=True)
+
+        # show the whole container tree
+        project.showContainerTree(show_concepts=True, show_methods=True, show_units=True)
+
         # show the datasets
-        project.showDatasetsContents()
+        # project.showDatasetsContents()
 
         # update database record
         project.updateDBrecord()
@@ -198,7 +207,7 @@ def load_project_test_datasets(dbcon, user_id, project_id):
         # newDataset.addContainers(project.getContainerByID([771, 956, 992]))
 
         # new empty dataset is created and added to the ResourceManager
-        newDataset = project.createDataset("Test dataset 3")
+        newDataset = project.createDataset("Test dataset")
         # add some containers from the ResourceManager - will be done through the GUI
         newDataset.addContainers(project.getContainerByID([771, 956, 992]))
         newDataset.getAnalyzed(force=True, report=False)
@@ -323,8 +332,7 @@ def create_vocabulary_from_agrovoc_dump(path):
     # transform to vocabulary structure
     output_vocab = []
     for r in ret["results"]["bindings"]:
-        output_vocab.append({"string": r["label"]["value"],
-                            "concept": {"vocabulary": "AGROVOC", "uri": r["concept"]["value"]}})
+        output_vocab.append({"term": r["label"]["value"], "vocabulary": "AGROVOC", "uri": r["concept"]["value"]})
     out_path = os.path.join(os.path.dirname(path), "agrovoc.json")
     # dump the result to json
     with open(out_path, "w", encoding='utf8') as f:
@@ -345,8 +353,8 @@ if __name__ == "__main__":
 
     # database connection to load/save projects and their structure
     # dbcon = DBconnector.get_connector()
-    dbcon = MySQLConnector()
-    # dbcon = NullConnector()
+    # dbcon = MySQLConnector()
+    dbcon = NullConnector()
 
 
     # checkout user - needed for proper manipulation of project if MySQL server is not reachable
@@ -356,20 +364,11 @@ if __name__ == "__main__":
 
 
     # do the use case
-    # project1 = establish_new_project(dbcon, user_id, **example_1)
-    # project1.keepFiles = False
-    # load_id = project1.id
-    # del project1
-    # project2 = establish_new_project(dbcon, user_id, **example_3)
-    # project2 = establish_new_project(dbcon, user_id, **example_4)
+    project1 = establish_new_project(dbcon, user_id, **example_1)
 
-    # project3 = establish_new_project(dbcon, user_id, **example_6)
-    # project3.uploadFilesFromSession("d:\\downloads\\lenz2022.zip")
-    # project3.showContainerTree()
-    # project3.updateDBrecord()
 
-    load_project_test_datasets(dbcon, user_id, 1)
-    # load_project_test_concepts(dbcon, user_id, 3)
+    # load_project_test_datasets(dbcon, user_id, 1)
+    load_project_test_concepts(dbcon, user_id, 1)
     # load_project_upload_files(dbcon, user_id, 19)
     # load_project_remove_container(dbcon, user_id, 1)
     # load_project_test_multitable(dbcon, user_id, 3)
@@ -408,3 +407,5 @@ if __name__ == "__main__":
     # print("max counts: {}".format(em.checkMaxCounts()))
 
     # EF.showSearchExpressions()
+
+    # create_vocabulary_from_agrovoc_dump("d:\\downloads\\agrov.dump")

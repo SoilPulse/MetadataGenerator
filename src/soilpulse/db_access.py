@@ -11,6 +11,7 @@ import os
 import re
 import shutil
 from pathlib import Path
+import importlib.resources
 
 from .exceptions import DatabaseFetchError, DatabaseEntryError, NameNotUniqueError, DeserializationError, ContainerStructureError
 
@@ -46,20 +47,24 @@ class DBconnector:
     project_files_root = Path(Path.home(), soilpulse_root_dir_name, project_files_dir_name)
     project_files_root.mkdir(parents=True, exist_ok=True)
 
-    vocabularies_dir_name = "vocabularies"
-    vocabularies_root = Path(Path.home(), soilpulse_root_dir_name, vocabularies_dir_name)
-    vocabularies_root.mkdir(parents=True, exist_ok=True)
-
-    # filename of global concepts vocabulary
-    concepts_vocabulary_filenames = ["agrovoc.json", "_concepts_vocabulary_2.json"]
-    # filename of global methods vocabulary
-    methods_vocabulary_filenames = ["_methods_vocabulary_1.json"]
-    # filename of global units vocabulary
-    units_vocabulary_filenames = ["_units_vocabulary_1.json"]
     # prefix for directory project directory name - to distinguish between JSON saved projects and MySQL saved projects
     dirname_prefix = None
     # subdirectory name for the datasets files
     datasets_directory_name = "datasets"
+
+    vocabularies_dir_name = "vocabularies"
+
+    # global concepts vocabularies
+    concepts_vocabulary_filenames = {"AGROVOC": "agrovoc.json", "TestConceptVocabulary": "_concepts_vocabulary_1.json"}
+    # global methods vocabularies
+    methods_vocabulary_filenames = {"TestMethodsVocabulary": "_methods_vocabulary_1.json"}
+    # global units vocabularies
+    units_vocabulary_filenames = {"TestUnitsVocabulary":  "_units_vocabulary_1.json"}
+
+    # project dictionaries filenames
+    concepts_translations_filename = "_concepts_translations.json"
+    methods_translations_filename = "_methods_translations.json"
+    units_translations_filename = "_units_translations.json"
 
     @classmethod
     def get_connector(cls):
@@ -87,6 +92,7 @@ class DBconnector:
         pass
     def getUserNameByID(self, id):
         pass
+
     def getProjectsOfUser(self, user_id):
         pass
 
@@ -108,9 +114,59 @@ class DBconnector:
 
     def updateProjectRecord(self, project, cascade=False):
         pass
+    def updateTranslationDictionaries(self, project):
+        # update the projects vocabulary by concepts of containers
+        # project.updateConceptsVocabularyFromContents()
+        project.exportTranslationsDictionaryToFile(project.conceptsTranslations, os.path.join(project.temp_dir, self.concepts_translations_filename))
+        # with open(os.path.join(project.temp_dir, self.concepts_translations_filename), "w") as f:
+        #     json.dump(project.conceptsTranslations, f, ensure_ascii=False, indent=4)
+        print(f"\tconcepts vocabulary saved")
+
+        # update the projects vocabulary by methods of containers
+        # project.updateMethodsVocabularyFromContents()
+        project.exportTranslationsDictionaryToFile(project.methodsTranslations, os.path.join(project.temp_dir, self.methods_translations_filename))
+
+        # with open(os.path.join(project.temp_dir, self.concepts_translations_filename), "w") as f:
+        #     json.dump(project.methodsTranslations, f, ensure_ascii=False, indent=4)
+        print(f"\tmethods vocabulary saved")
+
+        # update the projects vocabulary by units of containers
+        # project.updateUnitsVocabularyFromContents()
+        project.exportTranslationsDictionaryToFile(project.unitsTranslations, os.path.join(project.temp_dir, self.units_translations_filename))
+
+        # with open(os.path.join(project.temp_dir, project.units_translations_filename), "w") as f:
+        #     json.dump(project.unitsTranslations, f, ensure_ascii=False, indent=4)
+        print(f"\tunits vocabulary saved")
+        return
 
     def loadProject(self, project):
         pass
+
+    def loadTranslationsOfProject(self, project):
+        # load concepts vocabulary
+        concepts_dictionary_path = os.path.join(project.temp_dir, self.concepts_translations_filename)
+        if os.path.isfile(concepts_dictionary_path) and os.path.getsize(concepts_dictionary_path) > 0:
+            with open(concepts_dictionary_path, "r") as f:
+                project.conceptsTranslations = json.load(f)
+        else:
+            print(f"string-concept translations dictionary '{concepts_dictionary_path}' does not exist or is empty.")
+
+        # load methods vocabulary
+        methods_dictionary_path = os.path.join(project.temp_dir, self.methods_translations_filename)
+        if os.path.isfile(methods_dictionary_path) and os.path.getsize(methods_dictionary_path) > 0:
+            with open(methods_dictionary_path, "r") as f:
+                project.methodsTranslations = json.load(f)
+        else:
+            print(f"string-method translations dictionary '{methods_dictionary_path}' does not exist or is empty.")
+
+        # load units vocabulary
+        units_dictionary_path = os.path.join(project.temp_dir, self.units_translations_filename)
+        if os.path.isfile(units_dictionary_path) and os.path.getsize(units_dictionary_path) > 0:
+            with open(units_dictionary_path, "r") as f:
+                project.unitsTranslations = json.load(f)
+        else:
+            print(f"string-unit translations dictionary '{units_dictionary_path}' does not exist or is empty.")
+
 
     def deleteProjectRecord(self, project, delete_dir):
         pass
@@ -134,72 +190,74 @@ class DBconnector:
         datasets_dir = os.path.join(project_dir, self.datasets_directory_name)
         if not os.path.isdir(datasets_dir):
             os.mkdir(datasets_dir)
+
         return project_dir, datasets_dir
 
     def getDatasetsOfProject(self, project_id):
         pass
 
-    def loadVocabularyFromFile(self, input_file, type):
+    def loadVocabularyFromFile(self, filename):
         """
         Loads string-* translations JSON file
 
-        :param input_file: path of vocabulary file to load from
-        :param type: type of vocabulary 'concept'/'method'/'unit'
+        :param filename: path of vocabulary file to load from
         """
 
-        # load the input JSON file
-        str_dict = {}
-        with open(input_file, 'r') as f:
-            for str in json.load(f):
-                str_dict.update({str['string']: str[type]})
-        return str_dict
+        out_dict = []
+        with importlib.resources.open_text(f"soilpulse.{self.vocabularies_dir_name}", filename) as f:
+            for item in json.load(f):
+                out_dict.append(item)
+        return out_dict
 
     def loadConceptsVocabularies(self):
         """
         Loads string-concepts translations JSON file
         """
-        vocabs = []
+        vocabs = {}
         loaded = []
-        for vocab_filename in self.concepts_vocabulary_filenames:
+        for vocab, filename in self.concepts_vocabulary_filenames.items():
             try:
-                vocabs.append(self.loadVocabularyFromFile(os.path.join(self.vocabularies_root, vocab_filename), 'concept'))
+                vocabs.update({vocab: self.loadVocabularyFromFile(filename)})
             except:
-                print(f"failed to load concept vocabulary '{os.path.join(self.vocabularies_root, vocab_filename)}'")
+                print(f"failed to load concept vocabulary '{vocab}' from '{os.path.join(self.vocabularies_dir_name, filename)}'")
             else:
-                loaded.append(vocab_filename)
-        print(f"successfully loaded concept vocabularies: {', '.join([str(v) for v in loaded])}")
+                loaded.append(vocab)
+        if len(loaded) > 0:
+            print(f"loaded concepts vocabularies: {', '.join([str(v) for v in loaded])}")
         return vocabs
 
     def loadMethodsVocabularies(self):
         """
         Loads string-method translations JSON file
         """
-        vocabs = []
+        vocabs = {}
         loaded = []
-        for vocab_filename in self.methods_vocabulary_filenames:
+        for vocab, filename in self.methods_vocabulary_filenames.items():
             try:
-                vocabs.append(self.loadVocabularyFromFile(os.path.join(self.vocabularies_root, vocab_filename), 'method'))
+                vocabs.update({vocab: self.loadVocabularyFromFile(filename)})
             except:
-                print(f"failed to load method vocabulary '{os.path.join(self.vocabularies_root, vocab_filename)}'")
+                print(
+                    f"failed to load method vocabulary '{vocab}' from '{os.path.join(self.vocabularies_dir_name, filename)}'")
             else:
-                loaded.append(vocab_filename)
-        print(f"successfully loaded methods vocabularies: {', '.join([str(v) for v in loaded])}")
+                loaded.append(vocab)
+        print(f"loaded methods vocabularies: {', '.join([str(v) for v in loaded])}")
         return vocabs
 
     def loadUnitsVocabularies(self):
         """
         Loads string-unit translations JSON file
         """
-        vocabs = []
+        vocabs = {}
         loaded = []
-        for vocab_filename in self.units_vocabulary_filenames:
+        for vocab, filename in self.units_vocabulary_filenames.items():
             try:
-                vocabs.append(self.loadVocabularyFromFile(os.path.join(self.vocabularies_root, vocab_filename), 'unit'))
+                vocabs.update({vocab: self.loadVocabularyFromFile(filename)})
             except:
-                print(f"failed to load unit vocabulary '{os.path.join(self.vocabularies_root, vocab_filename)}'")
+                print(
+                    f"failed to load units vocabulary '{vocab}' from '{os.path.join(self.vocabularies_dir_name, filename)}'")
             else:
-                loaded.append(vocab_filename)
-        print(f"successfully loaded unit vocabularies: {', '.join([str(v) for v in loaded])}")
+                loaded.append(vocab)
+        print(f"loaded units vocabularies: {', '.join([str(v) for v in loaded])}")
         return vocabs
 
 class MySQLConnector(DBconnector):
@@ -226,9 +284,9 @@ class MySQLConnector(DBconnector):
     conceptsContainersTableName = "`container_concepts`"
     unitsContainersTableName = "`container_units`"
     methodsContainersTableName = "`container_methods`"
-    conceptVocabularyTableName = "`concepts_vocabulary`"
-    methodsVocabularyTableName = "`methods_vocabulary`"
-    unitsVocabularyTableName = "`units_vocabulary`"
+    conceptDictionaryTableName = "`concepts_dictionary`"
+    methodsDictionaryTableName = "`methods_dictionary`"
+    unitsDictionaryTableName = "`units_dictionary`"
 
 
     def __init__(self):
@@ -236,10 +294,10 @@ class MySQLConnector(DBconnector):
 
         try:
             self.db_connection = mysql.connector.connect(
-                host = self.server,
-                user = self.username,
-                password = self.pwd,
-                database = self.db_name
+                host=self.server,
+                user=self.username,
+                password=self.pwd,
+                database=self.db_name
             )
         except mysql.connector.errors.InterfaceError as e:
             print("The SoilPulse database server is not accessible:")
@@ -299,9 +357,8 @@ class MySQLConnector(DBconnector):
                 all_user_ids.append(res[0])
             if user_id in all_user_ids:
                 return user_id
-            return None
-        else:
-            return None
+        return None
+
 
     def getProjectsOfUser(self, user_id):
         """
@@ -387,25 +444,20 @@ class MySQLConnector(DBconnector):
         # insert queries must be committed
         self.db_connection.commit()
 
-        # # optionally the ID can be assigned based on last inserted ID - assured match of project.id and DB ID
-        # # because there is a very small chance that mismatch can happen while two projects are established at the same time
-
-        # # get and return the ID of newly created ProjectManager record
-        # thecursor.execute("SELECT LAST_INSERT_ID()")
-        # results = thecursor.fetchall()
-        # # assign the DB ID to Project instance
-        # for nid in results:
-        #     project.id = nid[0]
-        #     print(nid[0])
-        # # assign the project files directory path
-        # project.temp_dir = os.path.join(self.project_files_root, str(project.id))
-
         # insert line to `user_projects` table
         query = f"INSERT INTO {self.userProjectsTableName} (`user_id`, `project_id`) VALUES (%s, %s)"
         values = [user_id, project_id]
         thecursor.execute(query, values)
         self.db_connection.commit()
         thecursor.close()
+
+        # create empty project translation dictionaries
+        with open(os.path.join(project_temp_dir, self.concepts_translations_filename), "w") as f:
+            f.close()
+        with open(os.path.join(project_temp_dir, self.methods_translations_filename), "w") as f:
+            f.close()
+        with open(os.path.join(project_temp_dir, self.units_translations_filename), "w") as f:
+            f.close()
         return project_id, project_temp_dir, datasets_dir
 
     def updateProjectRecord(self, project, cascade=False):
@@ -493,8 +545,8 @@ class MySQLConnector(DBconnector):
             else:
                 print(f"\t(no datasets to save)")
 
-        # project concept/methods/units vocabulary doesn't need to be saved in MySQLconnector
-        # project concept vocabulary it's just a subset of all translations stored in DB
+        # save project concept/methods/units translation dictionaries
+        self.updateTranslationDictionaries(project)
 
         # delete string-concept translations that are no longer in use
         self.deleteOrphannedConceptTranslations(project.id, project.collectAllConcepts())
@@ -525,7 +577,7 @@ class MySQLConnector(DBconnector):
         )
         # fetch all translations from the database for the project
         thecursor = self.db_connection.cursor()
-        select_query = f"SELECT `id`, `string`, `vocabulary`, `uri`  FROM {self.conceptVocabularyTableName} " \
+        select_query = f"SELECT `id`, `string`, `vocabulary`, `uri`  FROM {self.conceptDictionaryTableName} " \
                        f"WHERE `project_id` = {project_id}"
         thecursor.execute(select_query)
         rows = thecursor.fetchall()
@@ -540,7 +592,7 @@ class MySQLConnector(DBconnector):
 
         # if there are IDs to delete, execute the deletion
         if ids_to_delete:
-            delete_query = f"DELETE FROM {self.conceptVocabularyTableName} WHERE id IN " \
+            delete_query = f"DELETE FROM {self.conceptDictionaryTableName} WHERE id IN " \
                            f" ({', '.join([str(id) for id in ids_to_delete])})"
             thecursor.execute(delete_query)
             self.db_connection.commit()
@@ -562,7 +614,7 @@ class MySQLConnector(DBconnector):
         )
         # fetch all translations from the database for the project
         thecursor = self.db_connection.cursor()
-        select_query = f"SELECT `id`, `string`, `vocabulary`, `uri`  FROM {self.methodsVocabularyTableName} " \
+        select_query = f"SELECT `id`, `string`, `vocabulary`, `uri`  FROM {self.methodsDictionaryTableName} " \
                        f"WHERE `project_id` = {project_id}"
         thecursor.execute(select_query)
         rows = thecursor.fetchall()
@@ -577,7 +629,7 @@ class MySQLConnector(DBconnector):
 
         # if there are IDs to delete, execute the deletion
         if ids_to_delete:
-            delete_query = f"DELETE FROM {self.methodsVocabularyTableName} WHERE id IN " \
+            delete_query = f"DELETE FROM {self.methodsDictionaryTableName} WHERE id IN " \
                            f" ({', '.join([str(id) for id in ids_to_delete])})"
             thecursor.execute(delete_query)
             self.db_connection.commit()
@@ -599,7 +651,7 @@ class MySQLConnector(DBconnector):
         )
         # fetch all translations from the database for the project
         thecursor = self.db_connection.cursor()
-        select_query = f"SELECT `id`, `string`, `vocabulary`, `uri`  FROM {self.unitsVocabularyTableName} " \
+        select_query = f"SELECT `id`, `string`, `vocabulary`, `uri`  FROM {self.unitsDictionaryTableName} " \
                        f"WHERE `project_id` = {project_id}"
         thecursor.execute(select_query)
         rows = thecursor.fetchall()
@@ -614,7 +666,7 @@ class MySQLConnector(DBconnector):
 
         # if there are IDs to delete, execute the deletion
         if ids_to_delete:
-            delete_query = f"DELETE FROM {self.unitsVocabularyTableName} WHERE id IN " \
+            delete_query = f"DELETE FROM {self.unitsDictionaryTableName} WHERE id IN " \
                            f" ({', '.join([str(id) for id in ids_to_delete])})"
             thecursor.execute(delete_query)
             self.db_connection.commit()
@@ -699,7 +751,7 @@ class MySQLConnector(DBconnector):
                     trans_id = self.getConceptTranslationID(string, concept['vocabulary'], concept['uri'], container.project.id)
                     # if the translation doesn't exist create it
                     if trans_id is None:
-                        trans_id = self.insertStringConceptTranslation(string, concept['vocabulary'], concept['uri'], container.project.id)
+                        trans_id = self.insertStringConceptTranslation(string, concept['term'], concept['vocabulary'], concept['uri'], container.project.id)
 
                     thecursor = self.db_connection.cursor()
                     thecursor.execute(f"SELECT COUNT(*) FROM {self.conceptsContainersTableName}"
@@ -726,7 +778,7 @@ class MySQLConnector(DBconnector):
                     trans_id = self.getMethodTranslationID(string, method['vocabulary'], method['uri'], container.project.id)
                     # if the translation doesn't exist create it
                     if trans_id is None:
-                        trans_id = self.insertStringMethodTranslation(string, method['vocabulary'], method['uri'], container.project.id)
+                        trans_id = self.insertStringMethodTranslation(string, method['term'], method['vocabulary'], method['uri'], container.project.id)
 
                     thecursor = self.db_connection.cursor()
                     thecursor.execute(f"SELECT COUNT(*) FROM {self.methodsContainersTableName}"
@@ -753,7 +805,7 @@ class MySQLConnector(DBconnector):
                     trans_id = self.getUnitTranslationID(string, unit['vocabulary'], unit['uri'], container.project.id)
                     # if the translation doesn't exist create it
                     if trans_id is None:
-                        trans_id = self.insertStringUnitTranslation(string, unit['vocabulary'], unit['uri'], container.project.id)
+                        trans_id = self.insertStringUnitTranslation(string, unit['term'], unit['vocabulary'], unit['uri'], container.project.id)
 
                     thecursor = self.db_connection.cursor()
                     thecursor.execute(f"SELECT COUNT(*) FROM {self.unitsContainersTableName}"
@@ -773,7 +825,7 @@ class MySQLConnector(DBconnector):
         The return ID is used in container-translation relation
         """
         thecursor = self.db_connection.cursor(dictionary=True)
-        query = f"SELECT `id` FROM {self.conceptVocabularyTableName} " \
+        query = f"SELECT `id` FROM {self.conceptDictionaryTableName} " \
               f"WHERE `string` = '{string}' AND `vocabulary` = '{vocabulary}' AND `uri` = '{uri}' "
         query += f"AND `project_id` = {project_id}" if project_id is not None else None
         thecursor.execute(query)
@@ -794,7 +846,7 @@ class MySQLConnector(DBconnector):
         The return ID is used in container-translation relation
         """
         thecursor = self.db_connection.cursor(dictionary=True)
-        query = f"SELECT `id` FROM {self.methodsVocabularyTableName} " \
+        query = f"SELECT `id` FROM {self.methodsDictionaryTableName} " \
               f"WHERE `string` = '{string}' AND `vocabulary` = '{vocabulary}' AND `uri` = '{uri}' "
         query += f"AND `project_id` = {project_id}" if project_id is not None else None
         thecursor.execute(query)
@@ -814,7 +866,7 @@ class MySQLConnector(DBconnector):
         The return ID is used in container-translation relation
         """
         thecursor = self.db_connection.cursor(dictionary=True)
-        query = f"SELECT `id` FROM {self.unitsVocabularyTableName} " \
+        query = f"SELECT `id` FROM {self.unitsDictionaryTableName} " \
                 f"WHERE `string` = '{string}' AND `vocabulary` = '{vocabulary}' AND `uri` = '{uri}' "
         query += f"AND `project_id` = {project_id}" if project_id is not None else None
         thecursor.execute(query)
@@ -830,19 +882,20 @@ class MySQLConnector(DBconnector):
             return results[0]['id']
 
 
-    def insertStringConceptTranslation(self, string, vocabulary, uri, project_id):
+    def insertStringConceptTranslation(self, string, term, vocabulary, uri, project_id):
         """
         Inserts DB entry of a string-concept definition into database table and returns ID of the translation
 
         :param string: the string which translation it is
+        :param term: the term of the uri
         :param vocabulary: vocabulary of the unit definition
         :param uri: unique identifier of the term within specified vocabulary
         :param project_id: ID of project to which the translation belongs
         :returns: ID of the newly created translation DB entry
         """
         thecursor = self.db_connection.cursor(dictionary=True)
-        query = f"INSERT INTO {self.conceptVocabularyTableName} (`string`, `vocabulary`, `uri`, `project_id`) " \
-              f"VALUES ('{string}', '{vocabulary}', '{uri}', {project_id});"
+        query = f"INSERT INTO {self.conceptDictionaryTableName} (`string`, `term`, `vocabulary`, `uri`, `project_id`) " \
+              f"VALUES ('{string}', '{term}', '{vocabulary}', '{uri}', {project_id});"
         thecursor.execute(query)
         self.db_connection.commit()
         # get the last inserted ID
@@ -852,19 +905,20 @@ class MySQLConnector(DBconnector):
 
         return new_id
 
-    def insertStringMethodTranslation(self, string, vocabulary, uri, project_id):
+    def insertStringMethodTranslation(self, string, term, vocabulary, uri, project_id):
         """
         Inserts DB entry of a string-method definition into database table and returns ID of the translation
 
         :param string: the string which translation it is
+        :param term: the term of the uri
         :param vocabulary: vocabulary of the unit definition
         :param uri: unique identifier of the term within specified vocabulary
         :param project_id: ID of project to which the translation belongs
         :returns: ID of the newly created translation DB entry
         """
         thecursor = self.db_connection.cursor(dictionary=True)
-        query = f"INSERT INTO {self.methodsVocabularyTableName} (`string`, `vocabulary`, `uri`, `project_id`) " \
-              f"VALUES ('{string}', '{vocabulary}', '{uri}', {project_id});"
+        query = f"INSERT INTO {self.methodsDictionaryTableName} (`string`, `term`, `vocabulary`, `uri`, `project_id`) " \
+              f"VALUES ('{string}', '{term}', '{vocabulary}', '{uri}', {project_id});"
         thecursor.execute(query)
         self.db_connection.commit()
         # get the last inserted ID
@@ -874,19 +928,20 @@ class MySQLConnector(DBconnector):
 
         return new_id
 
-    def insertStringUnitTranslation(self, string, vocabulary, uri, project_id):
+    def insertStringUnitTranslation(self, string, term, vocabulary, uri, project_id):
         """
         Inserts DB entry of a string-unit definition into database table and returns ID of the translation
 
-        :param string: the string which translation it is
+        :param string: the string being translated
+        :param term: the term of the uri
         :param vocabulary: vocabulary of the unit definition
         :param uri: unique identifier of the term within specified vocabulary
         :param project_id: ID of project to which the translation belongs
         :returns: ID of the newly created translation DB entry
         """
         thecursor = self.db_connection.cursor(dictionary=True)
-        query = f"INSERT INTO {self.unitsVocabularyTableName} (`string`, `vocabulary`, `uri`, `project_id`) " \
-              f"VALUES ('{string}', '{vocabulary}', '{uri}', {project_id});"
+        query = f"INSERT INTO {self.unitsDictionaryTableName} (`string`, `term`, `vocabulary`, `uri`, `project_id`) " \
+              f"VALUES ('{string}', '{term}', '{vocabulary}', '{uri}', {project_id});"
         thecursor.execute(query)
         self.db_connection.commit()
         # get the last inserted ID
@@ -897,7 +952,9 @@ class MySQLConnector(DBconnector):
         return new_id
 
     def updateDatasetRecord(self, dataset):
-
+        """
+        Saves dataset state into DB
+        """
         thecursor = self.db_connection.cursor()
 
         # update properties if the dataset record already exists
@@ -965,6 +1022,9 @@ class MySQLConnector(DBconnector):
                 project.keepFiles = False
             else:
                 project.keepFiles = True
+
+            # load translation dictionaries
+            self.loadTranslationsOfProject(project)
 
             if cascade:
                 # load the container tree
@@ -1132,8 +1192,8 @@ class MySQLConnector(DBconnector):
         :return:
         """
         thecursor = self.db_connection.cursor(dictionary=True)
-        query = f"SELECT `string`, `vocabulary`, `uri` FROM {self.conceptVocabularyTableName} " \
-                f"INNER JOIN {self.conceptsContainersTableName} ON {self.conceptsContainersTableName}.`translation_id` = {self.conceptVocabularyTableName}.`id` " \
+        query = f"SELECT `string`, `vocabulary`, `uri`, `term` FROM {self.conceptDictionaryTableName} " \
+                f"INNER JOIN {self.conceptsContainersTableName} ON {self.conceptsContainersTableName}.`translation_id` = {self.conceptDictionaryTableName}.`id` " \
                 f"INNER JOIN {self.containersTableName} ON {self.containersTableName}.`id` = {self.conceptsContainersTableName}.`container_id` " \
                 f"WHERE {self.containersTableName}.`id_local` = {container.id} " \
                 f"AND {self.containersTableName}.`project_id` = {container.project.id}"
@@ -1144,9 +1204,9 @@ class MySQLConnector(DBconnector):
         for res in results:
             if res["string"] not in concepts_dict.keys():
                 # concepts_list.append("string": res["string"] "concept": {res["vocabulary"], "uri": res["uri"])
-                concepts_dict.update({res["string"]: [{"vocabulary": res["vocabulary"], "uri": res["uri"]}]})
+                concepts_dict.update({res["string"]: [{"term": res["term"], "vocabulary": res["vocabulary"], "uri": res["uri"]}]})
             else:
-                concepts_dict.get(res["string"]).append({"vocabulary": res["vocabulary"], "uri": res["uri"]})
+                concepts_dict.get(res["string"]).append({"term": res["term"], "vocabulary": res["vocabulary"], "uri": res["uri"]})
 
         return concepts_dict
 
@@ -1159,8 +1219,8 @@ class MySQLConnector(DBconnector):
         :return:
         """
         thecursor = self.db_connection.cursor(dictionary=True)
-        query = f"SELECT `string`, `vocabulary`, `uri` FROM {self.methodsVocabularyTableName} " \
-                f"INNER JOIN {self.methodsContainersTableName} ON {self.methodsContainersTableName}.`translation_id` = {self.methodsVocabularyTableName}.`id` " \
+        query = f"SELECT `string`, `vocabulary`, `uri`, `term` FROM {self.methodsDictionaryTableName} " \
+                f"INNER JOIN {self.methodsContainersTableName} ON {self.methodsContainersTableName}.`translation_id` = {self.methodsDictionaryTableName}.`id` " \
                 f"INNER JOIN {self.containersTableName} ON {self.containersTableName}.`id` = {self.methodsContainersTableName}.`container_id` " \
                 f"WHERE {self.containersTableName}.`id_local` = {container.id} " \
                 f"AND {self.containersTableName}.`project_id` = {container.project.id}"
@@ -1170,9 +1230,9 @@ class MySQLConnector(DBconnector):
         results = thecursor.fetchall()
         for res in results:
             if res["string"] not in methods_dict.keys():
-                methods_dict.update({res["string"]: [{"vocabulary": res["vocabulary"], "uri": res["uri"]}]})
+                methods_dict.update({res["string"]: [{"term": res["term"], "vocabulary": res["vocabulary"], "uri": res["uri"]}]})
             else:
-                methods_dict.get(res["string"]).append({"vocabulary": res["vocabulary"], "uri": res["uri"]})
+                methods_dict.get(res["string"]).append({"term": res["term"], "vocabulary": res["vocabulary"], "uri": res["uri"]})
 
         return methods_dict
 
@@ -1184,8 +1244,8 @@ class MySQLConnector(DBconnector):
         :return:
         """
         thecursor = self.db_connection.cursor(dictionary=True)
-        query = f"SELECT `string`, `vocabulary`, `uri` FROM {self.unitsVocabularyTableName} " \
-                f"INNER JOIN {self.unitsContainersTableName} ON {self.unitsContainersTableName}.`translation_id` = {self.unitsVocabularyTableName}.`id` " \
+        query = f"SELECT `string`, `vocabulary`, `uri`, `term` FROM {self.unitsDictionaryTableName} " \
+                f"INNER JOIN {self.unitsContainersTableName} ON {self.unitsContainersTableName}.`translation_id` = {self.unitsDictionaryTableName}.`id` " \
                 f"INNER JOIN {self.containersTableName} ON {self.containersTableName}.`id` = {self.unitsContainersTableName}.`container_id` " \
                 f"WHERE {self.containersTableName}.`id_local` = {container.id} " \
                 f"AND {self.containersTableName}.`project_id` = {container.project.id}"
@@ -1195,9 +1255,9 @@ class MySQLConnector(DBconnector):
         results = thecursor.fetchall()
         for res in results:
             if res["string"] not in units_dict.keys():
-                units_dict.update({res["string"]: [{"vocabulary": res["vocabulary"], "uri": res["uri"]}]})
+                units_dict.update({res["string"]: [{"term": res["term"], "vocabulary": res["vocabulary"], "uri": res["uri"]}]})
             else:
-                units_dict.get(res["string"]).append({"vocabulary": res["vocabulary"], "uri": res["uri"]})
+                units_dict.get(res["string"]).append({"term": res["term"], "vocabulary": res["vocabulary"], "uri": res["uri"]})
 
         return units_dict
 
@@ -1348,6 +1408,14 @@ class NullConnector(DBconnector):
                 f.write("[]")
                 f.close()
 
+        # create empty project translation dictionaries
+        with open(os.path.join(project_temp_dir, self.concepts_translations_filename), "w") as f:
+            f.close()
+        with open(os.path.join(project_temp_dir, self.methods_translations_filename), "w") as f:
+            f.close()
+        with open(os.path.join(project_temp_dir, self.units_translations_filename), "w") as f:
+            f.close()
+
         return project_id, project_temp_dir, datasets_dir
 
     def updateProjectRecord(self, project, cascade=False):
@@ -1374,26 +1442,8 @@ class NullConnector(DBconnector):
             else:
                 print(f"\t(no datasets to save)")
 
-        # update project vocabularies
-        # update the projects vocabulary by concepts of containers
-        project.updateConceptsVocabularyFromContents()
-        with open(os.path.join(project.temp_dir, project.concepts_vocabulary_filename), "w") as f:
-            json.dump(project.conceptsVocabulary, f, ensure_ascii=False, indent=4)
-        print(f"\tconcepts vocabulary saved")
-
-        # update the projects vocabulary by methods of containers
-        project.updateMethodsVocabularyFromContents()
-        with open(os.path.join(project.temp_dir, project.methods_vocabulary_filename), "w") as f:
-            json.dump(project.methodsVocabulary, f, ensure_ascii=False, indent=4)
-        print(f"\tmethods vocabulary saved")
-
-        # update the projects vocabulary by units of containers
-        project.updateUnitsVocabularyFromContents()
-        with open(os.path.join(project.temp_dir, project.units_vocabulary_filename), "w") as f:
-            json.dump(project.unitsVocabulary, f, ensure_ascii=False, indent=4)
-        print(f"\tunits vocabulary saved")
-
-        # update concept mapping dump
+        # update project translation dictionaries
+        self.updateTranslationDictionaries(project)
 
         return
 
@@ -1415,6 +1465,9 @@ class NullConnector(DBconnector):
         else:
             raise DatabaseFetchError(f"Project ID {project.id} does not exist within local temporary projects."
                  f"\nAvailable project IDs are: {', '.join([str(pid) for pid in self.getAllTempProjectIDs()])}")
+
+        # load translation dictionaries
+        self.loadTranslationsOfProject(project)
 
         # load containers structure
         if cascade:
@@ -1438,17 +1491,6 @@ class NullConnector(DBconnector):
             else:
                 raise DatabaseFetchError(f"JSON file with stored dataset info '{self.datasets_attr_filename}'"
                                          f" was not found in project's directory '{project.temp_dir}'")
-        # # load concepts vocabulary
-        # concepts_vocabulary_path = os.path.join(project.temp_dir, self.concepts_vocabulary_filename)
-        # if os.path.isfile(concepts_vocabulary_path) and os.path.getsize(concepts_vocabulary_path) > 0:
-        #     with open(concepts_vocabulary_path, "r") as f:
-        #         project.conceptsVocabulary = json.load(f)
-        # else:
-        #     # nothing really needs to happen here as the vocabulary is in memory until the updateDBrecord is called
-        #     # and then it's rewritten everytime anyway
-        #     # raise DatabaseFetchError(f"JSON file with project's concepts vocabulary '{self.concepts_vocabulary_filename}'"
-        #     #                          f" was not found in project's directory '{project.temp_dir}'")
-        #     pass
         return project
 
     def loadChildContainers(self, project, containers_serialized, parent_container=None):
@@ -1671,6 +1713,6 @@ class EntityKeywordsDB:
                     # raise DatabaseFetchError("No keywords found for entity_id = '{}' ({})".format(entity.ID, entity.name))
                     typeKeywords = None
             keywords.update({type: typeKeywords})
-        return  keywords
+        return keywords
 
 
