@@ -1,0 +1,580 @@
+{
+  "resources": [
+    {
+      "name": "ready2",
+      "type": "table",
+      "path": "lenz2022_zip/lenz2022/database/ready2.csv",
+      "format": "csv",
+      "mediatype": "text/csv",
+      "encoding": "cp1252",
+      "dialect": {"csv": {"delimiter": " ", "skipInitialSpace": true}},
+      "schema": {
+        "fields": [
+          {
+            "name": "No",
+            "type": "string",
+            "concept": "own:ForeignKey",
+            "unit": "",
+            "method": "own:defined"
+          },
+          {
+            "name": "plot",
+            "type": "string",
+            "concept": "own:ForeignKey",
+            "unit": "",
+            "method": "own:defined"
+          },
+          {
+            "name": "place",
+            "type": "string",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_330988",
+            "unit": "",
+            "method": "own:MapReading"
+          },
+          {
+            "name": "coordinates",
+            "type": "string",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_64a2abf9",
+            "unit": "WGS84",
+            "method": "own:MapReading"
+          },
+          {
+            "name": "date",
+            "type": "date",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_7779",
+            "unit": "YYYY-MM-DD",
+            "method": "own:TimeReading"
+          },
+          {
+            "name": "plotlength",
+            "type": "integer",
+            "concept": [
+              "http://aims.fao.org/aos/agrovoc/c_36811",
+              "http://aims.fao.org/aos/agrovoc/c_4260"
+            ],
+            "unit": "m",
+            "method": "own:SetByDesign"
+          },
+          {
+            "name": "plotwidth",
+            "type": "integer",
+            "concept": [
+              "http://aims.fao.org/aos/agrovoc/c_36811",
+              "http://aims.fao.org/aos/agrovoc/c_8387"
+            ],
+            "unit": "m",
+            "method": "own:SetByDesign"
+          },
+          {
+            "name": "crop",
+            "type": "string",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_1972",
+            "unit": "",
+            "method": "own:InformationByFarmer"
+          },
+          {
+            "name": "bearb",
+            "type": "string",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_2018",
+            "unit": "",
+            "method": "own:InformationByFarmer"
+          },
+          {
+            "name": "project",
+            "type": "string",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_330903",
+            "unit": "",
+            "method": "own:SetByDesign"
+          },
+          {
+            "name": "corg",
+            "type": "number",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_389fe908",
+            "unit": "M-%",
+            "method": "own:CombustionDINXXXX"
+          },
+          {
+            "name": "cover",
+            "type": "integer",
+            "concept": "own:SoilCover",
+            "unit": "%",
+            "method": "own:VisualEstimation"
+          },
+          {
+            "name": "clay",
+            "type": "number",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_15619",
+            "unit": "M-%",
+            "method": "own:SoilCoreSamplingAndLabAnalysisWithoutDispergation"
+          },
+          {
+            "name": "fSi",
+            "type": "number",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_0f15e6e6",
+            "unit": "M-%",
+            "method": "own:SoilCoreSamplingAndLabAnalysisWithoutDispergation"
+          },
+          {
+            "name": "mSi",
+            "type": "number",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_090f427c",
+            "unit": "M-%",
+            "method": "own:SoilCoreSamplingAndLabAnalysisWithoutDispergation"
+          },
+          {
+            "name": "cSi",
+            "type": "number",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_c1b90f01",
+            "unit": "M-%",
+            "method": "own:SoilCoreSamplingAndLabAnalysisWithoutDispergation"
+          },
+          {
+            "name": "fSa",
+            "type": "number",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_a91f25d6",
+            "unit": "M-%",
+            "method": "own:SoilCoreSamplingAndLabAnalysisWithoutDispergation"
+          },
+          {
+            "name": "mSa",
+            "type": "number",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_7b64842d",
+            "unit": "M-%",
+            "method": "own:SoilCoreSamplingAndLabAnalysisWithoutDispergation"
+          },
+          {
+            "name": "cSa",
+            "type": "number",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_c03927e1",
+            "unit": "M-%",
+            "method": "own:SoilCoreSamplingAndLabAnalysisWithoutDispergation"
+          },
+          {
+            "name": "bulk",
+            "type": "integer",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_7167",
+            "unit": "kg/m^3",
+            "method": "own:SoilCoreSamplingAndLabAnalysis"
+          },
+          {
+            "name": "slope",
+            "type": "number",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_fa256eab",
+            "unit": "degree",
+            "method": "own:waterscale"
+          },
+          {
+            "name": "moist",
+            "type": "number",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_4886",
+            "unit": "percent",
+            "method": "own:SoilCoreSamplingWetWeightingDryWeighting"
+          },
+          {
+            "name": "runtype",
+            "type": "string",
+            "concept": "",
+            "unit": "",
+            "method": "own:defintition"
+          },
+          {
+            "name": "soiltextureclass",
+            "type": "string",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_7698",
+            "unit": "",
+            "method": "own:SoilCoreSamplingAndLabAnalysis"
+          },
+          {
+            "name": "rough",
+            "type": "string",
+            "concept": "",
+            "unit": "",
+            "method": "own:derivedOfRunofVelocitySlopeAndRunoffVolume"
+          },
+          {
+            "name": "cumq",
+            "type": "number",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_c9214ebe",
+            "unit": "",
+            "method": "own:SumOfRunoffTimeseries"
+          },
+          {
+            "name": "intens",
+            "type": "string",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_36860",
+            "unit": "mm/min",
+            "method": "own:timeseriesrecordofintensity"
+          },
+          {
+            "name": "totp",
+            "type": "number",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_36860",
+            "unit": "mm",
+            "method": "own:cumulativerainfall"
+          },
+          {
+            "name": "duration",
+            "type": "integer",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_7778",
+            "unit": "s",
+            "method": "own:stopwatch"
+          },
+          {
+            "name": "tR",
+            "type": "number",
+            "concept": "own:timeToRunoff",
+            "unit": "s",
+            "method": "own:stopwatch"
+          },
+          {
+            "name": "endinfil",
+            "type": "number",
+            "concept": "",
+            "unit": "mm/min",
+            "method": "own:DiffRainfall-Runoffatsteadystate"
+          },
+          {
+            "name": "soilloss",
+            "type": "number",
+            "unit": "kg",
+            "method": "cumulative soil loss of whole experiment",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_8dab65bc"
+          },
+          {
+            "name": "bulk.run",
+            "type": "integer",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_7167",
+            "unit": "kg/m^3",
+            "method": "own:SoilCoreSamplingAndLabAnalysis"
+          },
+          {
+            "name": "BBCH",
+            "type": "integer",
+            "concept": "",
+            "unit": ""
+          }
+        ],
+        "missingValues": [
+          "NA"
+        ],
+      "foreignKeys": [
+        {
+          "fields": [
+            "No"
+          ],
+          "reference": {
+            "resource": "meta",
+            "fields": [
+              "No"
+            ]
+          }
+        }
+      ]
+      }
+    },
+    {
+      "name": "meta",
+      "type": "table",
+      "path": "lenz2022_zip/lenz2022/export/meta.csv",
+      "format": "csv",
+      "mediatype": "text/csv",
+      "encoding": "utf-8",
+      "schema": {
+        "fields": [
+          {
+            "name": "soilloss",
+            "type": "string",
+            "unit": "kg",
+            "method": "cumulative soil loss of whole experiment",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_8dab65bc"
+          },
+          {
+            "name": "endinfil",
+            "type": "number",
+            "concept": "",
+            "unit": "mm/min",
+            "method": "own:DiffRainfall-Runoffatsteadystate"
+          },
+          {
+            "name": "duration",
+            "type": "integer",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_7778",
+            "unit": "s",
+            "method": "own:stopwatch"
+          },
+          {
+            "name": "cumq",
+            "type": "number",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_c9214ebe",
+            "unit": "",
+            "method": "own:SumOfRunoffTimeseries"
+          },
+          {
+            "name": "rough",
+            "type": "number",
+            "concept": "",
+            "unit": "",
+            "method": "own:derivedOfRunofVelocitySlopeAndRunoffVolume"
+          },
+          {
+            "name": "bulk",
+            "type": "integer",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_7167",
+            "unit": "kg/m^3",
+            "method": "own:SoilCoreSamplingAndLabAnalysis"
+          },
+          {
+            "name": "corg",
+            "type": "number",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_389fe908",
+            "unit": "M-%",
+            "method": "own:CombustionDINXXXX"
+          },
+          {
+            "name": "cSa",
+            "type": "integer",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_c03927e1",
+            "unit": "M-%",
+            "method": "own:SoilCoreSamplingAndLabAnalysisWithoutDispergation"
+          },
+          {
+            "name": "mSa",
+            "type": "integer",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_7b64842d",
+            "unit": "M-%",
+            "method": "own:SoilCoreSamplingAndLabAnalysisWithoutDispergation"
+          },
+          {
+            "name": "fSa",
+            "type": "integer",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_a91f25d6",
+            "unit": "M-%",
+            "method": "own:SoilCoreSamplingAndLabAnalysisWithoutDispergation"
+          },
+          {
+            "name": "cSi",
+            "type": "integer",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_c1b90f01",
+            "unit": "M-%",
+            "method": "own:SoilCoreSamplingAndLabAnalysisWithoutDispergation"
+          },
+          {
+            "name": "mSi",
+            "type": "integer",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_090f427c",
+            "unit": "M-%",
+            "method": "own:SoilCoreSamplingAndLabAnalysisWithoutDispergation"
+          },
+          {
+            "name": "fSi",
+            "type": "integer",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_0f15e6e6",
+            "unit": "M-%",
+            "method": "own:SoilCoreSamplingAndLabAnalysisWithoutDispergation"
+          },
+          {
+            "name": "slope",
+            "type": "number",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_fa256eab",
+            "unit": "degree",
+            "method": "own:waterscale"
+          },
+          {
+            "name": "plotwidth",
+            "type": "integer",
+            "concept": [
+              "http://aims.fao.org/aos/agrovoc/c_36811",
+              "http://aims.fao.org/aos/agrovoc/c_8387"
+            ],
+            "unit": "m",
+            "method": "own:SetByDesign"
+          },
+          {
+            "name": "plotlength",
+            "type": "integer",
+            "concept": [
+              "http://aims.fao.org/aos/agrovoc/c_36811",
+              "http://aims.fao.org/aos/agrovoc/c_4260"
+            ],
+            "unit": "m",
+            "method": "own:SetByDesign"
+          },
+          {
+            "name": "BBCH",
+            "type": "integer"
+          },
+          {
+            "name": "crop",
+            "type": "string"
+          },
+          {
+            "name": "treat",
+            "type": "string"
+          },
+          {
+            "name": "cover",
+            "type": "integer"
+          },
+          {
+            "name": "moist",
+            "type": "number",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_4886",
+            "unit": "percent",
+            "method": "own:SoilCoreSamplingWetWeightingDryWeighting"
+          },
+          {
+            "name": "runtype",
+            "type": "integer"
+          },
+          {
+            "name": "project",
+            "type": "string"
+          },
+          {
+            "name": "No",
+            "type": "string",
+            "concept": "own:primaryID",
+            "unit": "",
+            "method": "own:defined"
+          },
+          {
+            "name": "plot",
+            "type": "integer"
+          },
+          {
+            "name": "bulk.run",
+            "type": "integer"
+          },
+          {
+            "name": "CLAY",
+            "type": "integer"
+          },
+          {
+            "name": "SILT",
+            "type": "integer"
+          },
+          {
+            "name": "SAND",
+            "type": "integer"
+          },
+          {
+            "name": "KA5class",
+            "type": "string"
+          },
+          {
+            "name": "KA5main",
+            "type": "string"
+          },
+          {
+            "name": "D",
+            "type": "number",
+            "concept": "mean grain size diameter",
+            "unit": "mm",
+            "method": "log normalized average (Campbell 1985)"
+          },
+          {
+            "name": "SigP",
+            "type": "number",
+            "concept": "Standard deviation of mean grain size diameter",
+            "unit": "mm",
+            "method": "Standard deviation of log normalized average (Campbell 1985)"
+          },
+          {
+            "name": "crop_original",
+            "type": "string",
+            "concept": "own:ForeignKey",
+            "unit": "",
+            "method": "own:defined"
+          }
+        ],
+        "primaryKey": "No"
+      }
+    },
+    {
+      "name": "time",
+      "type": "table",
+      "path": "lenz2022_zip/lenz2022/export/time.csv",
+      "format": "csv",
+      "mediatype": "text/csv",
+      "encoding": "utf-8",
+      "schema": {
+        "fields": [
+          {
+            "name": "No",
+            "type": "string",
+            "concept": "own:ForeignKey",
+            "unit": "",
+            "method": "own:defined"
+          },
+          {
+            "name": "time",
+            "type": "integer",
+            "concept": "time, timedelta",
+            "unit": "s",
+            "method": "stopwatch"
+          },
+          {
+            "name": "runoffrate",
+            "type": "number"
+          },
+          {
+            "name": "sedconc",
+            "type": "number",
+            "concept": "",
+            "unit": "g/l",
+            "method": "sediment concentration measured in runoff samples"
+          },
+          {
+            "name": "rainfall",
+            "type": "number",
+            "concept": "http://aims.fao.org/aos/agrovoc/c_36860",
+            "unit": "m*m*m/s",
+            "method": "own:rainfall intensity valid in the preceding time interval"
+          },
+          {
+            "name": "plotwidth",
+            "type": "integer",
+            "concept": [
+              "http://aims.fao.org/aos/agrovoc/c_36811",
+              "http://aims.fao.org/aos/agrovoc/c_8387"
+            ],
+            "unit": "m",
+            "method": "own:SetByDesign"
+          },
+          {
+            "name": "plotlength",
+            "type": "integer",
+            "concept": [
+              "http://aims.fao.org/aos/agrovoc/c_36811",
+              "http://aims.fao.org/aos/agrovoc/c_4260"
+            ],
+            "unit": "m",
+            "method": "own:SetByDesign"
+          },
+          {
+            "name": "overflow",
+            "type": "boolean",
+            "concept": "",
+            "unit": "",
+            "method": "Boolean indicator for identification of measurements taken in runoff feeding phase."
+          }
+        ],
+        "primaryKey": ["No", "time"],
+        "missingValues": ["NA"],
+        "foreignKeys": [
+          {
+            "fields": [
+              "No"
+            ],
+            "reference": {
+              "resource": "meta",
+              "fields": [
+                "No"
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
