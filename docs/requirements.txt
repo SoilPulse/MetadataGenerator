@@ -1,3 +1,13 @@
 mysql-connector-python
 sphinx==7.1.2
 sphinx-rtd-theme==1.3.0rc1
+nbsphinx
+myst-parser
+IPython
+ipykernel
+
+requests
+frictionless
+SPARQLWrapper
+pandas
+chardet
