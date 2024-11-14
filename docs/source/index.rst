@@ -26,6 +26,7 @@ Contents
 --------
 
 .. toctree::
+   :glob:
 
-   application_examples
+   application_examples/*
    soilpulse
