@@ -12,25 +12,23 @@ from collections import Counter
 import chardet
 import pandas as pd
 import shutil
-import copy
 
-import pandas.errors
 from frictionless import validate, formats
 from frictionless.resources import Resource, TableResource, Package
 from io import StringIO
-# import magic
 
-
-from ..project_management import ContainerHandler, ContainerHandlerFactory, Pointer, Crawler, CrawlerFactory
+from ..project_management import ContainerHandler, ContainerHandlerFactory, Crawler, CrawlerFactory
 from ..db_access import EntityKeywordsDB
-from .data_structures import TableContainer, ColumnContainer
-# just for the standalone functions - will be changed
-# from ..resource_management import *
+
 import gzip
 
 
 
 def detect_encoding(input_file):
+    """
+    Tries to find out the encoding of a file
+    :param input_file: the file
+    """
     # If it's not a string, assume it's a file path and read the contents
     with open(input_file, 'rb') as file:
         rawdata = file.read()
@@ -40,19 +38,9 @@ def detect_encoding(input_file):
     confidence = result['confidence']
     return encoding, confidence
 
-def convert_tables_to_dataframes(text, table_structures):
-    dfs = []
-    for start, length in table_structures:
-        table_text = text[start:start+length]
-        lines = table_text.split('\n')
-        rows = [line.split(',') for line in lines]
-        df = pd.DataFrame(rows[1:], columns=rows[0])
-        dfs.append(df)
-    return dfs
-
 def detect_delimiters(text):
     """
-    Detect line, cell and decimal delimiters used in input file based on first table found in file
+    Detect cell and line delimiters used in a piece of text
     """
 
     # Use Sniffer to infer the dialect
@@ -62,6 +50,10 @@ def detect_delimiters(text):
     return str(dialect.delimiter), str(dialect.lineterminator)
 
 def is_file_archive(path):
+    """
+    Check if the given path is a file archive
+    :param path: path to be checked
+    """
     if os.path.isfile(path):
         path_split = path.split(".")
         if len(path_split) > 1:
@@ -74,6 +66,9 @@ def is_file_archive(path):
         return False
 
 def get_file_extension(path):
+    """
+    Returns the extension of a file if the path is a file otherwise None
+    """
     if os.path.isdir(path):
         return None
 
@@ -199,10 +194,15 @@ class FileSystemContainer(ContainerHandler):
                 cont.showContents(depth, ind, show_concepts, show_methods, show_units)
 
     def getFileSize(self):
+        """
+        Return file size in Bytes
+        """
         return os.stat(self.path).st_size if os.path.isfile(self.path) else None
 
     def getFileSizeFormated(self):
-        """Return a string of dynamically formatted file size."""
+        """
+        Returns a string of dynamically formatted file size.
+        """
         suffix = "B"
         size = self.getFileSize()
         if size:
@@ -222,13 +222,6 @@ class FileSystemContainer(ContainerHandler):
             tree.append(new_container)
             project_manager.downloadedFiles.append(fullpath)
         return tree
-
-
-    # def getSerializationDictionary(self):
-    #     dict = super().getSerializationDictionary()
-    #     for db_key, attr_key in self.serializationDict.items():
-    #         dict.update({db_key: str(getattr(self, attr_key))})
-    #     return dict
 
     def listOwnFiles(self, collection):
         collection.append(self.path)
@@ -515,7 +508,7 @@ class ArchiveFileContainer(FileSystemContainer):
         return output_tree
 
 
-    def getCrawled(self, cascade=True, force=False):
+    def getCrawled(self, cascade=True, force=False, report=False):
         """
         Executes the routines for scanning, recognizing and extracting metadata (and maybe data)
         """
@@ -523,165 +516,6 @@ class ArchiveFileContainer(FileSystemContainer):
             container.getCrawled()
 
 ContainerHandlerFactory.registerContainerType(ArchiveFileContainer, ArchiveFileContainer.containerType)
-
-class FileSystemPointer(Pointer):
-    pointerType = type
-
-    def __init__(self, filename, startChar, numChars):
-        # full path to the file of appearance
-        self.filename = filename
-        # index of place where the value starts
-        self.startChar = startChar
-        # length of the value in characters
-        self.numChars = numChars
-        pass
-
-    pass
-
-
-# class FilesystemCrawler(Crawler):
-#     """
-#     Crawler for file system repositories
-#     """
-#
-#     def __init__(self, filesystemContainer):
-#         self.path = filesystemContainer.path
-#         # print("new file system crawled created")
-#         pass
-#
-#     def crawl(self):
-#         """
-#         Do the crawl - go through the file and detect defined elements
-#         """
-#         print(f"crawling {self.path}")
-#         dataframes = self.get_tables_from_csv(2)
-#         if len(dataframes) > 0:
-#             print(f"\tfound {len(dataframes)} understandable table structures")
-#             return dataframes
-#         else:
-#             print(f"\tfound no understandable tables")
-#             return None
-#
-#     def get_tables_from_csv(self, cell_delimiter, min_lines=3):
-#         # encoding = detect_encoding(self.file)
-#         # read the file into a text
-#         with open(self.file, 'r', encoding='ANSI') as file:
-#             text = file.read()
-#         file_length = len(text)
-#         # try detecting delimiters from file content
-#         cell_sep, line_sep = detect_delimiters(text)
-#         print(f"\tcell delimiter: '{cell_sep}'")
-#
-#         # Pattern to match CSV-like tables without knowing delimiters
-#         # pattern = r'\b[\w\s]+(?:[^\w\s]+[\w\s]+)*\b'
-#         pattern = r'(?:(?<!\w)[^\w\s]*(?:\w+\W*(?:\w+\W*)+\w+|\w+(?:\W+\w+)+\w+)\b(?:\W|\Z))'
-#
-#         # Find all matches and their start character and length
-#         matches = re.finditer(pattern, text)
-#         # Filter matches based on structure (e.g., number of lines) and store start character and length
-#         table_dataframes = []
-#         m = 0
-#         for match in matches:
-#             start_char = match.start()
-#             length = match.end() - match.start()
-#
-#             # print(f"\nmatch {m}")
-#             # match_string = text[match.start():match.end()]
-#             # print(f"match string:\n{match_string}\nlength {len(match_string)}")
-#
-#             num_lines = text[match.start():match.end()].count('\n')
-#             # print(f"number of lines {num_lines}")
-#             if num_lines >= min_lines:
-#                 print(f"\ttable detected starting at {start_char} with length {length} (of total {file_length} characters), spanning over {num_lines} lines")
-#
-#                 table_text = text[start_char: start_char + length]
-#                 lines = table_text.split('\n')
-#                 rows = [line.split(cell_sep) for line in lines]
-#                 # replace possible empty cells in header
-#                 unknown_i = 1
-#                 i = 0
-#                 for cell in rows[0]:
-#                     # print(f"'{cell}'")
-#                     if len(cell) == 0:
-#                         print(f"\tempty value in header ('{cell}') replaced with generated name 'column_{unknown_i}")
-#                         rows[0][i] = f"column_{unknown_i}"
-#                         unknown_i += 1
-#                     i += 1
-#
-#                 # check if the last row is all Nones
-#                 num_nones = 0
-#                 for cell in rows[-1]:
-#                     if cell is None:
-#                         num_nones += 1
-#                 if num_nones == len(rows[-1]):
-#                     rows.pop()
-#                     print(f"\tlast row was all Nones and was removed")
-#                 print(f"\tcolumn headers are: {rows[0]}")
-#
-#                 # try converting list of lists to pandas dataframe
-#                 try:
-#                     df = pd.DataFrame(rows[1:], columns=rows[0])
-#                 except :
-#                     print(f"File '{self.file}' has unknown structure.")
-#
-#                 else:
-#                     table_dataframes.append(df)
-#             m += 1
-#
-#         return table_dataframes
-
-# class FileSystemCrawlerFactory:
-#     """
-#     File system type crawler factory
-#     """
-#
-#     # directory of registered publisher types classes
-#     filetypes = {}
-#
-#     # the one and only instance
-#     _instance = None
-#
-#     @classmethod
-#     def registerFileType(cls, file_type_crawler_class):
-#         cls.filetypes[file_type_crawler_class.extension] = file_type_crawler_class
-#         print(f"Crawler for file type '{file_type_crawler_class.extension}' registered.")
-#         return
-#
-#     @classmethod
-#     def createCrawler(cls, file_extension, container, *args):
-#         """
-#         Creates and returns instance of ContainerHandler for the file container provided
-#         """
-#
-#         if file_extension:
-#             if file_extension.lower() not in cls.filetypes.keys():
-#                 filetypes = ",".join(["'" + k + "'" for k in cls.filetypes.keys()])
-#                 print(
-#                     f"\t{os.path.basename(container.path)} - unsupported Crawler subclass type '{file_extension.lower()}' (registered types are: {filetypes}) - plain text crawler will be used instead.")
-#
-#                 return cls.filetypes['txt'](container, *args)
-#             else:
-#                 # special handling of different file types can be added here ...
-#                 if container.fileExtension == 'txt':
-#                     # ... like trying csv crawler on txt file
-#                     # print("\t\ttrying csv crawler on txt file")
-#                     output_crawler = cls.filetypes['csv'](container, *args)
-#                     # validate usability of CSV crawler
-#                     if output_crawler.validate():
-#                         print(f"\tCSV structure was detected in {container.path} and will be treated as such.")
-#                         return output_crawler
-#                     # otherwise just use native txt crawler
-#                     else:
-#                         # print("\t\t==> just text")
-#                         return cls.filetypes[file_extension](container, *args)
-#                 else:
-#                     return cls.filetypes[file_extension](container, *args)
-#         else:
-#             print(f"\tFile has no extension - plain text crawler will be used instead.")
-#             return cls.filetypes['txt'](container, *args)
-#
-#     def __init__(self):
-#         pass
 
 class FileSystemCrawler(Crawler):
     crawlerType = 'filesystem'
@@ -818,15 +652,9 @@ class CSVcrawler(Crawler):
         :return:
         """
 
-        print(f"crawling CSV '{self.container.path}' of container #{self.container.id}, encoding '{self.container.encoding}'") if report else None
-        # # search for string to concept translations
-        # self.container.concepts = self.find_translations(self.container.project.globalConceptsVocabulary)
-        # print(f"concept translations:\n{self.container.concepts}")
-        # # search for string to method translations
-        # self.container.methods = self.find_translations(self.container.project.globalMethodsVocabulary)
-        # # search for string to unit translations
-        # self.container.units = self.find_translations(self.container.project.globalUnitsVocabulary)
-
+        print(f"no crawling procedure defined for CSV crawler") if report else None
+        # change flag of parent container
+        self.container.wasCrawled = True
         return
 
     def split_into_chunks(self, content, cell_sep, line_sep="\n"):
@@ -929,86 +757,6 @@ class CSVcrawler(Crawler):
                         return [resource]
 
         return None
-        # """
-        # Searches for coherent tables by regular expression.
-        # Returns frictionless TableResource objects of all tables found in the file.
-        #
-        # :param min_lines: number of consistent lines needed for table identification
-        # :return: list of TableResource objects (even for a single table)
-        # """
-        #
-        # encoding = self.container.encoding
-        #
-        # # read the file into a text
-        # with open(self.container.path, 'r', encoding=encoding) as file:
-        #     try:
-        #         content = file.read()
-        #     except UnicodeDecodeError as e:
-        #         print(f"container '{self.container.name}' couldn't be analyzed due to problems with encoding.")
-        #         print(self.container.path)
-        #         return []
-        #     else:
-        #         # try detecting delimiters from file content
-        #         try:
-        #             cell_sep, line_sep = detect_delimiters(content)
-        #         except:
-        #             return []
-        #         print(f"\tcell delimiter: '{cell_sep}'") if report else None
-        #
-        #         # pattern to match CSV-like tables without knowing delimiters
-        #         pattern = r'(?:(?<!\w)[^\w\s]*(?:\w+\W*(?:\w+\W*)+\w+|\w+(?:\W+\w+)+\w+)\b(?:\W|\Z))'
-        #         # pattern = r'(?:(?<!\w)[^\w\s]*(?:\w+\W*(?:\w+\W*)+\w+|\w+(?:\W+\w+)+\w+)\b(?:\W|$))(?!\n\s*$)'
-        #         # pattern = r'(?:(?<!\w)[^\w\s]*(?:\w+\W*(?:\w+\W*)+\w+|\w+(?:\W+\w+)+\w+)\b(?:\W|$))(?=\n|\Z)'
-        #
-        #         # find all matches and their start character and length
-        #         matches = re.finditer(pattern, content)
-        #         # filter matches based on structure (e.g., number of lines) and store start character and length
-        #
-        #         # the file is directly converted to TableResource if only one table is found in the file
-        #         num_matches = sum(1 for _ in matches)
-        #         if num_matches == 1:
-        #             try:
-        #                 if cell_sep is not None:
-        #                     control = formats.CsvControl(
-        #                         delimiter=cell_sep,  # Single space as the delimiter
-        #                         # quote_char='"',  # Fields are wrapped in double quotes
-        #                         skip_initial_space=True  # Ignore multiple spaces between fields
-        #                     )
-        #
-        #                     fl = TableResource(self.container.path, format='csv', encoding=encoding, control=control)
-        #
-        #
-        #                 else:
-        #                     fl = TableResource(self.container.path, format='csv', encoding=encoding)
-        #                 # infer the columns scheme for frictionless resource
-        #                 fl.infer()
-        #                 pd = pandas.read_csv(self.container.path, encoding=encoding, on_bad_lines='skip')
-        #                 return [[fl, pd]]
-        #             except pandas.errors.ParserError as e:
-        #                 print(
-        #                     f"Table '{self.container.path}' couldn't be parsed to pandas dataframe")
-        #                 return []
-        #         else:
-        #             tables = []
-        #             m = 0
-        #             for match in matches:
-        #                 start_char = match.start()
-        #                 length = match.end() - match.start()
-        #
-        #                 # split the content based on provided index pairs
-        #                 segment = content[match.start():match.end()]
-        #
-        #                 # create new TableResource from the data segment
-        #                 resource = TableResource(data=StringIO(segment), format='csv')
-        #                 # create new DataFrame  from the data segment
-        #                 try:
-        #                     dataframe = pandas.read_csv(StringIO(segment), encoding=encoding, on_bad_lines='skip')
-        #                 except pandas.errors.ParserError as e:
-        #                     print(f"Error while trying to create pandas frame from table {m} of {num_matches} in '{self.container.path}'")
-        #                     print(e.message)
-        #                 tables.append([resource, dataframe])
-        #
-        #             return tables
 
     def create_tables_from_segments(self, segments):
         # for now raise an error
