@@ -1,19 +1,31 @@
 Welcome to SoilPulse's documentation!
 =====================================
 
-SoilPulse is a Python library for those who want a to become data enthusiasts.
+SoilPulse was a `NFDI4Earth Pilot project <https://www.nfdi4earth.de/2participate/pilots>`_ in which we explored how soil process can be FAIRified to become better reusable.
 
-Check out `the github repo <https://github.com/SoilPulse/MetadataGenerator>`_ for further information, including
-how to install the project and some application examples.
-The docs you find here are the technical docs generated from the docstrings.
+You will find the project report of this pilot at `zenodo <https://doi.org/10.5281/zenodo.13911635>`_.
 
-.. note::
+This documentation lives beyond the pilot phase of SoilPulse and shows:
 
-   This project is under active development.
+- How soil process data is FAIRified within SoilPulse with some `application examples <application_examples>`_ from unstructured published data sets to Reusable data sets.
+- What we consider relevant for `Reusabilty of tabular data <application_examples/concept_unit_method>`_.
+
+Within the pilot we implemented our workflows in the soilpulse python package. 
+The application examples are ongoingly further developed with further developments of this package.
+
+
+This documentation also shows:
+
+- How to install the soilpulse package
+- As well as the technical docs generated from the docstrings.
+
+You can contribute to or raise issues on the python package on `our github repo <https://github.com/SoilPulse/MetadataGenerator>`_.
+
 
 Contents
 --------
 
 .. toctree::
 
+   application_examples
    soilpulse
