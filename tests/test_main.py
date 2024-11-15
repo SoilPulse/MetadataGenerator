@@ -10,7 +10,7 @@ from soilpulse.resource_managers.mysql import *
 from soilpulse.resource_managers.xml import *
 from soilpulse.resource_managers.data_structures import *
 from soilpulse.resource_managers.json import *
-from soilpulse.db_access import DBconnector, NullConnector
+from soilpulse.db_access import DBconnector, MySQLConnector, NullConnector
 
 import pytest
 from pathlib import Path
@@ -52,7 +52,7 @@ def test_RA_invalid():
 
 ## Initiate Project
 # user_id will be later managed by some login framework in streamlit - user can access only own resources
-project = ProjectManager(DBconnector(), user_id=1, **example)
+project = ProjectManager(MySQLConnector(), user_id=1, **example)
 project.keepFiles = False
 ## Download Files
 project.downloadPublishedFiles()
