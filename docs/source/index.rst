@@ -29,6 +29,5 @@ Contents
    :glob:
 
    application_examples/*
-   application_examples/example_datasets/SWIG/*
    application_examples/reuse/*
    soilpulse
