@@ -31,14 +31,13 @@ def test_mysql_storage():
     # wait for DB to be set up
     time.sleep(5)
 
-    # get list of tables in established database
-    results = get_tables_of_DB(db.db_connection)
-
     retry = 0
     while retry < 5:
-        if not 'users' in results:
+        try:
             time.sleep(5)
+            # get list of tables in established database
             results = get_tables_of_DB(db.db_connection)
+        except:
             retry += 1
 
     assert 'projects' in results
