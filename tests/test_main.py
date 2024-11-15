@@ -115,6 +115,7 @@ def test_upload_files_mysql():
             f"WHERE `relative_path` IN ({', '.join(filenames)}) AND `project_id` = {project.id}"
     thecursor.execute(query)
     cont_count = thecursor.fetchone()[0]
+    thecursor.close()
     assert cont_count == 2
 
 def test_project_deleted_mysql():
@@ -135,6 +136,7 @@ def test_project_deleted_mysql():
     query = f"SELECT COUNT(*) FROM {project.dbconnection.projectsTableName} WHERE `id` = {project.id}"
     thecursor.execute(query)
     count = thecursor.fetchone()[0]
+    thecursor.close()
     assert count == 0
 
 # def test_delete_project():
