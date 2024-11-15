@@ -3,15 +3,15 @@
 @author: Jan Devátý, Jonas Lenz
 """
 
-from soilpulse.project_management import *
-from soilpulse.resource_managers.filesystem import *
-from soilpulse.resource_managers.mysql import *
-from soilpulse.resource_managers.xml import *
-from soilpulse.resource_managers.data_structures import *
-from soilpulse.resource_managers.json import *
-from soilpulse.data_publishers import *
-from soilpulse.metadata_scheme import *
-from soilpulse.db_access import EntityKeywordsDB, DBconnector, MySQLConnector, NullConnector
+from soilpulsecore.project_management import *
+from soilpulsecore.resource_managers.filesystem import *
+from soilpulsecore.resource_managers.mysql import *
+from soilpulsecore.resource_managers.xml import *
+from soilpulsecore.resource_managers.data_structures import *
+from soilpulsecore.resource_managers.json import *
+from soilpulsecore.data_publishers import *
+from soilpulsecore.metadata_scheme import *
+from soilpulsecore.db_access import EntityKeywordsDB, DBconnector, MySQLConnector, NullConnector
 
 
 def establish_new_project(dbcon, user_id, **example):

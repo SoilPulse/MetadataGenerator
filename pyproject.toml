@@ -5,13 +5,13 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "soilpulse"
+name = "soilpulsecore"
 dynamic = ["version"]
 authors = [
   { name="Jan Devátý", email="jan.devaty@fsv.cvut.cz" },
   { name="Jonas Lenz", email="jonas.lenz@iproconsult.com" },
 ]
-description = "SoilPulse metadata generator"
+description = "soilpulsecore is the backbone of SoilPulse metadata generation"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {file = "LICENSE"}
