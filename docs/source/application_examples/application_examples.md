@@ -1,20 +1,5 @@
 # Application examples
 
-## TUBAF data
-
-The data from several experimental campaigns of the [TU Bergakademie Freiberg (TUBAF)](https://tu-freiberg.de/fakult3/ibf/bodenphysik-und-oekohydrologie) was curated within a dissertation thesis and is available in differing data structures from the zenodo publication [10.5281/zenodo.6654150](https://doi.org/10.5281/zenodo.6654150).
-
-- One structure holds the relevant data in tabular form, within three tables
-- Units, methods and concepts were manually assigned
-- A pipeline was manually created to transform the data in a machine readable data structure
-
-## Ries data
-
-[Ries et. al.](https://doi.org/10.6094/UNIFR/151460) data contains data of a experimental campaign on 21 experimental sites with 6 distinct experiments on each site.
-The data is published in an institutional repository, without table descriptive metadata interpreted by this repository.
-Metadata for each table column is contained within the data *.tsv files in comment rows, which were extracted and parsed to fricitonless descriptors.
-Concepts from controlled vacabularies were assigned to the fricitonless descriptor from a user defined mapping.
-
 
 ## SWIG data
 

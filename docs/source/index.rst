@@ -3,8 +3,7 @@ Welcome to SoilPulse's documentation!
 
 SoilPulse was a `NFDI4Earth Pilot project <https://www.nfdi4earth.de/2participate/pilots>`_ in which we explored how soil process can be FAIRified to become better reusable.
 
-..
-   You can find the project report of this pilot at `zenodo <https://doi.org/10.5281/zenodo.13911635`_.
+You will find the project report of this pilot at `zenodo <https://doi.org/10.5281/zenodo.13911635>`_.
 
 This documentation lives beyond the pilot phase of SoilPulse and shows:
 
