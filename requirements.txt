@@ -8,4 +8,4 @@ frictionless
 SPARQLWrapper
 pandas
 chardet
-soilpulse
+soilpulse-core

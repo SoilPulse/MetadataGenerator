@@ -5,14 +5,14 @@ Created on Sat Jun 29 05:14:24 2024.
 @author: JL
 """
 
-from soilpulse import db_access as spdb
+from soilpulse-core import db_access as spdb
 
-from soilpulse.project_management import ProjectManager, DatabaseEntryError, SourceFile
-import soilpulse.resource_managers.filesystem
-import soilpulse.resource_managers.mysql
-import soilpulse.resource_managers.xml
-import soilpulse.resource_managers.json
-from soilpulse.data_publishers import PublisherFactory, DOIdataRetrievalException
+from soilpulse-core.project_management import ProjectManager, DatabaseEntryError, SourceFile
+import soilpulse-core.resource_managers.filesystem
+import soilpulse-core.resource_managers.mysql
+import soilpulse-core.resource_managers.xml
+import soilpulse-core.resource_managers.json
+from soilpulse-core.data_publishers import PublisherFactory, DOIdataRetrievalException
 
 from pathlib import Path
 import os

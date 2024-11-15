@@ -1,4 +1,4 @@
-from soilpulse.db_access import MySQLConnector, NullConnector
+from soilpulse-core.db_access import MySQLConnector, NullConnector
 import time
 from pathlib import Path
 import os

@@ -1,7 +1,7 @@
 # Configuration file for the Sphinx documentation builder.
 
 # -- Project information
-project = 'SoilPulse Metadatagenerator'
+project = 'soilpulse-core is the backbone of SoilPulse metadata generator'
 copyright = '2024, Devátý Lenz'
 author = 'Jan Devátý, Jonas Lenz'
 
