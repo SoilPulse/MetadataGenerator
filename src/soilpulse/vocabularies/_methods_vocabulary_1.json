@@ -1,0 +1,17 @@
+[
+    {
+        "term": "This is a testing string method 1",
+        "vocabulary": "methodic",
+        "uri": "http://some_method_uri"
+    },
+    {
+        "term": "Yet another method to test",
+        "vocabulary": "methodic",
+        "uri": "http://another_method_uri"
+    },
+    {
+        "term": "And one more method with some crazy stuff",
+        "vocabulary": "methodic",
+        "uri": "http://one_more_method_uri"
+    }
+]

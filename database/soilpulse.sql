@@ -9,16 +9,17 @@ DROP DATABASE IF EXISTS `soilpulse`;
 CREATE DATABASE `soilpulse` /*!40100 DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci */;
 USE `soilpulse`;
 
-DROP TABLE IF EXISTS `concepts_vocabulary`;
-CREATE TABLE `concepts_vocabulary` (
+DROP TABLE IF EXISTS `concepts_dictionary`;
+CREATE TABLE `concepts_dictionary` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `project_id` int(11) DEFAULT NULL,
   `string` varchar(255) NOT NULL,
+  `term` varchar(255) NOT NULL,
   `vocabulary` varchar(100) NOT NULL,
   `uri` varchar(255) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `project_id` (`project_id`),
-  CONSTRAINT `concepts_vocabulary_ibfk_1` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`) ON DELETE CASCADE
+  CONSTRAINT `concepts_dictionary_ibfk_1` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 
@@ -50,7 +51,7 @@ CREATE TABLE `container_concepts` (
   KEY `container_id` (`container_id`),
   KEY `translation_id` (`translation_id`),
   CONSTRAINT `container_concepts_ibfk_5` FOREIGN KEY (`container_id`) REFERENCES `containers` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `container_concepts_ibfk_8` FOREIGN KEY (`translation_id`) REFERENCES `concepts_vocabulary` (`id`) ON DELETE CASCADE
+  CONSTRAINT `container_concepts_ibfk_8` FOREIGN KEY (`translation_id`) REFERENCES `concepts_dictionary` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 
@@ -61,7 +62,7 @@ CREATE TABLE `container_methods` (
   KEY `container_id` (`container_id`),
   KEY `translation_id` (`translation_id`),
   CONSTRAINT `container_methods_ibfk_1` FOREIGN KEY (`container_id`) REFERENCES `containers` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `container_methods_ibfk_3` FOREIGN KEY (`translation_id`) REFERENCES `methods_vocabulary` (`id`) ON DELETE CASCADE
+  CONSTRAINT `container_methods_ibfk_3` FOREIGN KEY (`translation_id`) REFERENCES `methods_dictionary` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 
@@ -72,7 +73,7 @@ CREATE TABLE `container_units` (
   KEY `container_id` (`container_id`),
   KEY `translation_id` (`translation_id`),
   CONSTRAINT `container_units_ibfk_1` FOREIGN KEY (`container_id`) REFERENCES `containers` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `container_units_ibfk_2` FOREIGN KEY (`translation_id`) REFERENCES `units_vocabulary` (`id`) ON DELETE CASCADE
+  CONSTRAINT `container_units_ibfk_2` FOREIGN KEY (`translation_id`) REFERENCES `units_dictionary` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 
@@ -99,40 +100,17 @@ CREATE TABLE `datasets_containers` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 
-DROP TABLE IF EXISTS `entities`;
-CREATE TABLE `entities` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `type_id` int(11) NOT NULL,
-  `mapping_id` int(11) NOT NULL,
-  `value` varchar(500) DEFAULT NULL,
-  `pointer` varchar(200) DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `mapping_id` (`mapping_id`),
-  CONSTRAINT `entities_ibfk_1` FOREIGN KEY (`mapping_id`) REFERENCES `mappings` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci COMMENT='stores instances of metadata entities belonging to a certain mapping';
-
-
-DROP TABLE IF EXISTS `mappings`;
-CREATE TABLE `mappings` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `name` varchar(255) DEFAULT NULL,
-  `project_id` int(11) NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `project_id` (`project_id`),
-  CONSTRAINT `mappings_ibfk_1` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci COMMENT='stores relations between metadata entity mappings and resources';
-
-
-DROP TABLE IF EXISTS `methods_vocabulary`;
-CREATE TABLE `methods_vocabulary` (
+DROP TABLE IF EXISTS `methods_dictionary`;
+CREATE TABLE `methods_dictionary` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `project_id` int(11) DEFAULT NULL,
   `string` varchar(255) NOT NULL,
+  `term` varchar(255) NOT NULL,
   `vocabulary` varchar(100) NOT NULL,
   `uri` varchar(255) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `project_id` (`project_id`),
-  CONSTRAINT `methods_vocabulary_ibfk_2` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`) ON DELETE CASCADE
+  CONSTRAINT `methods_dictionary_ibfk_2` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 
@@ -147,16 +125,17 @@ CREATE TABLE `projects` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci COMMENT='stores information about resources';
 
 
-DROP TABLE IF EXISTS `units_vocabulary`;
-CREATE TABLE `units_vocabulary` (
+DROP TABLE IF EXISTS `units_dictionary`;
+CREATE TABLE `units_dictionary` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `project_id` int(11) DEFAULT NULL,
   `string` varchar(255) NOT NULL,
+  `term` varchar(255) NOT NULL,
   `vocabulary` varchar(100) NOT NULL,
   `uri` varchar(255) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `project_id` (`project_id`),
-  CONSTRAINT `units_vocabulary_ibfk_1` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`) ON DELETE CASCADE
+  CONSTRAINT `units_dictionary_ibfk_1` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 
@@ -183,4 +162,4 @@ CREATE TABLE `user_projects` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 
--- 2024-10-17 20:40:22
+-- 2024-11-14 23:33:19
