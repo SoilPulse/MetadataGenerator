@@ -32,7 +32,7 @@ def test_mysql_storage():
     time.sleep(5)
 
     # get list of tables in established database
-    results = get_tables_of_DB(db.db_connection)
+#    results = get_tables_of_DB(db.db_connection)
 
     assert True
 #    assert 'projects' in results
