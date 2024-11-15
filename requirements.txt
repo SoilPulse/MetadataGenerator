@@ -1,5 +1,3 @@
---extra-index-url https://test.pypi.org/simple/
-
 requests
 streamlit
 streamlit-tree-select
@@ -8,4 +6,3 @@ frictionless
 SPARQLWrapper
 pandas
 chardet
-soilpulse-core
