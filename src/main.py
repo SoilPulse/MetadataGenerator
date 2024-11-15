@@ -49,7 +49,7 @@ def establish_new_project(dbcon, user_id, **example):
             # setting of files 'licensing' - this property should be available through GUI
             project.keepFiles = True
             # show the whole container tree
-            # project.showContainerTree()
+            project.showContainerTree()
 
             project.updateDBrecord()
 
@@ -354,8 +354,8 @@ if __name__ == "__main__":
 
     # database connection to load/save projects and their structure
     # dbcon = DBconnector.get_connector()
-    # dbcon = MySQLConnector()
-    dbcon = NullConnector()
+    dbcon = MySQLConnector()
+    # dbcon = NullConnector()
 
 
     # checkout user - needed for proper manipulation of project if MySQL server is not reachable
@@ -365,11 +365,13 @@ if __name__ == "__main__":
 
 
     # do the use case
-    project1 = establish_new_project(dbcon, user_id, **example_1)
+    project1 = establish_new_project(dbcon, user_id, **example_5)
+    project1.keepFiles = False
+    project1.updateDBrecord()
 
 
     # load_project_test_datasets(dbcon, user_id, 1)
-    load_project_test_concepts(dbcon, user_id, 1)
+    # load_project_test_concepts(dbcon, user_id, 1)
     # load_project_upload_files(dbcon, user_id, 19)
     # load_project_remove_container(dbcon, user_id, 1)
     # load_project_test_multitable(dbcon, user_id, 3)

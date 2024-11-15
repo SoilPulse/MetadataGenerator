@@ -168,7 +168,7 @@ class DBconnector:
             print(f"string-unit translations dictionary '{units_dictionary_path}' does not exist or is empty.")
 
 
-    def deleteProjectRecord(self, project, delete_dir):
+    def deleteProject(self, project, delete_dir=True):
         pass
 
     def updateContainerRecord(self, container, cascade=False):
@@ -1149,15 +1149,15 @@ class MySQLConnector(DBconnector):
 
     def deleteProject(self, project, delete_dir=True):
         cursor = self.db_connection.cursor()
-        query = "DELETE FROM projects WHERE `id` = %s"
-        cursor.execute(query, project.id)
+        query = f"DELETE FROM {self.projectsTableName} WHERE `id` = {project.id}"
+        cursor.execute(query)
         self.db_connection.commit()
         cursor.close()
 
         # Optionally delete the project directory
         if delete_dir:
             if os.path.exists(project.temp_dir):
-                os.rmdir(project.temp_dir)
+                shutil.rmtree(project.temp_dir)
         return
 
     def datasetContainerRecordExists(self, dataset, container):
@@ -1347,6 +1347,7 @@ class NullConnector(DBconnector):
 
     def getUserNameByID(self, user_id):
         return ["Local", "User"]
+
     def checkoutUser(self, user_id):
         return 0
 
@@ -1583,9 +1584,9 @@ class NullConnector(DBconnector):
             datasets.append(new_dataset)
         return datasets
 
-    def deleteProject(self, project, delete_dir):
+    def deleteProject(self, project, delete_dir=True):
         if os.path.exists(project.temp_dir):
-            os.rmdir(project.temp_dir)
+            shutil.rmtree(project.temp_dir)
 
     def updateContainerRecord(self, container, cascade=False):
         pass

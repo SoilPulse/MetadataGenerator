@@ -1,0 +1,56 @@
+[
+    {
+      "string": "sedconc",
+      "translation": [
+        {"term":"sediment concentration", "vocabulary": "*own", "uri": "http://sediment/concentration/uri"}
+      ]
+    },
+    {
+      "string": "plotwidth",
+      "translation": [
+        {"term":"plot width", "vocabulary": "*own", "uri": "http://plot/width/uri"}
+      ]
+    },
+    {
+      "string": "plotlength",
+      "translation": [
+        {"term":"plot length", "vocabulary": "*own", "uri": "http://plot/length/uri"}
+      ]
+    },
+    {
+      "string": "rainfall",
+      "translation": [
+        {"term":"precipitation intensity", "vocabulary": "*own", "uri": "http://preciptitaion/intensityuri"}
+      ]
+    },
+    {
+      "string": "runoffrate",
+      "translation": [
+        {"term":"runoff rate", "vocabulary": "*own", "uri": "http://runoff/rate/uri"}
+      ]
+    },
+    {
+      "string": "plot",
+      "translation": [
+        {"term":"plot", "vocabulary": "*own", "uri": "http://plot/uri"}
+      ]
+    },
+    {
+      "string": "bulk",
+      "translation": [
+        {"term":"bulk density", "vocabulary": "*own", "uri": "http://bulk/density/uri"}
+      ]
+    },
+    {
+      "string": "moist",
+      "translation": [
+        {"term":"initial moisture", "vocabulary": "*own", "uri": "http://initial/moisture/uri"}
+      ]
+    },
+    {
+      "string": "bearb", 
+      "translation": [
+        {"term":"agrotechnology", "vocabulary": "*own", "uri": "http://agrotechnology/uri"}
+      ]
+    }
+  ]

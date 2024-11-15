@@ -1,0 +1,20 @@
+[
+    {
+      "string": "method 1",
+      "translation": [
+        {"term": "method 1 description", "vocabulary": "methodic", "uri": "http://some/method/uri"}
+      ]
+    },
+    {
+      "string": "Yet another method to test",
+      "translation": [
+        {"term": "another method description", "vocabulary": "methodic", "uri": "http://another/method/uri"}
+      ]
+    },
+    {
+      "string": "And one more method with some crazy stuff",
+      "translation": [
+        {"term": "third method description", "vocabulary": "methodic", "uri": "http://one/more/method/uri"}
+      ]
+    }
+  ]
