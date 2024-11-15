@@ -28,6 +28,5 @@ Contents
 .. toctree::
    :glob:
 
-   application_examples/*
-   application_examples/reuse/*
+   application_examples
    soilpulse
