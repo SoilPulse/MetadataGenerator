@@ -16,7 +16,7 @@ build:
     # golang: "1.19"
   jobs:
     pre_build:
-     - sphinx-apidoc -o ./docs/source/ ./src/soilpulse-core -F -a -A "Jan Devátý, Jonas Lenz" -H "soilpulse core"
+     - sphinx-apidoc -o ./docs/source/ ./src/soilpulsecore -F -a -A "Jan Devátý, Jonas Lenz" -H "soilpulse core"
 
 python:
   install:

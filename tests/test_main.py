@@ -3,14 +3,14 @@
 @author: Jan Devátý, Jonas Lenz
 """
 
-from soilpulse-core.project_management import ProjectManager
-from soilpulse-core.data_publishers import *
-from soilpulse-core.resource_managers.filesystem import *
-from soilpulse-core.resource_managers.mysql import *
-from soilpulse-core.resource_managers.xml import *
-from soilpulse-core.resource_managers.data_structures import *
-from soilpulse-core.resource_managers.json import *
-from soilpulse-core.db_access import DBconnector, MySQLConnector, NullConnector
+from soilpulsecore.project_management import ProjectManager
+from soilpulsecore.data_publishers import *
+from soilpulsecore.resource_managers.filesystem import *
+from soilpulsecore.resource_managers.mysql import *
+from soilpulsecore.resource_managers.xml import *
+from soilpulsecore.resource_managers.data_structures import *
+from soilpulsecore.resource_managers.json import *
+from soilpulsecore.db_access import DBconnector, MySQLConnector, NullConnector
 
 import pytest
 from pathlib import Path

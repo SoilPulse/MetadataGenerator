@@ -5,7 +5,7 @@ Spyder Editor
 This is a temporary script file.
 """
 
-from soilpulse-core import get_metadata as gm
+from soilpulsecore import get_metadata as gm
 
 
 class TestGetMetadata:

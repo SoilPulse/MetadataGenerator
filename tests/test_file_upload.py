@@ -3,14 +3,14 @@
 @author: Jan Devátý, Jonas Lenz
 """
 
-from soilpulse-core.project_management import ProjectManager, DatabaseEntryError
-import soilpulse-core.resource_managers.filesystem
-import soilpulse-core.resource_managers.mysql
-import soilpulse-core.resource_managers.xml
-import soilpulse-core.resource_managers.json
-from soilpulse-core.data_publishers import PublisherFactory, DOIdataRetrievalException
-#import soilpulse-core.metadata_scheme
-from soilpulse-core.db_access import EntityKeywordsDB, DBconnector
+from soilpulsecore.project_management import ProjectManager, DatabaseEntryError
+import soilpulsecore.resource_managers.filesystem
+import soilpulsecore.resource_managers.mysql
+import soilpulsecore.resource_managers.xml
+import soilpulsecore.resource_managers.json
+from soilpulsecore.data_publishers import PublisherFactory, DOIdataRetrievalException
+#import soilpulsecore.metadata_scheme
+from soilpulsecore.db_access import EntityKeywordsDB, DBconnector
 
 import pytest
 from pathlib import Path

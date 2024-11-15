@@ -16,7 +16,7 @@ The application examples are ongoingly further developed with further developmen
 
 This documentation also shows:
 
-- How to install the soilpulse-core package
+- How to install the soilpulsecore package
 - As well as the technical docs generated from the docstrings.
 
 You can contribute to or raise issues on the python package on `our github repo <https://github.com/SoilPulse/MetadataGenerator>`_.
@@ -28,4 +28,4 @@ Contents
 .. toctree::
 
    application_examples
-   soilpulse-core
+   soilpulsecore
