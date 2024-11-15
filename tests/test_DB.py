@@ -19,7 +19,7 @@ def test_mysql_storage():
         return results
 
     # load the SQL code from file
-    with open("../database/soilpulse.sql", "r") as file:
+    with open("database/soilpulse.sql", "r") as file:
         sql = file.read()
 
     # establish the database on the server from the loaded code
