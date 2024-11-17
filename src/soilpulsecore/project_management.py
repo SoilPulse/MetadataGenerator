@@ -177,7 +177,6 @@ class ProjectManager:
         - remove old files if there were any
         :param doi: DOI to apply
         """
-        print(f"doi: '{doi}'")
         # if the doi parameter already had some value
         if self.doi:
             # and the new value differs from the previous one
@@ -850,7 +849,7 @@ class ProjectManager:
                     print(f"\t\t{method}")
 
         print(f"\nString-unit translations dictionary of project '{self.name}'{' is empty.' if len(self.unitsTranslations) == 0 else ':'}")
-        if len(self.methodsTranslations) > 0:
+        if len(self.unitsTranslations) > 0:
             for string, units in self.unitsTranslations.items():
                 print(f"\t\"{string}\"")
                 for unit in units:
@@ -1278,13 +1277,34 @@ class ContainerHandler:
             if hasattr(self, "methods"):
                 print("  " * (depth + 1) + "methods:") if len(self.methods) > 0 else None
                 for string, methods in self.methods.items():
-                    print("  "*(depth+2)+string+": "+"; ".join([f"'{meth['uri']}' ({meth['vocabulary']})" for meth in methods]))
-
+                    add = "  " * (depth + 2) + string + ": "
+                    i = 0
+                    for meth in methods:
+                        if i > 0:
+                            add += "; "
+                        if meth.get('term'):
+                            add += f"'{meth['term']}' "
+                        if meth.get('locator'):
+                            add += f"[{meth['locator']['start_char']}:{meth['locator']['end_char']}] "
+                        add += f"{meth['uri']} ({meth['vocabulary']})"
+                        i += 1
+                    print(add)
         if show_units:
             if hasattr(self, "units"):
                 print("  " * (depth + 1) + "units:") if len(self.units) > 0 else None
                 for string, units in self.units.items():
-                    print("  "*(depth+2)+string+": "+"; ".join([f"'{unit['uri']}' ({unit['vocabulary']})" for unit in units]))
+                    add = "  " * (depth + 2) + string + ": "
+                    i = 0
+                    for unit in units:
+                        if i > 0:
+                            add += "; "
+                        if unit.get('term'):
+                            add += f"'{unit['term']}' "
+                        if unit.get('locator'):
+                            add += f"[{unit['locator']['start_char']}:{unit['locator']['end_char']}] "
+                        add += f"{unit['uri']} ({unit['vocabulary']})"
+                        i += 1
+                    print(add)
 
         # invoke showContents of sub-containers
         if len(self.containers) > 0:
