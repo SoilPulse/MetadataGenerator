@@ -340,6 +340,49 @@ def create_vocabulary_from_agrovoc_dump(path):
         json.dump(output_vocab, f, ensure_ascii=False, indent=4)
     return output_vocab
 
+
+def process_runoffdb(dbcon):
+    """
+    use case function
+    """
+    print("\n\n" + 150 * "#")
+    print("PROCESS RUNOFFDB")
+    print(150 * "#"+"\n")
+    # example.update({"user_id": user_id})
+
+    # create ResourceManager instance for new resource:
+    try:
+        project = ProjectManager(dbcon, user_id, name="RunoffDB excerpt")
+
+    except DatabaseEntryError as e:
+        # this exception is thrown when trying to add new ResourceManager with existing name into the database (for same user)
+        # pass the error message to the user ... some pop-up window with the message
+        print(e.message)
+        pass
+    except NotImplementedError:
+        print(
+            f"Publisher of requested DOI record related files 'is not supported.\nCurrently implemented publishers: {[', '.join([k for k in PublisherFactory.publishers.keys()])]}")
+    except DOIdataRetrievalException as e:
+        print("Problems occurred while trying to retrieve DOI data:")
+        print(e.message)
+    else:
+        # upload files
+        project.uploadFilesFromSession("d:\\downloads\\runoffdb_excerpt.csv")
+        project.keepFiles = True
+        project.updateConceptsTranslationsFromFile("d:\\downloads\\runoffdb_concepts.json")
+        project.updateUnitsTranslationsFromFile("d:\\downloads\\bracket_units.json")
+        print(f"units dictionary:\n{project.unitsTranslations}")
+        the_table = project.getContainerByID(2)
+        the_table.getCrawled()
+        # show the whole container tree
+        project.showContainerTree()
+        print(project.getContainerByID(16))
+        project.updateDBrecord()
+
+        return project
+    return
+
+
 if __name__ == "__main__":
     # user identifier that will be later managed by some login framework in streamlit
     # it's needed for loading ProjectManagers from database - user can access only own projects
@@ -364,11 +407,13 @@ if __name__ == "__main__":
     dbcon.printUserInfo(user_id)
 
 
-    # do the use case
-    project1 = establish_new_project(dbcon, user_id, **example_5)
-    project1.keepFiles = False
-    project1.updateDBrecord()
+    # # do the use case
+    # project1 = establish_new_project(dbcon, user_id, **example_5)
+    # project1.keepFiles = False
+    # project1.updateDBrecord()
 
+    # do the use case
+    rdb_project = process_runoffdb(dbcon)
 
     # load_project_test_datasets(dbcon, user_id, 1)
     # load_project_test_concepts(dbcon, user_id, 1)

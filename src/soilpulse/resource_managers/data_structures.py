@@ -269,21 +269,21 @@ class ColumnCrawler(Crawler):
         # search for string to concept translations in project dictionary
         start_time = time.time()
         # print(f"searching '{self.container.name}' for string-concept translations in project's dictionary")
-        all_translations = self.find_translations_in_dictionary(self.container.project.conceptsTranslations, full_match_only=True)
+        all_translations = self.find_translations_in_dictionary(self.container.project.conceptsTranslations, full_match_only=False)
         for translation in all_translations:
             for string, concepts in translation.items():
                 for concept in concepts:
                     self.container.addStringConcept(string, concept)
         # search for string to method translations in project dictionary
         # print(f"searching '{self.container.name}' for string-method translations in project's dictionary")
-        all_translations = self.find_translations_in_dictionary(self.container.project.methodsTranslations, full_match_only=True)
+        all_translations = self.find_translations_in_dictionary(self.container.project.methodsTranslations, full_match_only=False)
         for translation in all_translations:
             for string, methods in translation.items():
                 for method in methods:
                     self.container.addStringMethod(string, method)
         # search for string to unit translations in project dictionary
         # print(f"searching '{self.container.name}' for string-unit translations in project's dictionary")
-        all_translations = self.find_translations_in_dictionary(self.container.project.unitsTranslations, full_match_only=True)
+        all_translations = self.find_translations_in_dictionary(self.container.project.unitsTranslations, full_match_only=False)
         for translation in all_translations:
             for string, units in translation.items():
                 for unit in units:

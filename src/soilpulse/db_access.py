@@ -204,7 +204,7 @@ class DBconnector:
         """
 
         out_dict = []
-        with importlib.resources.open_text(f"soilpulse.{self.vocabularies_dir_name}", filename) as f:
+        with importlib.resources.open_text(f"soilpulsecore.{self.vocabularies_dir_name}", filename) as f:
             for item in json.load(f):
                 out_dict.append(item)
         return out_dict
@@ -240,7 +240,8 @@ class DBconnector:
                     f"failed to load method vocabulary '{vocab}' from '{os.path.join(self.vocabularies_dir_name, filename)}'")
             else:
                 loaded.append(vocab)
-        print(f"loaded methods vocabularies: {', '.join([str(v) for v in loaded])}")
+        if len(loaded) > 0:
+            print(f"loaded methods vocabularies: {', '.join([str(v) for v in loaded])}")
         return vocabs
 
     def loadUnitsVocabularies(self):
@@ -257,7 +258,8 @@ class DBconnector:
                     f"failed to load units vocabulary '{vocab}' from '{os.path.join(self.vocabularies_dir_name, filename)}'")
             else:
                 loaded.append(vocab)
-        print(f"loaded units vocabularies: {', '.join([str(v) for v in loaded])}")
+        if len(loaded) > 0:
+            print(f"loaded units vocabularies: {', '.join([str(v) for v in loaded])}")
         return vocabs
 
 class MySQLConnector(DBconnector):
