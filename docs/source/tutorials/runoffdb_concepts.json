@@ -1,0 +1,80 @@
+[
+    {
+      "string": "locality",
+      "translation": [
+        {"term": "locality", "vocabulary": "*own", "uri": "locality@ownvocab"}
+      ]
+    },
+    {
+      "string": "simulator",
+      "translation": [
+        {"term": "rainfall simulator", "vocabulary": "*own", "uri": "rainfall_simulator@ownvocab"}
+      ]
+    },
+      {
+      "string": "date",
+      "translation": [
+        {"term": "date of experiment", "vocabulary": "methodic", "uri": "date_of_experiment@ownvocab"}
+      ]
+    },
+    {
+      "string": "init. moisture",
+      "translation": [
+        {"term": "initial moisture", "vocabulary": "*own", "uri": "initial_moisture@ownvocab"}
+      ]
+    },
+    {
+      "string": "canopy cover",
+      "translation": [
+        {"term": "canopy cover", "vocabulary": "*own", "uri": "canopy_cover@ownvocab"}
+      ]
+    },
+    {
+      "string": "BBCH",
+      "translation": [
+        {"term": "BBCH", "vocabulary": "*own", "uri": "bbch@ownvocab"}
+      ]
+    },
+    {
+      "string": "rain intensity",
+      "translation": [
+        {"term": "rainfall intensity", "vocabulary": "*own", "uri": "rainfall_intensity@ownvocab"}
+      ]
+    },
+    {
+      "string": "time to runoff",
+      "translation": [
+        {"term": "time to runoff", "vocabulary": "*own", "uri": "time_to_runoff@ownvocab"}
+      ]
+    },
+    {
+      "string": "bulk density",
+      "translation": [
+        {"term": "bulk density", "vocabulary": "*own", "uri": "bulk_density@ownvocab"}
+      ]
+    },
+    {
+      "string": "total time",
+      "translation": [
+        {"term": "experiment duration", "vocabulary": "*own", "uri": "experiment_duration@ownvocab"}
+      ]
+    },
+    {
+      "string": "total rainfall",
+      "translation": [
+        {"term": "rainfall total", "vocabulary": "*own", "uri": "rainfall_total@ownvocab"}
+      ]
+    },
+    {
+      "string": "total discharge",
+      "translation": [
+        {"term": "total discharge", "vocabulary": "*own", "uri": "total_discharge@ownvocab"}
+      ]
+    },
+    {
+      "string": "total soil loss",
+      "translation": [
+        {"term": "total soil loss", "vocabulary": "*own", "uri": "total_soil_loss@ownvocab"}
+      ]
+    }
+  ]
