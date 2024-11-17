@@ -7,8 +7,8 @@ You will find the project report of this pilot at `zenodo <https://doi.org/10.52
 
 This documentation lives beyond the pilot phase of SoilPulse and shows:
 
-- How soil process data is FAIRified within SoilPulse with some `application examples <application_examples>`_ from unstructured published data sets to Reusable data sets.
-- What we consider relevant for `Reusabilty of tabular data <application_examples/concept_unit_method>`_.
+- How soil process data is FAIRified within SoilPulse with some `application examples <#Reusability-application-on-example-datasets>`_ from unstructured published data sets to Reusable data sets.
+- What we consider relevant for `Reusabilty of tabular data <FAIR_world/concept_unit_method.html>`_.
 
 Within the pilot we implemented our workflows in the soilpulse python package. 
 The application examples are ongoingly further developed with further developments of this package.
@@ -27,5 +27,8 @@ Contents
 
 .. toctree::
 
+   tutorials
+   fair_world
    application_examples
+
    soilpulsecore
