@@ -717,7 +717,7 @@ class ProjectManager:
         for path, contID in self.containersOfPaths.items():
             print(f"{path}\t[{contID}]")
 
-    def collectAllConcepts(self):
+    def collectContainerConcepts(self):
         """
         Collects all concepts from containers of the tree
         """
@@ -728,7 +728,7 @@ class ProjectManager:
                 updateTranslationsDictionary(project_concepts, all_containers_concepts)
         return project_concepts
 
-    def collectAllMethods(self):
+    def collectContainerMethods(self):
         """
         Collects all methods from containers of the tree
         """
@@ -739,7 +739,7 @@ class ProjectManager:
                 updateTranslationsDictionary(project_methods, all_containers_methods)
         return project_methods
 
-    def collectAllUnits(self):
+    def collectContainerUnits(self):
         """
         Collects all units from containers of the tree
         """
@@ -754,7 +754,7 @@ class ProjectManager:
         """
         Updates project's string-concept translations by translations from own containers
         """
-        concepts_of_containers = self.collectAllConcepts()
+        concepts_of_containers = self.collectContainerConcepts()
         updateTranslationsDictionary(self.conceptsTranslations, concepts_of_containers)
         return
 
@@ -762,7 +762,7 @@ class ProjectManager:
         """
         Updates project's string-method translations by translations from own containers
         """
-        methods_of_containers = self.collectAllMethods()
+        methods_of_containers = self.collectContainerMethods()
         updateTranslationsDictionary(self.methodsTranslations, methods_of_containers)
         return
 
@@ -770,7 +770,7 @@ class ProjectManager:
         """
         Updates project's string-unit translations by translations from own containers
         """
-        units_of_containers = self.collectAllUnits()
+        units_of_containers = self.collectContainerUnits()
         updateTranslationsDictionary(self.unitsTranslations, units_of_containers)
         return
     def updateConceptsTranslationsFromFile(self, input_file):
@@ -810,16 +810,16 @@ class ProjectManager:
 
         :param input_file: path of vocabulary file to load from
         """
-
         # load the input JSON file
-        str_dict = {}
-        with open(input_file, 'r') as f:
-            try:
-                for str in json.load(f):
-                    str_dict.update({str['string']: str["translation"]})
-            except KeyError as e:
-                print(f"Translations dictionary '{input_file}' failed to load.")
-        return str_dict
+        dict = {}
+        try:
+            with open(input_file, "r") as f:
+                dict = json.load(f)
+        except:
+            print(f"Translations dictionary '{input_file}' failed to load.")
+        else:
+            print(f"Translations dictionary from file'{input_file}' successfully loaded.")
+        return dict
 
     def exportTranslationsDictionaryToFile(self, dictionary, filepath):
         """
@@ -1212,31 +1212,32 @@ class ContainerHandler:
     def __str__(self):
         out = f"\n|  # {self.id}  |  name: '{self.name}'  |  parent: "
         out += f"{self.parentContainer.id}\n" if self.parentContainer is not None else f"project root\n"
-        out += f"|  class: {type(self).__name__}"
-        out += f"|  crawler class: {type(self.crawler).__name__}\n" if self.crawler else "\n"
+        out += f"|  container type: {self.containerType}  "
+        out += f"|  crawler type: {self.crawler.crawlerType}\n" if self.crawler else "\n"
         if hasattr(self, "path"):
             out += f"|  {self.path}\n"
         if hasattr(self, "concepts"):
-            out += f"|  string-concept translations: {'-' if len(self.concepts) == 0 else ''}"
+            out += f"|  string-concept translations: "
+            out += 'none assigned' if len(self.concepts) == 0 else '\n'
             for string, concs in self.concepts.items():
-                out += f"|\t\"{string}\""
+                out += f"|\t\t\"{string}\"\n"
                 for conc in concs:
-                    out += f"|\t\t{conc}"
-            out += "\n"
+                    out += f"|\t\t\t{conc}\n"
+
         if hasattr(self, "methods"):
-            out += f"|  string-method translations: {'-' if len(self.methods) == 0 else ''}"
+            out += f"|  string-method translations: "
+            out += 'none assigned' if len(self.methods) == 0 else '\n'
             for string, meths in self.methods.items():
-                out += f"|\t\"{string}\""
+                out += f"|\t\t\"{string}\"\n"
                 for meth in meths:
-                    out += f"|\t\t{meth}"
-            out += "\n"
+                    out += f"|\t\t\t{meth}\n"
         if hasattr(self, "units"):
-            out += f"|  string-unit translations: {'-' if len(self.units) == 0 else ''}"
+            out += f"|  string-unit translations: "
+            out += 'none assigned' if len(self.units) == 0 else '\n'
             for string, units in self.units.items():
-                out += f"|\t\"{string}\""
+                out += f"|\t\t\"{string}\"\n"
                 for unit in units:
-                    out += f"|\t\t{unit}"
-            out += "\n"
+                    out += f"|\t\t\t{unit}\n"
         return out
 
 
@@ -1633,7 +1634,6 @@ class ContainerHandler:
 
         # collect concepts from child containers if desired
         if cascade:
-            # then collect string-concepts from child containers
             for cont in self.containers:
                 cont.collectConcepts(collection, cascade)
 
@@ -1654,7 +1654,6 @@ class ContainerHandler:
 
         # collect methods from child containers if desired
         if cascade:
-            # then collect string-methods from child containers
             for cont in self.containers:
                 cont.collectMethods(collection, cascade)
 
@@ -1674,7 +1673,6 @@ class ContainerHandler:
 
         # collect units from child containers if desired
         if cascade:
-            # then collect string-units from child containers
             for cont in self.containers:
                 cont.collectUnits(collection, cascade)
 
@@ -1918,10 +1916,10 @@ class Crawler:
         """
         results = []
         # search in container name
-        container_name = self.container.name.lower().strip(" _-")
+        container_name = self.container.name.lower()
         # iterate over each term in the vocabulary to find matches in container name
         for term in vocabulary:
-            term_pattern = re.compile(re.escape(term["term"].lower().strip(" _-")))
+            term_pattern = re.compile(re.escape(term["term"].lower()))
             matches = term_pattern.finditer(container_name)
             found_translations = []
             for match in matches:
@@ -1978,18 +1976,18 @@ def get_directory_size(path):
     return total_size
 
 
-def updateTranslationsDictionary(target_vocab, input_vocab):
+def updateTranslationsDictionary(target_dict, input_dict):
     """
     General function to update one translations dictionary (concepts/methods/units) by another.
     Strings from input dictionary are added to target dictionary if not there already.
     Translations from input dictionary are added to target vocabulary if not there already
     """
     # iterate over each string in the input vocabulary
-    for string, input_translations in input_vocab.items():
+    for string, input_translations in input_dict.items():
         # check if the string exists in the target vocabulary
-        if string in target_vocab.keys():
+        if string in target_dict.keys():
             # get the list of translations for the string in the target vocab
-            target_translations = target_vocab[string]
+            target_translations = target_dict[string]
             # create a set of existing translation tuples (vocabulary, uri) in the target vocab
             existing_translations_set = set(
                 (translation['vocabulary'], translation['uri']) for translation in target_translations
@@ -2003,5 +2001,5 @@ def updateTranslationsDictionary(target_vocab, input_vocab):
                     target_translations.append(input_translation)
         else:
             # If the string does not exist in the target vocabulary, add it with its translations
-            target_vocab.update({string: input_translations})
+            target_dict.update({string: input_translations})
     return
