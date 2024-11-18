@@ -196,18 +196,29 @@ class DBconnector:
     def getDatasetsOfProject(self, project_id):
         pass
 
-    def loadVocabularyFromFile(self, filename):
+    def loadVocabularyFromResource(self, filename):
         """
         Loads string-* translations JSON file
 
-        :param filename: path of vocabulary file to load from
+        :param filename: name of vocabulary file inside the package 'vocabularies' folder
         """
-
         out_dict = []
-        with importlib.resources.open_text(f"soilpulsecore.{self.vocabularies_dir_name}", filename) as f:
+        with importlib.resources.open_text(f"{__package__}.{self.vocabularies_dir_name}", filename) as f:
             for item in json.load(f):
                 out_dict.append(item)
         return out_dict
+
+    def loadVocabularyFromFile(self, input_file):
+        vocab = []
+        try:
+            with open(input_file, 'r', encoding='utf-8') as f:
+                vocab = json.load(f)
+        except:
+            print(f"Loading vocabulary from file '{input_file}' failed.")
+        else:
+            print(f"Vocabulary from file '{input_file}' successfully loaded.")
+        return vocab
+
 
     def loadConceptsVocabularies(self):
         """
@@ -217,7 +228,7 @@ class DBconnector:
         loaded = []
         for vocab, filename in self.concepts_vocabulary_filenames.items():
             try:
-                vocabs.update({vocab: self.loadVocabularyFromFile(filename)})
+                vocabs.update({vocab: self.loadVocabularyFromResource(filename)})
             except:
                 print(f"failed to load concept vocabulary '{vocab}' from '{os.path.join(self.vocabularies_dir_name, filename)}'")
             else:
@@ -234,7 +245,7 @@ class DBconnector:
         loaded = []
         for vocab, filename in self.methods_vocabulary_filenames.items():
             try:
-                vocabs.update({vocab: self.loadVocabularyFromFile(filename)})
+                vocabs.update({vocab: self.loadVocabularyFromResource(filename)})
             except:
                 print(
                     f"failed to load method vocabulary '{vocab}' from '{os.path.join(self.vocabularies_dir_name, filename)}'")
@@ -252,7 +263,7 @@ class DBconnector:
         loaded = []
         for vocab, filename in self.units_vocabulary_filenames.items():
             try:
-                vocabs.update({vocab: self.loadVocabularyFromFile(filename)})
+                vocabs.update({vocab: self.loadVocabularyFromResource(filename)})
             except:
                 print(
                     f"failed to load units vocabulary '{vocab}' from '{os.path.join(self.vocabularies_dir_name, filename)}'")
@@ -551,11 +562,11 @@ class MySQLConnector(DBconnector):
         self.updateTranslationDictionaries(project)
 
         # delete string-concept translations that are no longer in use
-        self.deleteOrphannedConceptTranslations(project.id, project.collectAllConcepts())
+        self.deleteOrphannedConceptTranslations(project.id, project.collectContainerConcepts())
         # delete string-method translations that are no longer in use
-        self.deleteOrphannedMethodTranslations(project.id, project.collectAllMethods())
+        self.deleteOrphannedMethodTranslations(project.id, project.collectContainerMethods())
         # delete string-unit translations that are no longer in use
-        self.deleteOrphannedUnitTranslations(project.id, project.collectAllUnits())
+        self.deleteOrphannedUnitTranslations(project.id, project.collectContainerUnits())
 
 
         thecursor.close()
