@@ -105,7 +105,8 @@ def test_project_saved_mysql():
     assert results[0]['relative_path'] == "DOI_metadata.json"
     assert results[1]['relative_path'] == "Publisher_metadata.json"
 
-project.keepFiles = True
+if not mysql_state == 'bad':
+    project.keepFiles = True
 
 @pytest.mark.skipif(mysql_state == 'bad', reason="MySQL does not work on github windows runners, so if project initiation fails, this test will fail.")
 def test_upload_files_mysql():
