@@ -269,22 +269,22 @@ class ColumnCrawler(Crawler):
         # search for string to concept translations in project dictionary
         start_time = time.time()
         # print(f"searching '{self.container.name}' for string-concept translations in project's dictionary")
-        all_translations = self.find_translations_in_dictionary(self.container.project.conceptsTranslations, full_match_only=True)
-        for translation in all_translations:
+        found_concepts = self.find_translations_in_dictionary(self.container.project.conceptsTranslations, full_match_only=False)
+        for translation in found_concepts:
             for string, concepts in translation.items():
                 for concept in concepts:
                     self.container.addStringConcept(string, concept)
         # search for string to method translations in project dictionary
         # print(f"searching '{self.container.name}' for string-method translations in project's dictionary")
-        all_translations = self.find_translations_in_dictionary(self.container.project.methodsTranslations, full_match_only=True)
-        for translation in all_translations:
+        found_methods = self.find_translations_in_dictionary(self.container.project.methodsTranslations, full_match_only=False)
+        for translation in found_methods:
             for string, methods in translation.items():
                 for method in methods:
                     self.container.addStringMethod(string, method)
         # search for string to unit translations in project dictionary
         # print(f"searching '{self.container.name}' for string-unit translations in project's dictionary")
-        all_translations = self.find_translations_in_dictionary(self.container.project.unitsTranslations, full_match_only=True)
-        for translation in all_translations:
+        found_units = self.find_translations_in_dictionary(self.container.project.unitsTranslations, full_match_only=False)
+        for translation in found_units:
             for string, units in translation.items():
                 for unit in units:
                     self.container.addStringUnit(string, unit)
@@ -293,20 +293,20 @@ class ColumnCrawler(Crawler):
 
         # search for string to concept translations in all registered global concept vocabularies
         start_time = time.time()
-        all_translations = []
+        found_concepts = []
         # print(f"searching vocabularies for string-concept translations of '{self.container.name}'")
         for vocab in self.container.project.globalConceptsVocabularies.values():
-            all_translations.extend(self.find_translations_in_vocabulary(vocab, full_match_only=True))
-        for translation in all_translations:
+            found_concepts.extend(self.find_translations_in_vocabulary(vocab, full_match_only=False))
+        for translation in found_concepts:
             for string, concepts in translation.items():
                 for concept in concepts:
                     self.container.addStringConcept(string, concept)
         # search for string to method translations
-        all_translations = []
+        found_methods = []
         # print(f"searching vocabularies for string-method translations of '{self.container.name}'")
         for vocab in self.container.project.globalMethodsVocabularies.values():
-            all_translations.extend(self.find_translations_in_vocabulary(vocab, full_match_only=True))
-        for translation in all_translations:
+            found_methods.extend(self.find_translations_in_vocabulary(vocab, full_match_only=False))
+        for translation in found_methods:
             for string, methods in translation.items():
                 for method in methods:
                     self.container.addStringMethod(string, method)
@@ -314,8 +314,8 @@ class ColumnCrawler(Crawler):
         found_units = []
         # print(f"searching vocabularies for string-unit translations of '{self.container.name}'")
         for vocab in self.container.project.globalUnitsVocabularies.values():
-            found_units.extend(self.find_translations_in_vocabulary(vocab, full_match_only=True))
-        for translation in all_translations:
+            found_units.extend(self.find_translations_in_vocabulary(vocab, full_match_only=False))
+        for translation in found_units:
             for string, units in translation.items():
                 for unit in units:
                     self.container.addStringUnit(string, unit)
