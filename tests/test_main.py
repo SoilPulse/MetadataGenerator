@@ -19,7 +19,7 @@ from shutil import rmtree
 
 # example DOI record
 example = {"name": "NFDItest", "doi": "10.5281/zenodo.8345022"}
-files = [Path("testfiles","testdata.csv").absolute().as_posix(), Path("testfiles","testtexture.csv").absolute().as_posix()]
+files = [Path("tests/testfiles","testdata.csv").absolute().as_posix(), Path("tests/testfiles","testtexture.csv").absolute().as_posix()]
 
 example_outputs = {"RA": "DataCite", # which RA should be returned from doi.org
                    "containers_files_loaded": 6, # number of top level containers soilpulse should identify
@@ -102,8 +102,8 @@ def test_project_saved_mysql():
     assert results[1]['name'] == "Publisher metadata"
     assert results[0]['type'] == "json"
     assert results[1]['type'] == "json"
-    assert Path(results[0]['relative_path']) == Path("DOI_metadata.json")
-    assert Path(results[1]['relative_path']) == Path("Publisher_metadata.json")
+    assert results[0]['relative_path'].strip("/") == "DOI_metadata.json"
+    assert results[1]['relative_path'].strip("/") == "Publisher_metadata.json"
 
 if not mysql_state == 'bad':
     project.keepFiles = True
@@ -199,8 +199,8 @@ def test_project_saved_null():
     assert containers["2"]["name"] == "Publisher metadata"
     assert containers["1"]["type"] == "json"
     assert containers["2"]["type"] == "json"
-    assert Path(containers["1"]["relative_path"]) == Path("DOI_metadata.json")
-    assert Path(containers["2"]["relative_path"]) == Path("Publisher_metadata.json")
+    assert containers["1"]["relative_path"].strip("/") == "DOI_metadata.json"
+    assert containers["2"]["relative_path"].strip("/") == "Publisher_metadata.json"
 
 project2.keepFiles = True
 
