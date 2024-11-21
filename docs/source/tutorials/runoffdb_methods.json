@@ -1,0 +1,8 @@
+{
+  "bulk density": [
+    {"term": "undisturbed samples collected by Kopecky cylinders 50*51mm, average value from sub-samples", "vocabulary": "*own", "uri": "bulk_density1@ownmethodvocab"}
+  ],
+  "rain intensity": [
+    {"term": "average value from continuous rainfall intensity measurement by tipping bucket rain gauge", "vocabulary": "*own", "uri": "rain-intensity@ownmethodvocab"}
+  ]
+}

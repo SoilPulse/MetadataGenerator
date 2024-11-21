@@ -1,0 +1,8 @@
+[
+        {"term": "[mm.h^-1]", "vocabulary": "*own", "uri": "millimetres-per-hour@ownunitsvocab"},
+        {"term": "[g.cm^-3]", "vocabulary": "*own", "uri": "grams-per-cubic-centimeter@ownunitsvocab"},
+        {"term": "[s]", "vocabulary": "*own", "uri": "seconds@ownunitsvocab"},
+        {"term": "[mm]", "vocabulary": "*own", "uri": "millimeters@ownunitsvocab"},
+        {"term": "[l]", "vocabulary": "*own", "uri": "litres@ownunitsvocab"},
+        {"term": "[g]", "vocabulary": "*own", "uri": "grams@ownunitsvocab"}
+]
