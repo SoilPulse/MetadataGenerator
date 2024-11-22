@@ -1,0 +1,57 @@
+[
+       {
+            "term": "canopy",
+            "vocabulary": "AGROVOC",
+            "uri": "http://aims.fao.org/aos/agrovoc/c_1262"
+        },
+        {
+            "term": "time",
+            "vocabulary": "AGROVOC",
+            "uri": "http://aims.fao.org/aos/agrovoc/c_7778"
+        },
+        {
+            "term": "runoff",
+            "vocabulary": "AGROVOC",
+            "uri": "http://aims.fao.org/aos/agrovoc/c_35388"
+        },
+        {
+            "term": "latitude",
+            "vocabulary": "AGROVOC",
+            "uri": "http://aims.fao.org/aos/agrovoc/c_4222"
+        },
+        {
+            "term": "longitude",
+            "vocabulary": "AGROVOC",
+            "uri": "http://aims.fao.org/aos/agrovoc/c_52bebf31"
+        }
+        {
+            "term": "plot",
+            "vocabulary": "AGROVOC",
+            "uri": "http://aims.fao.org/aos/agrovoc/c_36811"
+        },
+        {
+            "term": "crop",
+            "vocabulary": "AGROVOC",
+            "uri": "http://aims.fao.org/aos/agrovoc/c_1972"
+        },
+        {
+            "term": "rain",
+            "vocabulary": "AGROVOC",
+            "uri": "http://aims.fao.org/aos/agrovoc/c_6435"
+        },
+        {
+            "term": "density",
+            "vocabulary": "AGROVOC",
+            "uri": "http://aims.fao.org/aos/agrovoc/c_2186"
+        },
+        {
+            "term": "soil",
+            "vocabulary": "AGROVOC",
+            "uri": "http://aims.fao.org/aos/agrovoc/c_7156"
+        },
+        {
+            "term": "soil loss",
+            "vocabulary": "AGROVOC",
+            "uri": "http://aims.fao.org/aos/agrovoc/c_8dab65bc"
+        }
+]
