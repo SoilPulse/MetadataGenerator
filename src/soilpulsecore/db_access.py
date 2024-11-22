@@ -55,11 +55,11 @@ class DBconnector:
     vocabularies_dir_name = "vocabularies"
 
     # global concepts vocabularies
-    concepts_vocabulary_filenames = {"AGROVOC": "agrovoc.json", "TestConceptVocabulary": "_concepts_vocabulary_1.json"}
+    concepts_vocabulary_filenames = {"AGROVOC": "agrovoc_excerpt.json"}
     # global methods vocabularies
-    methods_vocabulary_filenames = {"TestMethodsVocabulary": "_methods_vocabulary_1.json"}
+    methods_vocabulary_filenames = {}
     # global units vocabularies
-    units_vocabulary_filenames = {"TestUnitsVocabulary":  "_units_vocabulary_1.json"}
+    units_vocabulary_filenames = {}
 
     # project dictionaries filenames
     concepts_translations_filename = "_concepts_translations.json"
