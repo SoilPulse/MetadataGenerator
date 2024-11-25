@@ -1,4 +1,4 @@
-# Metadata on table structure
+# Data Reusability
 
 Data values are often written in tables.
 To know what a value within the table actually means, one must interpret metadata.
