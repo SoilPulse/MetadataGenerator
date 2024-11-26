@@ -1,0 +1,315 @@
+locality;latitude;longitude;run ID;date;plot ID;simulator;crop;crop type;initial cond.;init. moisture;canopy cover;BBCH;rain intensity [mm.h^-1];time to runoff;bulk density [g.cm^-3];total time [s];total rainfall [mm.h^-1];total discharge [l];total soil loss [g]
+Puclice;49.586;13.013;555;2018-05-21 09:00:00;139;VUMOP portable rainfall simulator;cultivated fallow;without cover;dry;7.200;NA;NA;73.200;0:02:43;1.350;1830.000;36.600;383.000;8714.068
+Puclice;49.586;13.013;543;2018-05-21 09:00:00;140;VUMOP portable rainfall simulator;proso millet;summer cereals;dry;5.300;50.000;19;72.600;0:03:13;1.450;1830.000;36.300;303.800;1331.081
+Puclice;49.586;13.013;556;2018-05-21 09:00:00;139;VUMOP portable rainfall simulator;cultivated fallow;without cover;very wet;15.800;NA;NA;73.200;0:00:40;1.350;1830.000;36.600;471.950;5777.754
+Puclice;49.586;13.013;535;2018-05-21 09:00:00;142;VUMOP portable rainfall simulator;green peas;legumes;dry;4.300;55.000;39;73.200;0:01:37;1.570;1860.000;36.600;414.900;3110.126
+Puclice;49.586;13.013;539;2018-05-21 09:00:00;141;VUMOP portable rainfall simulator;lupin;legumes;dry;5.000;30.000;33;73.200;0:01:46;1.570;1830.000;36.600;348.650;4151.413
+Puclice;49.586;13.013;549;2018-05-21 09:00:00;138;VUMOP portable rainfall simulator;sunflower;oil-crops;dry;5.300;5.000;33;72.600;0:02:00;1.500;1830.000;36.300;428.763;5695.235
+Puclice;49.586;13.013;529;2018-05-21 09:00:00;143;VUMOP portable rainfall simulator;broad bean;legumes;dry;6.500;30.000;36;73.200;0:02:00;1.320;1830.000;36.600;410.078;9077.566
+Puclice;49.586;13.013;536;2018-05-21 09:00:00;142;VUMOP portable rainfall simulator;green peas;legumes;very wet;15.800;55.000;39;73.200;0:00:46;1.570;1830.000;36.600;456.500;1673.751
+Puclice;49.586;13.013;544;2018-05-21 09:00:00;140;VUMOP portable rainfall simulator;proso millet;summer cereals;very wet;13.900;50.000;19;72.600;0:01:16;1.450;1830.000;36.300;384.100;764.531
+Puclice;49.586;13.013;550;2018-05-21 09:00:00;138;VUMOP portable rainfall simulator;sunflower;oil-crops;very wet;13.800;5.000;33;73.200;0:00:46;1.500;1830.000;36.600;469.840;4446.012
+Puclice;49.586;13.013;540;2018-05-21 09:00:00;141;VUMOP portable rainfall simulator;lupin;legumes;very wet;13.700;30.000;33;73.200;0:01:00;1.570;1830.000;36.600;445.850;2782.154
+Puclice;49.586;13.013;530;2018-05-21 09:00:00;143;VUMOP portable rainfall simulator;broad bean;legumes;very wet;15.400;30.000;36;73.200;0:01:00;1.320;1830.000;36.600;455.050;6108.552
+Řisuty;50.217;14.017;137;2018-05-21 10:10:00;20;CTU portable rainfall simulator;winter green peas;legumes;dry;16.000;37.000;38;60.000;0:10:00;1.335;2250.000;37.500;99.954;3084.896
+Řisuty;50.217;14.017;138;2018-05-21 11:05:00;20;CTU portable rainfall simulator;winter green peas;legumes;very wet;43.000;37.000;38;60.000;0:00:30;1.335;1740.000;29.000;158.250;5581.572
+Řisuty;50.217;14.017;139;2018-05-21 11:57:00;21;CTU portable rainfall simulator;green peas;legumes;dry;12.000;NA;36;60.000;0:11:00;1.241;2310.000;38.500;126.376;2378.571
+Řisuty;50.217;14.017;140;2018-05-21 12:50:00;21;CTU portable rainfall simulator;green peas;legumes;very wet;43.000;NA;36;60.000;0:00:30;1.241;1680.000;28.000;236.089;6632.280
+Řisuty;50.217;14.017;141;2018-05-21 13:51:00;33;CTU portable rainfall simulator;cultivated fallow;without cover;dry;17.000;NA;NA;60.000;0:04:00;1.165;1890.000;31.500;307.102;10085.940
+Řisuty;50.217;14.017;142;2018-05-21 14:41:00;33;CTU portable rainfall simulator;cultivated fallow;without cover;very wet;38.000;NA;NA;60.000;0:00:00;1.165;1650.000;27.500;276.808;9106.326
+Řisuty;50.217;14.017;143;2018-05-25 09:51:00;22;CTU portable rainfall simulator;summer barley;summer cereals;dry;38.000;NA;37;60.000;0:26:00;1.241;3210.000;53.500;35.502;116.558
+Řisuty;50.217;14.017;144;2018-05-25 11:05:00;22;CTU portable rainfall simulator;summer barley;summer cereals;very wet;45.000;NA;37;60.000;0:02:00;1.241;1770.000;29.500;65.441;299.972
+Řisuty;50.217;14.017;147;2018-05-25 14:39:00;33;CTU portable rainfall simulator;cultivated fallow;without cover;dry;28.000;NA;NA;60.000;0:02:00;1.165;1770.000;29.500;404.146;8905.275
+Řisuty;50.217;14.017;148;2018-05-25 15:28:00;33;CTU portable rainfall simulator;cultivated fallow;without cover;very wet;38.000;NA;NA;60.000;0:00:30;1.165;1680.000;28.000;425.917;7996.938
+Řisuty;50.217;14.017;150;2018-05-30 12:22:00;15;CTU portable rainfall simulator;alfalfa;fodder crops continous;very wet;42.000;93.000;NA;60.000;0:20:30;1.405;2730.000;45.500;78.439;267.058
+Řisuty;50.217;14.017;152;2018-05-30 15:36:00;24;CTU portable rainfall simulator;fiddleneck;fodder crops single year;very wet;44.000;100.000;33;60.000;0:05:00;1.252;1950.000;32.500;56.127;63.033
+Řisuty;50.217;14.017;153;2018-05-30 16:28:00;23;CTU portable rainfall simulator;mustard;fodder crops single year;dry;12.000;87.000;34;60.000;0:19:00;1.252;2790.000;46.500;100.495;856.519
+Řisuty;50.217;14.017;154;2018-05-30 17:32:00;23;CTU portable rainfall simulator;mustard;fodder crops single year;very wet;44.000;87.000;34;60.000;0:02:00;1.252;1770.000;29.500;174.317;2600.403
+Řisuty;50.217;14.017;155;2018-05-31 09:16:00;25;CTU portable rainfall simulator;corn;summer cereals;dry;13.000;NA;14;60.000;0:02:00;1.252;1770.000;29.500;219.401;2455.247
+Řisuty;50.217;14.017;156;2018-05-31 10:01:00;25;CTU portable rainfall simulator;corn;summer cereals;very wet;45.000;NA;14;NA;0:01:00;1.252;1710.000;26.000;245.078;3464.153
+Řisuty;50.217;14.017;157;2018-05-31 11:02:00;33;CTU portable rainfall simulator;cultivated fallow;without cover;dry;17.000;NA;NA;60.000;0:06:00;1.165;2010.000;33.500;316.231;7668.027
+Řisuty;50.217;14.017;158;2018-05-31 11:53:00;33;CTU portable rainfall simulator;cultivated fallow;without cover;very wet;35.000;NA;NA;60.000;0:00:30;1.165;1680.000;28.000;400.960;9563.910
+Řisuty;50.217;14.017;159;2018-05-31 12:37:00;19;CTU portable rainfall simulator;winter wheat;winter cereals;dry;16.000;NA;57;60.000;0:50:00;1.335;4650.000;77.500;103.737;585.912
+Řisuty;50.217;14.017;160;2018-05-31 14:12:00;19;CTU portable rainfall simulator;winter wheat;winter cereals;very wet;47.000;NA;57;60.000;0:04:00;1.335;1890.000;31.500;156.387;510.455
+Řisuty;50.217;14.017;161;2018-06-20 10:35:00;26;CTU portable rainfall simulator;sunflower;oil-crops;dry;16.000;62.000;33;60.000;0:03:00;1.264;1830.000;30.500;194.404;655.188
+Řisuty;50.217;14.017;162;2018-06-20 11:22:00;26;CTU portable rainfall simulator;sunflower;oil-crops;very wet;42.000;62.000;33;60.000;0:01:00;1.264;1710.000;28.500;251.983;521.523
+Řisuty;50.217;14.017;163;2018-06-20 12:26:00;33;CTU portable rainfall simulator;cultivated fallow;without cover;dry;12.000;NA;NA;60.000;0:10:00;1.165;2250.000;37.500;227.220;5037.742
+Řisuty;50.217;14.017;164;2018-06-20 13:52:00;33;CTU portable rainfall simulator;cultivated fallow;without cover;very wet;34.000;NA;NA;60.000;0:00:30;1.165;1680.000;28.000;386.681;7209.278
+Řisuty;50.217;14.017;166;2018-06-20 16:26:00;19;CTU portable rainfall simulator;winter wheat;winter cereals;very wet;46.000;NA;75;60.000;0:02:00;1.345;1770.000;29.500;254.840;293.813
+Puclice;49.586;13.013;551;2018-07-02 09:00:00;138;VUMOP portable rainfall simulator;sunflower;oil-crops;dry;3.400;30.000;65;73.200;0:00:40;1.410;1830.000;36.600;403.500;3787.787
+Puclice;49.586;13.013;537;2018-07-02 09:00:00;142;VUMOP portable rainfall simulator;green peas;legumes;dry;4.600;70.000;39;72.600;0:03:13;1.480;1830.000;35.695;277.150;610.826
+Puclice;49.586;13.013;541;2018-07-02 09:00:00;141;VUMOP portable rainfall simulator;lupin;legumes;dry;5.200;70.000;73;73.200;0:03:27;1.450;1830.000;36.600;313.250;689.169
+Puclice;49.586;13.013;531;2018-07-02 09:00:00;143;VUMOP portable rainfall simulator;broad bean;legumes;dry;4.200;55.000;77;72.600;0:02:13;1.380;1830.000;36.300;344.600;1467.438
+Puclice;49.586;13.013;546;2018-07-02 09:00:00;140;VUMOP portable rainfall simulator;proso millet;summer cereals;very wet;14.700;70.000;59;73.200;0:02:00;1.360;1830.000;36.600;366.000;246.012
+Puclice;49.586;13.013;552;2018-07-02 09:00:00;138;VUMOP portable rainfall simulator;sunflower;oil-crops;very wet;14.900;30.000;65;73.200;0:00:45;1.410;1830.000;36.600;476.750;2494.650
+Puclice;49.586;13.013;538;2018-07-02 09:00:00;142;VUMOP portable rainfall simulator;green peas;legumes;very wet;15.800;70.000;39;73.200;0:02:00;1.480;1830.000;36.600;423.700;264.399
+Puclice;49.586;13.013;542;2018-07-02 09:00:00;141;VUMOP portable rainfall simulator;lupin;legumes;very wet;12.300;70.000;73;73.200;0:02:00;1.450;1830.000;36.600;409.850;483.097
+Puclice;49.586;13.013;532;2018-07-02 09:00:00;143;VUMOP portable rainfall simulator;broad bean;legumes;very wet;11.400;55.000;77;73.200;0:01:24;1.380;1830.000;36.600;456.250;1359.876
+Puclice;49.586;13.013;557;2018-07-02 09:00:00;139;VUMOP portable rainfall simulator;cultivated fallow;without cover;dry;5.700;NA;NA;72.600;0:02:43;1.330;1830.000;36.300;355.750;5630.820
+Puclice;49.586;13.013;545;2018-07-02 09:00:00;140;VUMOP portable rainfall simulator;proso millet;summer cereals;dry;3.400;70.000;59;73.200;0:03:52;1.360;1830.000;36.600;240.300;246.831
+Puclice;49.586;13.013;558;2018-07-02 09:00:00;139;VUMOP portable rainfall simulator;cultivated fallow;without cover;very wet;14.100;NA;NA;73.200;0:00:39;1.330;1830.000;36.600;479.050;5658.487
+Řisuty;50.217;14.017;167;2018-07-17 12:08:00;15;CTU portable rainfall simulator;alfalfa;fodder crops continous;dry;26.000;NA;NA;60.000;0:49:00;1.405;4590.000;76.500;25.873;61.765
+Řisuty;50.217;14.017;168;2018-07-17 13:53:00;15;CTU portable rainfall simulator;alfalfa;fodder crops continous;very wet;43.000;NA;NA;60.000;0:04:00;1.405;1890.000;31.500;85.452;254.022
+Řisuty;50.217;14.017;169;2018-07-17 14:49:00;33;CTU portable rainfall simulator;cultivated fallow;without cover;dry;19.000;NA;NA;60.000;0:07:00;1.165;2070.000;34.500;210.575;5310.098
+Řisuty;50.217;14.017;170;2018-07-17 15:42:00;33;CTU portable rainfall simulator;cultivated fallow;without cover;very wet;39.000;NA;NA;60.000;0:00:30;1.165;1680.000;28.000;357.661;8537.581
+Řisuty;50.217;14.017;171;2018-07-17 16:53:00;21;CTU portable rainfall simulator;green peas;legumes;dry;20.000;NA;89;60.000;0:08:30;1.278;2160.000;36.000;30.743;267.493
+Řisuty;50.217;14.017;172;2018-07-17 17:53:00;21;CTU portable rainfall simulator;green peas;legumes;very wet;43.000;NA;89;60.000;0:00:30;1.278;1680.000;28.000;100.578;412.409
+Řisuty;50.217;14.017;174;2018-07-18 11:07:00;22;CTU portable rainfall simulator;summer barley;summer cereals;very wet;45.000;NA;89;60.000;0:06:00;1.278;2010.000;33.500;92.917;486.778
+Řisuty;50.217;14.017;175;2018-07-18 12:32:00;26;CTU portable rainfall simulator;sunflower;oil-crops;dry;12.000;NA;57;60.000;0:05:30;1.278;1980.000;33.000;148.447;410.498
+Řisuty;50.217;14.017;176;2018-07-18 13:25:30;26;CTU portable rainfall simulator;sunflower;oil-crops;very wet;41.000;NA;57;60.000;0:00:30;1.278;1680.000;28.000;263.353;797.643
+Řisuty;50.217;14.017;177;2018-07-18 14:28:00;25;CTU portable rainfall simulator;corn;summer cereals;dry;15.000;NA;35;60.000;0:03:00;1.278;1830.000;30.500;196.607;2039.438
+Řisuty;50.217;14.017;178;2018-07-18 15:14:00;25;CTU portable rainfall simulator;corn;summer cereals;very wet;43.000;NA;35;60.000;0:00:30;1.278;1680.000;28.000;306.863;2864.839
+Puclice;49.586;13.013;534;2018-07-23 09:00:00;143;VUMOP portable rainfall simulator;broad bean;legumes;very wet;21.400;NA;82;72.600;0:01:00;1.420;1830.000;36.300;407.463;511.620
+Puclice;49.586;13.013;559;2018-07-23 09:00:00;139;VUMOP portable rainfall simulator;cultivated fallow;without cover;dry;12.100;NA;NA;72.600;0:01:24;1.360;1830.000;36.300;396.950;8466.082
+Puclice;49.586;13.013;560;2018-07-23 09:00:00;139;VUMOP portable rainfall simulator;cultivated fallow;without cover;very wet;19.600;NA;NA;73.200;0:01:00;1.360;1830.000;36.600;490.950;6117.544
+Puclice;49.586;13.013;547;2018-07-23 09:00:00;140;VUMOP portable rainfall simulator;proso millet;summer cereals;dry;10.300;NA;75;73.200;0:03:19;1.420;1830.000;36.600;139.350;94.501
+Puclice;49.586;13.013;553;2018-07-23 09:00:00;138;VUMOP portable rainfall simulator;sunflower;oil-crops;dry;5.900;NA;76;72.600;0:01:45;1.430;1830.000;36.300;406.650;1945.041
+Puclice;49.586;13.013;533;2018-07-23 09:00:00;143;VUMOP portable rainfall simulator;broad bean;legumes;dry;13.000;NA;82;73.200;0:02:00;1.420;1830.000;36.600;360.250;1145.937
+Puclice;49.586;13.013;548;2018-07-23 09:00:00;140;VUMOP portable rainfall simulator;proso millet;summer cereals;very wet;18.500;NA;75;73.200;0:02:00;1.420;1860.000;36.600;271.300;39.729
+Puclice;49.586;13.013;554;2018-07-23 09:00:00;138;VUMOP portable rainfall simulator;sunflower;oil-crops;very wet;16.700;NA;76;73.200;0:00:49;1.430;1830.000;36.600;466.900;1420.524
+Řisuty;50.217;14.017;180;2018-07-25 10:58:00;23;CTU portable rainfall simulator;mustard;fodder crops single year;very wet;36.000;NA;85;60.000;0:05:00;1.278;1950.000;32.500;17.611;16.441
+Řisuty;50.217;14.017;183;2018-07-25 15:03:00;33;CTU portable rainfall simulator;cultivated fallow;without cover;dry;16.000;NA;NA;60.000;0:10:00;1.165;2250.000;37.500;245.909;5699.840
+Řisuty;50.217;14.017;184;2018-07-25 15:56:00;33;CTU portable rainfall simulator;cultivated fallow;without cover;very wet;37.000;NA;NA;60.000;0:00:30;1.165;1680.000;28.000;317.711;4683.965
+Řisuty;50.217;14.017;185;2018-08-07 11:31:00;26;CTU portable rainfall simulator;sunflower;oil-crops;dry;NA;NA;81;60.000;0:04:00;1.285;1890.000;31.500;258.398;2327.667
+Řisuty;50.217;14.017;186;2018-08-07 12:20:00;26;CTU portable rainfall simulator;sunflower;oil-crops;very wet;39.000;NA;81;60.000;0:01:00;1.285;1710.000;28.500;324.013;2438.177
+Řisuty;50.217;14.017;187;2018-08-07 13:15:00;25;CTU portable rainfall simulator;corn;summer cereals;dry;16.000;NA;63;60.000;0:03:00;1.285;1830.000;30.500;169.633;2349.701
+Řisuty;50.217;14.017;188;2018-08-07 14:03:00;25;CTU portable rainfall simulator;corn;summer cereals;very wet;41.000;NA;63;60.000;0:00:30;1.285;1680.000;28.000;315.281;2903.731
+Řisuty;50.217;14.017;189;2018-08-07 15:15:00;33;CTU portable rainfall simulator;cultivated fallow;without cover;dry;16.000;NA;NA;60.000;0:08:30;1.165;2160.000;36.000;233.598;4418.007
+Řisuty;50.217;14.017;190;2018-08-07 16:08:00;33;CTU portable rainfall simulator;cultivated fallow;without cover;very wet;35.000;NA;NA;60.000;0:00:00;1.165;1650.000;27.500;324.603;4374.276
+Řisuty;50.217;14.017;198;2018-08-28 11:22:00;33;CTU portable rainfall simulator;cultivated fallow;without cover;dry;22.000;NA;NA;60.000;0:04:00;1.165;1890.000;31.500;351.763;6908.696
+Řisuty;50.217;14.017;199;2018-08-28 12:13:00;33;CTU portable rainfall simulator;cultivated fallow;without cover;very wet;37.000;NA;NA;60.000;0:01:00;1.165;1710.000;28.500;411.372;7024.331
+Řisuty;50.217;14.017;201;2018-08-28 14:10:00;19;CTU portable rainfall simulator;winter wheat;winter cereals;very wet;45.000;NA;NA;60.000;0:05:00;1.363;1950.000;32.500;15.091;30.696
+Řisuty;50.217;14.017;203;2018-08-29 10:55:00;22;CTU portable rainfall simulator;summer barley;summer cereals;very wet;39.000;NA;NA;60.000;0:01:00;1.299;1710.000;28.500;72.314;249.476
+Řisuty;50.217;14.017;204;2018-08-29 12:07:00;27;CTU portable rainfall simulator;winter rape;oil-crops;dry;14.000;NA;NA;60.000;0:09:00;1.363;2190.000;36.500;141.600;1157.443
+Řisuty;50.217;14.017;205;2018-08-29 13:16:00;27;CTU portable rainfall simulator;winter rape;oil-crops;very wet;42.000;NA;NA;60.000;0:00:30;1.363;1680.000;28.000;294.068;2673.807
+Řisuty;50.217;14.017;206;2018-08-29 15:03:00;25;CTU portable rainfall simulator;corn;summer cereals;dry;14.000;NA;NA;60.000;0:02:00;1.299;1770.000;29.500;251.438;4006.219
+Řisuty;50.217;14.017;207;2018-08-29 15:48:00;25;CTU portable rainfall simulator;corn;summer cereals;very wet;42.000;NA;NA;60.000;0:00:30;1.299;1680.000;28.000;319.127;4726.891
+Řisuty;50.217;14.017;208;2018-09-19 17:37:00;29;CTU portable rainfall simulator;seed bed;without cover;dry;NA;NA;NA;60.000;0:26:00;1.165;3210.000;53.500;55.657;340.219
+Řisuty;50.217;14.017;209;2018-09-19 18:48:00;29;CTU portable rainfall simulator;seed bed;without cover;very wet;NA;NA;NA;60.000;0:01:00;1.165;1710.000;28.500;222.451;995.736
+Řisuty;50.217;14.017;215;2019-06-03 12:35:00;41;CTU portable rainfall simulator;cultivated fallow;without cover;dry;NA;NA;NA;60.000;0:04:00;1.153;1890.000;31.500;215.835;4793.628
+Řisuty;50.217;14.017;216;2019-06-03 13:35:00;41;CTU portable rainfall simulator;cultivated fallow;without cover;very wet;NA;NA;NA;60.000;0:00:00;1.269;1650.000;27.500;346.775;5512.603
+Řisuty;50.217;14.017;217;2019-06-03 14:44:00;40;CTU portable rainfall simulator;mustard;fodder crops single year;dry;NA;91.000;NA;60.000;0:27:00;1.249;3270.000;54.000;55.439;345.024
+Řisuty;50.217;14.017;218;2019-06-03 16:00:00;40;CTU portable rainfall simulator;mustard;fodder crops single year;very wet;NA;91.000;NA;60.000;0:06:00;1.249;2010.000;33.500;156.520;494.373
+Řisuty;50.217;14.017;219;2019-06-04 09:38:00;38;CTU portable rainfall simulator;buckwheat;summer cereals;dry;NA;100.000;NA;60.000;0:10:30;1.212;2280.000;38.000;30.280;121.729
+Řisuty;50.217;14.017;220;2019-06-04 10:36:00;38;CTU portable rainfall simulator;buckwheat;summer cereals;very wet;NA;100.000;NA;60.000;0:01:00;1.212;1710.000;28.500;145.828;532.598
+Řisuty;50.217;14.017;221;2019-06-04 11:35:00;37;CTU portable rainfall simulator;fiddleneck;fodder crops single year;dry;NA;100.000;NA;60.000;0:04:00;1.212;1890.000;31.500;61.958;133.748
+Řisuty;50.217;14.017;222;2019-06-04 12:26:00;37;CTU portable rainfall simulator;fiddleneck;fodder crops single year;very wet;NA;100.000;NA;60.000;0:01:00;1.212;1710.000;28.500;206.548;198.982
+Řisuty;50.217;14.017;223;2019-06-11 10:35:00;36;CTU portable rainfall simulator;corn;summer cereals;dry;35.000;13.000;NA;60.000;0:01:00;1.269;1710.000;28.500;333.330;5399.581
+Řisuty;50.217;14.017;224;2019-06-11 11:23:00;36;CTU portable rainfall simulator;corn;summer cereals;very wet;42.000;13.000;NA;60.000;0:00:00;1.269;1650.000;27.500;384.321;5139.212
+Řisuty;50.217;14.017;225;2019-06-11 12:44:00;41;CTU portable rainfall simulator;cultivated fallow;without cover;dry;21.000;NA;NA;60.000;0:04:00;1.153;1890.000;31.500;306.652;7407.033
+Řisuty;50.217;14.017;226;2019-06-11 13:33:00;41;CTU portable rainfall simulator;cultivated fallow;without cover;very wet;37.000;NA;NA;60.000;0:00:00;1.269;1650.000;27.500;389.750;8610.386
+Řisuty;50.217;14.017;227;2019-07-02 10:06:00;41;CTU portable rainfall simulator;cultivated fallow;without cover;dry;15.000;NA;NA;60.000;0:04:00;1.153;1890.000;31.500;140.953;4619.236
+Řisuty;50.217;14.017;228;2019-07-02 10:56:00;41;CTU portable rainfall simulator;cultivated fallow;without cover;very wet;47.000;NA;NA;60.000;0:00:00;1.269;1650.000;27.500;260.163;6212.766
+Řisuty;50.217;14.017;229;2019-07-02 11:54:00;40;CTU portable rainfall simulator;mustard;fodder crops single year;dry;10.000;100.000;NA;60.000;0:17:00;1.212;2670.000;44.500;127.364;528.538
+Řisuty;50.217;14.017;230;2019-07-02 13:04:00;40;CTU portable rainfall simulator;mustard;fodder crops single year;very wet;48.000;100.000;NA;60.000;0:01:00;1.212;1710.000;28.500;267.086;633.215
+Řisuty;50.217;14.017;231;2019-07-02 14:02:00;38;CTU portable rainfall simulator;buckwheat;summer cereals;dry;12.000;100.000;NA;60.000;0:08:00;1.212;2130.000;35.500;33.510;169.838
+Řisuty;50.217;14.017;232;2019-07-02 14:56:00;38;CTU portable rainfall simulator;buckwheat;summer cereals;very wet;49.000;100.000;NA;60.000;0:01:00;1.212;1710.000;28.500;196.048;513.208
+Řisuty;50.217;14.017;233;2019-07-02 15:50:00;37;CTU portable rainfall simulator;fiddleneck;fodder crops single year;dry;11.000;100.000;NA;60.000;0:35:00;1.212;3750.000;62.500;104.669;175.872
+Řisuty;50.217;14.017;234;2019-07-02 17:06:00;37;CTU portable rainfall simulator;fiddleneck;fodder crops single year;very wet;47.000;100.000;NA;60.000;0:00:00;1.212;1650.000;27.500;260.204;371.388
+Řisuty;50.217;14.017;235;2019-07-03 09:35:00;36;CTU portable rainfall simulator;corn;summer cereals;dry;12.000;90.000;NA;60.000;0:03:00;1.269;1830.000;30.500;119.731;2852.832
+Řisuty;50.217;14.017;236;2019-07-03 10:20:00;36;CTU portable rainfall simulator;corn;summer cereals;very wet;45.000;90.000;NA;60.000;0:01:00;1.269;1710.000;28.500;222.602;3571.989
+Řisuty;50.217;14.017;240;2019-07-03 12:35:00;42;CTU portable rainfall simulator;cultivated fallow;without cover;very wet;42.000;NA;NA;60.000;0:05:00;1.269;1950.000;32.500;30.342;19.150
+Řisuty;50.217;14.017;241;2019-07-03 13:00:00;43;CTU portable rainfall simulator;cultivated fallow;without cover;dry;15.000;NA;NA;60.000;0:03:00;1.153;1830.000;30.500;50.575;307.918
+Řisuty;50.217;14.017;242;2019-07-03 14:10:00;43;CTU portable rainfall simulator;cultivated fallow;without cover;very wet;42.000;NA;NA;60.000;0:01:00;1.269;1710.000;28.500;248.839;983.249
+Řisuty;50.217;14.017;243;2019-07-30 10:46:00;41;CTU portable rainfall simulator;cultivated fallow;without cover;dry;42.000;NA;NA;60.000;0:04:00;1.153;2040.000;34.000;427.570;18672.925
+Řisuty;50.217;14.017;244;2019-07-30 11:37:00;41;CTU portable rainfall simulator;cultivated fallow;without cover;very wet;47.000;NA;NA;60.000;0:00:00;1.269;1650.000;27.500;458.997;17054.388
+Řisuty;50.217;14.017;247;2019-07-30 13:33:00;44;CTU portable rainfall simulator;winter rape;oil-crops;dry;18.000;NA;NA;60.000;0:01:00;1.269;1710.000;28.500;99.512;306.344
+Řisuty;50.217;14.017;248;2019-07-30 14:19:00;44;CTU portable rainfall simulator;winter rape;oil-crops;very wet;38.000;NA;NA;60.000;0:01:00;1.269;1710.000;28.500;194.679;371.806
+Řisuty;50.217;14.017;249;2019-07-30 15:24:00;45;CTU portable rainfall simulator;winter rape;oil-crops;dry;22.000;NA;NA;60.000;0:03:00;1.269;1830.000;30.500;151.895;204.113
+Řisuty;50.217;14.017;250;2019-07-30 16:12:00;45;CTU portable rainfall simulator;winter rape;oil-crops;very wet;41.000;NA;NA;60.000;0:02:00;1.269;1770.000;29.500;239.581;172.322
+Řisuty;50.217;14.017;251;2019-07-30 17:13:00;46;CTU portable rainfall simulator;winter rape;oil-crops;dry;10.000;NA;NA;60.000;0:22:00;1.269;2970.000;49.500;43.636;168.148
+Řisuty;50.217;14.017;252;2019-07-30 18:20:00;46;CTU portable rainfall simulator;winter rape;oil-crops;very wet;33.000;NA;NA;60.000;0:01:00;1.269;1710.000;28.500;131.645;517.154
+Řisuty;50.217;14.017;257;2019-07-31 09:01:00;43;CTU portable rainfall simulator;cultivated fallow;without cover;dry;30.000;NA;NA;60.000;0:26:00;1.153;3210.000;53.500;73.031;297.528
+Řisuty;50.217;14.017;258;2019-07-31 10:20:00;43;CTU portable rainfall simulator;cultivated fallow;without cover;very wet;42.000;NA;NA;60.000;0:01:00;1.269;1710.000;28.500;156.628;303.982
+Řisuty;50.217;14.017;255;2019-07-31 11:11:00;42;CTU portable rainfall simulator;cultivated fallow;without cover;dry;32.000;NA;NA;60.000;0:42:00;1.153;4170.000;69.500;139.358;47.706
+Řisuty;50.217;14.017;256;2019-07-31 12:39:00;42;CTU portable rainfall simulator;cultivated fallow;without cover;very wet;41.000;NA;NA;60.000;0:01:00;1.269;1710.000;28.500;155.523;34.298
+Řisuty;50.217;14.017;253;2019-07-31 13:53:00;36;CTU portable rainfall simulator;corn;summer cereals;dry;28.000;40.000;NA;60.000;0:02:00;1.269;1770.000;29.500;229.995;4876.379
+Řisuty;50.217;14.017;254;2019-07-31 14:39:00;36;CTU portable rainfall simulator;corn;summer cereals;very wet;45.000;40.000;NA;60.000;0:01:00;1.269;1710.000;28.500;336.856;4803.732
+Řisuty;50.217;14.017;259;2019-11-25 09:39:00;35;CTU portable rainfall simulator;winter rye;winter cereals;dry;28.000;NA;NA;60.000;0:17:00;1.237;2670.000;44.500;105.442;359.394
+Řisuty;50.217;14.017;260;2019-11-25 10:39:00;35;CTU portable rainfall simulator;winter rye;winter cereals;very wet;48.000;NA;NA;60.000;0:01:00;1.237;1710.000;28.000;242.550;1619.028
+Řisuty;50.217;14.017;261;2019-11-25 11:28:00;34;CTU portable rainfall simulator;winter rape;oil-crops;dry;25.000;NA;NA;60.000;0:31:00;1.200;3510.000;58.500;82.689;286.664
+Řisuty;50.217;14.017;262;2019-11-25 12:45:00;34;CTU portable rainfall simulator;winter rape;oil-crops;very wet;42.000;NA;NA;60.000;0:03:00;1.200;1830.000;30.000;74.381;209.860
+Řisuty;50.217;14.017;316;2020-04-08 11:26:00;34;CTU portable rainfall simulator;winter rape;oil-crops;very wet;39.730;NA;NA;60.000;0:15:00;1.200;2550.000;42.500;93.235;323.529
+Řisuty;50.217;14.017;318;2020-04-08 13:19:00;35;CTU portable rainfall simulator;winter rye;winter cereals;very wet;39.820;NA;NA;60.000;0:10:00;1.237;2250.000;37.500;116.559;110.734
+Řisuty;50.217;14.017;320;2020-04-08 15:17:00;57;CTU portable rainfall simulator;winter wheat;winter cereals;very wet;36.520;NA;NA;60.000;0:20:00;1.212;2850.000;47.500;46.395;332.085
+Řisuty;50.217;14.017;321;2020-04-08 16:37:00;56;CTU portable rainfall simulator;cultivated fallow;without cover;dry;12.200;NA;NA;NA;0:03:00;1.200;1530.000;25.500;208.354;8314.945
+Řisuty;50.217;14.017;322;2020-04-08 17:29:00;56;CTU portable rainfall simulator;cultivated fallow;without cover;very wet;22.560;NA;NA;60.000;0:00:00;1.200;1650.000;27.500;388.483;10920.099
+Řisuty;50.217;14.017;326;2020-05-15 11:23:00;57;CTU portable rainfall simulator;winter wheat;winter cereals;very wet;37.710;NA;NA;60.000;0:30:00;1.212;3450.000;57.500;31.401;70.289
+Řisuty;50.217;14.017;327;2020-05-15 13:24:00;56;CTU portable rainfall simulator;cultivated fallow;without cover;dry;13.544;NA;NA;60.000;0:01:00;1.153;1410.000;23.500;265.166;9677.916
+Řisuty;50.217;14.017;328;2020-05-15 14:08:00;56;CTU portable rainfall simulator;cultivated fallow;without cover;very wet;25.920;NA;NA;60.000;0:00:00;1.269;1680.000;28.000;408.071;9353.209
+Řisuty;50.217;14.017;329;2020-06-17 10:19:00;56;CTU portable rainfall simulator;cultivated fallow;without cover;dry;16.425;NA;NA;60.000;0:01:00;1.153;1110.000;18.500;170.980;6322.656
+Řisuty;50.217;14.017;330;2020-06-17 13:55:00;56;CTU portable rainfall simulator;cultivated fallow;without cover;very wet;NA;NA;NA;60.000;0:01:00;1.269;1710.000;28.500;423.561;10813.697
+Řisuty;50.217;14.017;331;2020-06-17 15:03:00;62;CTU portable rainfall simulator;winter rape;oil-crops;dry;11.190;NA;NA;60.000;0:08:00;1.249;2130.000;35.500;123.615;425.623
+Řisuty;50.217;14.017;332;2020-06-17 15:55:00;62;CTU portable rainfall simulator;winter rape;oil-crops;very wet;27.620;NA;NA;60.000;0:01:00;1.249;1710.000;28.500;266.874;1246.942
+Řisuty;50.217;14.017;333;2020-06-17 17:00:00;61;CTU portable rainfall simulator;corn;summer cereals;dry;13.550;NA;NA;60.000;0:04:00;1.292;1890.000;31.500;210.906;3780.478
+Řisuty;50.217;14.017;334;2020-06-17 17:48:00;61;CTU portable rainfall simulator;corn;summer cereals;very wet;29.620;NA;NA;60.000;0:00:00;1.292;1650.000;27.500;331.523;5106.009
+Řisuty;50.217;14.017;336;2020-06-18 09:38:00;63;CTU portable rainfall simulator;corn;summer cereals;very wet;35.480;NA;NA;60.000;0:30:00;1.220;3450.000;57.500;39.509;146.362
+Řisuty;50.217;14.017;339;2020-06-18 14:49:00;65;CTU portable rainfall simulator;sunflower;oil-crops;dry;9.680;NA;NA;60.000;0:00:00;1.145;1680.000;28.000;216.180;3470.484
+Řisuty;50.217;14.017;340;2020-06-18 15:33:00;65;CTU portable rainfall simulator;sunflower;oil-crops;very wet;26.590;NA;NA;60.000;0:00:00;1.145;1680.000;28.000;291.543;3777.389
+Řisuty;50.217;14.017;341;2020-06-23 09:49:00;56;CTU portable rainfall simulator;cultivated fallow;without cover;dry;14.578;NA;NA;60.000;0:01:00;1.153;1710.000;28.500;345.109;10091.269
+Řisuty;50.217;14.017;342;2020-06-23 10:35:00;56;CTU portable rainfall simulator;cultivated fallow;without cover;very wet;27.422;NA;NA;60.000;0:00:00;1.269;1680.000;28.000;410.305;8493.359
+Řisuty;50.217;14.017;343;2020-06-23 11:54:00;66;CTU portable rainfall simulator;sunflower;oil-crops;dry;12.720;NA;NA;60.000;0:08:00;1.325;2130.000;35.500;77.876;335.570
+Řisuty;50.217;14.017;344;2020-06-23 12:50:00;66;CTU portable rainfall simulator;sunflower;oil-crops;very wet;22.020;NA;NA;60.000;0:00:00;1.325;1680.000;28.000;154.107;456.202
+Řisuty;50.217;14.017;346;2020-06-23 14:36:00;67;CTU portable rainfall simulator;sorghum;summer cereals;very wet;26.260;NA;NA;60.000;0:05:00;1.183;1950.000;32.500;60.574;368.466
+Řisuty;50.217;14.017;347;2020-06-24 08:34:00;68;CTU portable rainfall simulator;sorghum;summer cereals;dry;10.370;NA;NA;60.000;0:02:00;1.304;1770.000;29.500;174.582;2742.164
+Řisuty;50.217;14.017;348;2020-06-24 09:20:00;68;CTU portable rainfall simulator;sorghum;summer cereals;very wet;23.444;NA;NA;60.000;0:01:00;1.304;1710.000;28.500;289.283;2401.778
+Řisuty;50.217;14.017;351;2020-06-24 12:43:00;69;CTU portable rainfall simulator;corn;summer cereals;dry;11.380;NA;NA;NA;0:10:00;1.265;2250.000;32.500;79.229;306.932
+Řisuty;50.217;14.017;352;2020-06-24 13:51:00;69;CTU portable rainfall simulator;corn;summer cereals;very wet;28.670;NA;NA;60.000;0:01:00;1.265;1740.000;29.000;262.637;719.607
+Řisuty;50.217;14.017;353;2020-07-08 09:13:00;56;CTU portable rainfall simulator;cultivated fallow;without cover;dry;11.333;NA;NA;60.000;0:02:00;1.153;1770.000;29.500;256.422;7625.088
+Řisuty;50.217;14.017;354;2020-07-08 09:59:00;56;CTU portable rainfall simulator;cultivated fallow;without cover;very wet;28.450;NA;NA;65.000;0:01:00;1.269;1710.000;30.875;402.189;7986.305
+Řisuty;50.217;14.017;356;2020-07-08 11:26:00;59;CTU portable rainfall simulator;corn;summer cereals;very wet;28.280;NA;NA;60.000;0:06:00;1.220;2010.000;33.500;36.144;147.120
+Řisuty;50.217;14.017;359;2020-07-08 14:13:00;71;CTU portable rainfall simulator;sorghum;summer cereals;dry;8.870;NA;NA;60.000;0:16:00;1.183;2610.000;43.500;104.725;709.741
+Řisuty;50.217;14.017;360;2020-07-08 15:13:00;71;CTU portable rainfall simulator;sorghum;summer cereals;very wet;23.260;NA;NA;60.000;0:02:00;1.183;1770.000;29.500;276.705;813.393
+Řisuty;50.217;14.017;363;2020-08-06 09:24:00;56;CTU portable rainfall simulator;cultivated fallow;without cover;dry;15.080;NA;NA;60.000;0:01:00;1.307;1710.000;28.500;358.001;9725.015
+Řisuty;50.217;14.017;364;2020-08-06 10:05:00;56;CTU portable rainfall simulator;cultivated fallow;without cover;very wet;23.575;NA;NA;60.000;0:01:00;1.307;1710.000;28.500;396.435;8949.960
+Řisuty;50.217;14.017;365;2020-08-06 11:01:00;61;CTU portable rainfall simulator;corn;summer cereals;dry;10.140;NA;35;60.000;0:05:00;1.254;1950.000;32.500;55.825;105.420
+Řisuty;50.217;14.017;366;2020-08-06 11:52:00;61;CTU portable rainfall simulator;corn;summer cereals;very wet;17.330;NA;35;60.000;0:01:00;1.254;1710.000;28.000;113.591;136.131
+Řisuty;50.217;14.017;368;2020-08-06 13:38:00;63;CTU portable rainfall simulator;corn;summer cereals;very wet;19.490;NA;35;60.000;0:13:00;1.355;2430.000;40.500;90.793;350.932
+Řisuty;50.217;14.017;370;2020-08-06 15:27:00;64;CTU portable rainfall simulator;sunflower;oil-crops;very wet;31.550;NA;57;60.000;0:13:00;1.350;2430.000;40.500;48.919;267.238
+Řisuty;50.217;14.017;372;2020-08-06 17:13:00;69;CTU portable rainfall simulator;corn;summer cereals;very wet;22.820;NA;35;60.000;0:04:00;1.283;1890.000;31.500;75.570;70.836
+Řisuty;50.217;14.017;373;2020-08-19 09:20:00;67;CTU portable rainfall simulator;sorghum;summer cereals;dry;14.660;NA;NA;60.000;0:03:00;1.183;1830.000;30.500;29.360;93.264
+Řisuty;50.217;14.017;374;2020-08-19 10:06:00;67;CTU portable rainfall simulator;sorghum;summer cereals;very wet;25.540;NA;NA;60.000;0:01:00;1.183;1710.000;28.500;46.079;91.421
+Řisuty;50.217;14.017;375;2020-08-19 11:13:00;68;CTU portable rainfall simulator;sorghum;summer cereals;dry;13.810;NA;NA;60.000;0:01:00;1.304;1710.000;28.500;164.784;897.534
+Řisuty;50.217;14.017;376;2020-08-19 11:59:00;68;CTU portable rainfall simulator;sorghum;summer cereals;very wet;21.680;NA;NA;60.000;0:01:00;1.304;1710.000;28.000;229.876;768.029
+Řisuty;50.217;14.017;377;2020-08-19 12:58:00;56;CTU portable rainfall simulator;cultivated fallow;without cover;dry;21.133;NA;NA;60.000;0:03:00;1.256;1830.000;30.000;357.704;14054.109
+Řisuty;50.217;14.017;378;2020-08-19 13:45:00;56;CTU portable rainfall simulator;cultivated fallow;without cover;very wet;29.967;NA;NA;60.000;0:01:00;1.256;1710.000;28.500;381.933;11220.780
+Řisuty;50.217;14.017;382;2020-08-19 16:59:00;70;CTU portable rainfall simulator;sorghum;summer cereals;very wet;29.660;NA;NA;60.000;0:05:00;1.307;1950.000;32.500;24.989;70.198
+Řisuty;50.217;14.017;383;2020-09-09 09:25:00;69;CTU portable rainfall simulator;corn;summer cereals;dry;6.330;NA;NA;60.000;0:08:00;1.265;2130.000;35.500;72.736;30.772
+Řisuty;50.217;14.017;384;2020-09-09 10:16:00;69;CTU portable rainfall simulator;corn;summer cereals;very wet;16.940;NA;NA;60.000;0:01:00;1.265;1710.000;28.500;203.743;87.928
+Řisuty;50.217;14.017;386;2020-09-09 11:53:00;70;CTU portable rainfall simulator;sorghum;summer cereals;very wet;32.040;NA;NA;60.000;0:04:00;1.289;1890.000;31.500;29.647;47.194
+Řisuty;50.217;14.017;388;2020-09-09 13:42:00;64;CTU portable rainfall simulator;sunflower;oil-crops;very wet;26.550;NA;NA;60.000;0:07:00;1.294;2070.000;34.500;93.318;379.231
+Řisuty;50.217;14.017;389;2020-09-09 14:34:00;63;CTU portable rainfall simulator;corn;summer cereals;dry;8.900;NA;NA;60.000;0:14:00;1.249;2490.000;41.500;73.200;104.009
+Řisuty;50.217;14.017;390;2020-09-09 15:33:00;63;CTU portable rainfall simulator;corn;summer cereals;very wet;22.180;NA;NA;60.000;0:01:00;1.249;1560.000;26.000;154.625;237.061
+Řisuty;50.217;14.017;392;2020-09-09 17:15:00;72;CTU portable rainfall simulator;sorghum;summer cereals;very wet;23.850;NA;NA;NA;0:21:00;1.358;2910.000;44.500;44.087;291.253
+Řisuty;50.217;14.017;393;2020-09-10 10:14:00;61;CTU portable rainfall simulator;corn;summer cereals;dry;6.350;NA;NA;60.000;0:04:00;1.282;1890.000;31.500;49.632;96.272
+Řisuty;50.217;14.017;394;2020-09-10 11:01:00;61;CTU portable rainfall simulator;corn;summer cereals;very wet;26.650;NA;NA;60.000;0:01:00;1.282;1560.000;26.000;115.533;169.617
+Řisuty;50.217;14.017;395;2020-09-10 11:57:00;68;CTU portable rainfall simulator;sorghum;summer cereals;dry;6.780;NA;NA;60.000;0:07:00;1.283;2070.000;34.500;97.887;379.544
+Řisuty;50.217;14.017;396;2020-09-10 12:48:00;68;CTU portable rainfall simulator;sorghum;summer cereals;very wet;21.010;NA;NA;60.000;0:01:00;1.283;1710.000;28.500;187.071;723.377
+Řisuty;50.217;14.017;399;2020-09-10 15:19:00;56;CTU portable rainfall simulator;cultivated fallow;without cover;dry;13.100;NA;NA;60.000;0:03:00;1.153;1830.000;30.500;298.624;13629.680
+Řisuty;50.217;14.017;400;2020-09-10 16:06:00;56;CTU portable rainfall simulator;cultivated fallow;without cover;very wet;25.100;NA;NA;60.000;0:01:00;1.269;1710.000;28.500;395.263;13683.017
+Řisuty;50.217;14.017;562;2021-05-26 11:38:00;155;CTU portable rainfall simulator;green peas;legumes;dry;22.940;NA;NA;NA;0:11:00;1.238;2310.000;41.722;207.438;3999.445
+Řisuty;50.217;14.017;561;2021-05-26 12:33:00;155;CTU portable rainfall simulator;green peas;legumes;very wet;37.230;NA;NA;65.530;0:01:00;1.238;1710.000;31.127;309.103;5482.784
+Řisuty;50.217;14.017;563;2021-05-26 15:49:00;154;CTU portable rainfall simulator;cultivated fallow;without cover;dry;16.450;NA;NA;64.730;0:06:00;NA;2010.000;36.141;309.544;5589.953
+Řisuty;50.217;14.017;564;2021-05-26 16:39:00;154;CTU portable rainfall simulator;cultivated fallow;without cover;very wet;25.770;NA;NA;NA;0:01:00;NA;1710.000;30.956;420.899;7171.844
+Řisuty;50.217;14.017;569;2021-07-01 09:46:00;157;CTU portable rainfall simulator;sorghum;summer cereals;dry;23.170;NA;NA;60.000;0:05:00;1.278;1950.000;32.500;124.228;418.820
+Řisuty;50.217;14.017;570;2021-07-01 10:34:00;157;CTU portable rainfall simulator;sorghum;summer cereals;very wet;34.070;NA;NA;60.000;0:01:00;1.278;1710.000;28.500;251.565;500.437
+Řisuty;50.217;14.017;571;2021-07-01 11:27:00;154;CTU portable rainfall simulator;cultivated fallow;without cover;dry;20.720;NA;NA;60.000;0:02:00;1.289;1770.000;29.500;401.502;8358.428
+Řisuty;50.217;14.017;572;2021-07-01 12:14:00;154;CTU portable rainfall simulator;cultivated fallow;without cover;very wet;29.130;NA;NA;60.000;0:00:30;1.327;1680.000;28.000;439.655;8250.203
+Řisuty;50.217;14.017;575;2021-07-01 13:53:00;158;CTU portable rainfall simulator;corn;summer cereals;dry;24.900;NA;NA;60.000;0:04:00;1.281;1890.000;31.500;47.089;308.178
+Řisuty;50.217;14.017;576;2021-07-01 14:41:00;158;CTU portable rainfall simulator;corn;summer cereals;very wet;35.640;NA;NA;60.000;0:01:00;1.281;1710.000;28.500;105.875;641.045
+Řisuty;50.217;14.017;577;2021-07-01 15:27:00;159;CTU portable rainfall simulator;corn;summer cereals;dry;27.820;NA;NA;60.000;0:07:00;1.260;2070.000;34.500;72.854;643.529
+Řisuty;50.217;14.017;578;2021-07-01 16:20:00;159;CTU portable rainfall simulator;corn;summer cereals;very wet;33.200;NA;NA;60.000;0:20:00;1.260;1770.000;29.500;134.694;525.446
+Řisuty;50.217;14.017;579;2021-07-13 10:19:00;154;CTU portable rainfall simulator;cultivated fallow;without cover;dry;13.590;NA;NA;60.000;0:02:00;NA;1770.000;29.500;365.256;10733.608
+Řisuty;50.217;14.017;580;2021-07-13 11:11:00;154;CTU portable rainfall simulator;cultivated fallow;without cover;very wet;24.940;NA;NA;60.000;0:01:00;NA;1710.000;28.500;401.538;9835.505
+Řisuty;50.217;14.017;581;2021-07-13 12:11:00;155;CTU portable rainfall simulator;green peas;legumes;dry;21.770;NA;NA;60.000;0:13:00;1.405;2430.000;40.500;92.297;199.271
+Řisuty;50.217;14.017;582;2021-07-13 13:09:00;155;CTU portable rainfall simulator;green peas;legumes;very wet;36.570;NA;NA;60.000;0:00:30;1.405;1680.000;28.000;191.008;570.654
+Řisuty;50.217;14.017;583;2021-07-13 14:21:00;160;CTU portable rainfall simulator;sorghum;summer cereals;dry;18.760;NA;NA;60.000;0:20:00;1.307;2850.000;47.500;36.684;86.161
+Řisuty;50.217;14.017;584;2021-07-13 15:24:00;160;CTU portable rainfall simulator;sorghum;summer cereals;very wet;34.030;NA;NA;60.000;0:03:00;1.307;1830.000;30.500;78.032;165.806
+Řisuty;50.217;14.017;585;2021-07-13 16:20:00;161;CTU portable rainfall simulator;sunflower;oil-crops;dry;16.980;NA;NA;60.000;0:20:00;1.306;2850.000;47.500;73.719;459.976
+Řisuty;50.217;14.017;586;2021-07-13 17:22:00;161;CTU portable rainfall simulator;sunflower;oil-crops;very wet;33.030;NA;NA;60.000;0:02:00;1.306;1770.000;29.500;144.939;929.069
+Řisuty;50.217;14.017;587;2021-07-15 09:16:00;162;CTU portable rainfall simulator;corn;summer cereals;dry;27.170;NA;NA;60.000;0:01:00;1.234;1710.000;28.500;128.779;431.988
+Řisuty;50.217;14.017;588;2021-07-15 10:01:00;162;CTU portable rainfall simulator;corn;summer cereals;very wet;31.670;NA;NA;60.000;0:01:00;1.234;1710.000;28.500;251.711;902.767
+Řisuty;50.217;14.017;589;2021-07-15 10:47:00;163;CTU portable rainfall simulator;sorghum;summer cereals;dry;31.760;NA;NA;60.000;0:01:00;1.418;1710.000;28.500;239.762;323.223
+Řisuty;50.217;14.017;590;2021-07-15 11:32:00;163;CTU portable rainfall simulator;sorghum;summer cereals;very wet;37.210;NA;NA;60.000;0:02:00;1.418;1770.000;29.500;328.780;374.679
+Řisuty;50.217;14.017;591;2021-07-15 12:26:00;164;CTU portable rainfall simulator;corn;summer cereals;dry;31.760;NA;NA;60.000;0:28:00;1.342;3330.000;55.500;173.476;156.929
+Řisuty;50.217;14.017;592;2021-07-15 13:35:00;164;CTU portable rainfall simulator;corn;summer cereals;very wet;40.720;NA;NA;60.000;0:04:00;1.342;1890.000;31.500;205.372;135.063
+Řisuty;50.217;14.017;593;2021-07-20 10:09:00;154;CTU portable rainfall simulator;cultivated fallow;without cover;dry;16.210;NA;NA;60.000;0:02:00;1.271;1770.000;29.500;364.051;11159.461
+Řisuty;50.217;14.017;594;2021-07-20 11:01:00;154;CTU portable rainfall simulator;cultivated fallow;without cover;very wet;28.080;NA;NA;60.000;0:01:00;1.271;1710.000;28.500;434.260;14607.903
+Řisuty;50.217;14.017;595;2021-07-20 12:09:00;165;CTU portable rainfall simulator;sunflower;oil-crops;dry;27.650;NA;NA;60.000;0:03:00;1.392;1830.000;30.500;273.967;305.221
+Řisuty;50.217;14.017;596;2021-07-20 13:00:00;165;CTU portable rainfall simulator;sunflower;oil-crops;very wet;34.740;NA;NA;60.000;0:00:30;1.392;1650.000;27.500;381.944;417.810
+Řisuty;50.217;14.017;597;2021-07-20 13:54:00;166;CTU portable rainfall simulator;sorghum;summer cereals;dry;25.800;NA;NA;60.000;0:09:00;1.370;2190.000;36.500;143.380;323.192
+Řisuty;50.217;14.017;598;2021-07-20 15:04:00;166;CTU portable rainfall simulator;sorghum;summer cereals;very wet;35.800;NA;NA;60.000;0:00:30;1.370;1650.000;27.500;289.556;553.488
+Řisuty;50.217;14.017;599;2021-07-20 16:01:00;167;CTU portable rainfall simulator;corn;summer cereals;dry;26.250;NA;NA;60.000;0:11:00;1.542;2310.000;38.500;203.278;474.970
+Řisuty;50.217;14.017;600;2021-07-20 17:00:00;167;CTU portable rainfall simulator;corn;summer cereals;very wet;34.870;NA;NA;60.000;0:02:00;1.542;1770.000;29.500;322.413;1098.601
+Řisuty;50.217;14.017;601;2021-07-28 09:16:00;154;CTU portable rainfall simulator;cultivated fallow;without cover;dry;13.710;NA;NA;60.000;0:04:00;1.148;1890.000;31.500;364.004;14000.935
+Řisuty;50.217;14.017;602;2021-07-28 10:05:00;154;CTU portable rainfall simulator;cultivated fallow;without cover;very wet;25.800;NA;NA;60.000;0:01:00;1.148;1710.000;28.500;352.946;10194.731
+Řisuty;50.217;14.017;603;2021-07-28 10:56:00;157;CTU portable rainfall simulator;sorghum;summer cereals;dry;11.050;NA;NA;60.000;0:12:00;1.451;2370.000;39.500;106.659;168.922
+Řisuty;50.217;14.017;604;2021-07-28 11:54:00;157;CTU portable rainfall simulator;sorghum;summer cereals;very wet;32.010;NA;NA;60.000;0:01:00;1.451;1710.000;28.500;266.186;418.611
+Řisuty;50.217;14.017;605;2021-07-28 12:47:00;158;CTU portable rainfall simulator;corn;summer cereals;dry;12.400;NA;NA;60.000;0:20:00;1.383;2850.000;47.500;119.596;354.768
+Řisuty;50.217;14.017;606;2021-07-28 13:50:00;158;CTU portable rainfall simulator;corn;summer cereals;very wet;30.680;NA;NA;60.000;0:01:00;1.383;1710.000;28.500;243.733;984.164
+Řisuty;50.217;14.017;607;2021-07-28 14:36:00;159;CTU portable rainfall simulator;corn;summer cereals;dry;12.170;NA;NA;60.000;0:06:00;1.439;2010.000;33.500;98.431;643.013
+Řisuty;50.217;14.017;608;2021-07-28 15:25:00;159;CTU portable rainfall simulator;corn;summer cereals;very wet;30.900;NA;NA;60.000;0:01:00;1.439;1710.000;28.500;248.287;1775.132
+Řisuty;50.217;14.017;609;2021-08-03 12:05:00;154;CTU portable rainfall simulator;cultivated fallow;without cover;dry;25.780;NA;NA;60.000;0:04:00;1.329;1890.000;31.500;467.850;8443.759
+Řisuty;50.217;14.017;610;2021-08-03 12:34:00;154;CTU portable rainfall simulator;cultivated fallow;without cover;very wet;34.000;NA;NA;60.000;0:01:00;1.329;1710.000;28.500;425.375;5036.422
+Řisuty;50.217;14.017;613;2021-08-04 15:00:00;161;CTU portable rainfall simulator;sunflower;oil-crops;dry;NA;NA;NA;60.000;0:03:00;NA;1890.000;31.500;36.059;176.584
+Řisuty;50.217;14.017;614;2021-08-04 15:48:00;161;CTU portable rainfall simulator;sunflower;oil-crops;very wet;NA;NA;NA;60.000;0:01:00;NA;1710.000;28.500;103.194;561.822
+Řisuty;50.217;14.017;615;2021-08-12 09:37:00;154;CTU portable rainfall simulator;cultivated fallow;without cover;dry;16.530;NA;NA;60.000;0:03:00;NA;1830.000;30.500;414.600;11372.816
+Řisuty;50.217;14.017;616;2021-08-12 10:22:00;154;CTU portable rainfall simulator;cultivated fallow;without cover;very wet;23.810;NA;NA;60.000;0:10:00;NA;1710.000;28.500;433.532;8844.395
+Řisuty;50.217;14.017;617;2021-08-12 11:38:00;162;CTU portable rainfall simulator;corn;summer cereals;dry;12.390;NA;NA;60.000;0:07:00;1.311;2070.000;34.500;75.600;391.447
+Řisuty;50.217;14.017;618;2021-08-12 12:28:00;162;CTU portable rainfall simulator;corn;summer cereals;very wet;18.910;NA;NA;60.000;0:01:00;1.311;1710.000;28.500;204.352;854.459
+Řisuty;50.217;14.017;619;2021-08-12 13:27:00;163;CTU portable rainfall simulator;sorghum;summer cereals;dry;19.200;NA;NA;60.000;0:19:00;1.433;2790.000;46.500;65.806;30.084
+Řisuty;50.217;14.017;620;2021-08-12 14:29:00;163;CTU portable rainfall simulator;sorghum;summer cereals;very wet;28.160;NA;NA;60.000;0:01:00;1.433;1710.000;28.500;193.564;35.833
+Řisuty;50.217;14.017;622;2021-08-12 16:05:00;164;CTU portable rainfall simulator;corn;summer cereals;very wet;32.730;NA;NA;60.000;0:01:00;1.360;1710.000;28.500;50.342;32.882
+Řisuty;50.217;14.017;624;2021-09-02 09:55:00;159;CTU portable rainfall simulator;corn;summer cereals;dry;9.030;NA;NA;60.000;0:03:00;1.258;1710.000;28.500;153.350;612.722
+Řisuty;50.217;14.017;625;2021-09-02 10:43:00;159;CTU portable rainfall simulator;corn;summer cereals;very wet;24.370;NA;NA;60.000;0:00:30;1.258;1680.000;28.000;305.844;1451.248
+Řisuty;50.217;14.017;626;2021-09-02 11:46:00;158;CTU portable rainfall simulator;corn;summer cereals;dry;10.390;NA;NA;60.000;0:01:00;1.436;1710.000;28.500;110.125;654.592
+Řisuty;50.217;14.017;627;2021-09-02 12:30:00;158;CTU portable rainfall simulator;corn;summer cereals;very wet;22.390;NA;NA;60.000;0:01:00;1.436;1710.000;28.500;261.965;1345.530
+Řisuty;50.217;14.017;628;2021-09-02 13:39:00;157;CTU portable rainfall simulator;sorghum;summer cereals;dry;10.700;NA;NA;60.000;0:02:00;1.455;1770.000;29.500;80.878;298.311
+Řisuty;50.217;14.017;629;2021-09-02 14:25:00;157;CTU portable rainfall simulator;sorghum;summer cereals;very wet;27.460;NA;NA;60.000;0:00:30;1.455;1680.000;28.000;271.663;657.477
+Řisuty;50.217;14.017;630;2021-09-02 15:26:00;154;CTU portable rainfall simulator;cultivated fallow;without cover;dry;17.050;NA;NA;60.000;0:04:00;1.329;1890.000;31.500;350.046;12946.146
+Řisuty;50.217;14.017;631;2021-09-02 16:15:00;154;CTU portable rainfall simulator;cultivated fallow;without cover;very wet;26.800;NA;NA;60.000;0:01:00;1.329;1710.000;28.500;415.213;11245.188
+Řisuty;50.217;14.017;632;2021-09-03 08:41:00;162;CTU portable rainfall simulator;corn;summer cereals;dry;11.610;NA;NA;60.000;0:04:00;NA;1890.000;31.500;121.175;398.173
+Řisuty;50.217;14.017;633;2021-09-03 09:31:00;162;CTU portable rainfall simulator;corn;summer cereals;very wet;17.700;NA;NA;60.000;0:01:00;NA;1710.000;28.500;298.784;782.176
+Řisuty;50.217;14.017;634;2021-09-03 10:32:00;161;CTU portable rainfall simulator;sunflower;oil-crops;dry;11.350;NA;NA;60.000;0:04:00;1.276;1890.000;31.500;80.794;688.320
+Řisuty;50.217;14.017;635;2021-09-03 11:21:00;161;CTU portable rainfall simulator;sunflower;oil-crops;very wet;20.490;NA;NA;60.000;0:01:00;1.276;1710.000;28.500;251.568;1046.123
+Řisuty;50.217;14.017;636;2021-09-03 12:27:00;160;CTU portable rainfall simulator;sorghum;summer cereals;dry;13.130;NA;NA;60.000;0:03:00;1.360;1830.000;30.500;54.047;418.358
+Řisuty;50.217;14.017;637;2021-09-03 13:15:00;160;CTU portable rainfall simulator;sorghum;summer cereals;very wet;19.360;NA;NA;60.000;0:02:00;1.360;1770.000;29.500;111.884;344.412
+Řisuty;50.217;14.017;640;2022-05-31 12:30:00;170;CTU portable rainfall simulator;cultivated fallow;without cover;dry;10.127;NA;NA;60.000;0:10:00;1.098;2250.000;37.500;241.349;7400.343
+Řisuty;50.217;14.017;643;2022-05-31 12:58:00;171;CTU small portable rainfall simulator (9550);cultivated fallow;without cover;dry;NA;NA;NA;60.000;0:08:00;1.098;2130.000;35.500;23.272;425.809
+Řisuty;50.217;14.017;642;2022-05-31 13:25:00;170;CTU portable rainfall simulator;cultivated fallow;without cover;very wet;32.903;NA;NA;60.000;0:01:00;1.098;1710.000;28.500;409.096;8686.074
+Řisuty;50.217;14.017;644;2022-05-31 13:48:00;171;CTU small portable rainfall simulator (9550);cultivated fallow;without cover;very wet;NA;NA;NA;60.000;0:00:30;1.098;1680.000;28.000;24.742;414.767
+Řisuty;50.217;14.017;645;2022-05-31 14:48:00;172;CTU small portable rainfall simulator (9550);cultivated fallow;without cover;dry;NA;NA;NA;60.000;0:16:00;1.098;2610.000;43.500;17.578;232.976
+Řisuty;50.217;14.017;646;2022-05-31 15:48:00;172;CTU small portable rainfall simulator (9550);cultivated fallow;without cover;very wet;NA;NA;NA;60.000;0:01:00;1.098;1710.000;28.500;22.852;334.115
+Řisuty;50.217;14.017;647;2022-05-31 16:26:00;173;CTU small portable rainfall simulator (9550);cultivated fallow;without cover;dry;11.300;NA;NA;60.000;0:08:00;1.098;2130.000;35.500;21.918;167.741
+Řisuty;50.217;14.017;648;2022-05-31 17:18:00;173;CTU small portable rainfall simulator (9550);cultivated fallow;without cover;very wet;27.620;NA;NA;60.000;0:01:00;1.098;1710.000;28.500;28.542;220.848
+Řisuty;50.217;14.017;649;2022-06-15 11:08:00;170;CTU portable rainfall simulator;cultivated fallow;without cover;dry;10.850;NA;NA;60.000;0:06:00;NA;2010.000;33.500;274.602;8522.828
+Řisuty;50.217;14.017;651;2022-06-15 11:40:00;173;CTU small portable rainfall simulator (9550);cultivated fallow;without cover;dry;NA;NA;NA;60.000;0:10:00;NA;2250.000;37.500;17.192;222.727
+Řisuty;50.217;14.017;650;2022-06-15 11:58:00;170;CTU portable rainfall simulator;cultivated fallow;without cover;very wet;28.210;NA;NA;60.000;0:00:30;NA;1680.000;28.000;377.109;8232.608
+Řisuty;50.217;14.017;652;2022-06-15 12:35:00;173;CTU small portable rainfall simulator (9550);cultivated fallow;without cover;very wet;NA;NA;NA;60.000;0:01:00;NA;1710.000;28.500;19.635;224.240
+Řisuty;50.217;14.017;653;2022-06-23 16:52:00;171;CTU small portable rainfall simulator (9550);cultivated fallow;without cover;dry;9.375;NA;NA;60.000;0:10:00;NA;2250.000;37.500;23.338;314.625
+Řisuty;50.217;14.017;654;2022-06-23 17:46:00;171;CTU small portable rainfall simulator (9550);cultivated fallow;without cover;very wet;22.125;NA;NA;60.000;0:00:30;NA;1680.000;28.000;28.547;356.300
+Řisuty;50.217;14.017;655;2022-06-23 18:43:00;172;CTU small portable rainfall simulator (9550);cultivated fallow;without cover;dry;8.625;NA;NA;60.000;0:09:00;NA;2190.000;36.500;19.581;244.126
+Řisuty;50.217;14.017;656;2022-06-23 19:37:00;172;CTU small portable rainfall simulator (9550);cultivated fallow;without cover;very wet;23.825;NA;NA;NA;0:01:00;NA;1710.000;28.500;23.719;274.223
+Řisuty;50.217;14.017;657;2022-07-14 11:53:00;173;CTU small portable rainfall simulator (9550);cultivated fallow;without cover;dry;12.100;NA;NA;60.000;0:11:00;NA;2310.000;38.500;20.524;233.358
+Řisuty;50.217;14.017;663;2022-07-14 12:13:00;170;CTU portable rainfall simulator;cultivated fallow;without cover;dry;12.150;NA;NA;146.000;0:04:00;NA;6240.000;253.067;3598.397;190770.390
+Řisuty;50.217;14.017;658;2022-07-14 12:48:00;173;CTU small portable rainfall simulator (9550);cultivated fallow;without cover;very wet;27.125;NA;NA;60.000;0:01:00;NA;1710.000;28.500;24.789;250.171
+Řisuty;50.217;14.017;659;2022-07-14 13:33:00;172;CTU small portable rainfall simulator (9550);cultivated fallow;without cover;dry;13.400;NA;NA;60.000;0:09:00;NA;2190.000;36.500;13.845;128.455
+Řisuty;50.217;14.017;660;2022-07-14 14:28:00;172;CTU small portable rainfall simulator (9550);cultivated fallow;without cover;very wet;30.075;NA;NA;60.000;0:01:00;NA;1710.000;28.500;28.070;295.378
+Řisuty;50.217;14.017;661;2022-07-14 15:16:00;171;CTU small portable rainfall simulator (9550);cultivated fallow;without cover;dry;15.625;NA;NA;60.000;0:11:00;NA;2310.000;38.500;18.819;97.513
+Řisuty;50.217;14.017;662;2022-07-14 16:11:00;171;CTU small portable rainfall simulator (9550);cultivated fallow;without cover;very wet;25.175;NA;NA;60.000;0:01:00;NA;1710.000;28.500;20.781;117.462
+Řisuty;50.217;14.017;664;2022-07-20 11:44:00;173;CTU small portable rainfall simulator (9550);cultivated fallow;without cover;dry;15.850;NA;NA;60.000;0:18:00;NA;2730.000;45.500;11.656;51.241
+Řisuty;50.217;14.017;677;2022-07-20 11:54:00;177;CTU portable rainfall simulator;grass mixture;fodder crops continous;dry;8.850;NA;NA;60.000;0:17:00;1.369;2220.000;37.000;8.168;12.104
+Řisuty;50.217;14.017;668;2022-07-20 11:54:00;175;CTU portable rainfall simulator;cultivated fallow;without cover;dry;12.700;NA;NA;60.000;0:15:00;1.149;2250.000;37.500;28.350;217.045
+Řisuty;50.217;14.017;671;2022-07-20 11:54:00;174;CTU portable rainfall simulator;cultivated fallow;without cover;dry;15.825;NA;NA;60.000;0:10:00;1.157;2250.000;37.500;52.841;482.522
+Řisuty;50.217;14.017;674;2022-07-20 11:54:00;176;CTU portable rainfall simulator;grass mixture;fodder crops continous;dry;12.925;NA;NA;60.000;0:17:00;1.369;2220.000;37.000;4.155;12.705
+Řisuty;50.217;14.017;665;2022-07-20 12:47:00;173;CTU small portable rainfall simulator (9550);cultivated fallow;without cover;very wet;33.050;NA;NA;60.000;0:01:00;NA;1710.000;28.500;18.672;99.047
+Řisuty;50.217;14.017;669;2022-07-20 12:54:00;175;CTU portable rainfall simulator;cultivated fallow;without cover;very wet;33.875;NA;NA;60.000;0:01:00;1.149;1710.000;28.500;64.528;691.032
+Řisuty;50.217;14.017;672;2022-07-20 12:54:00;174;CTU portable rainfall simulator;cultivated fallow;without cover;very wet;33.900;NA;NA;60.000;0:01:00;1.157;1710.000;28.500;65.300;745.155
+Řisuty;50.217;14.017;678;2022-07-20 12:54:00;177;CTU portable rainfall simulator;grass mixture;fodder crops continous;very wet;26.550;NA;NA;60.000;0:07:00;1.369;1770.000;29.500;13.843;29.727
+Řisuty;50.217;14.017;679;2022-07-20 13:40:00;177;CTU portable rainfall simulator;grass mixture;fodder crops continous;very wet;NA;NA;NA;60.000;0:01:00;1.369;810.000;13.500;29.802;106.011
+Řisuty;50.217;14.017;676;2022-07-20 13:40:00;176;CTU portable rainfall simulator;grass mixture;fodder crops continous;very wet;NA;NA;NA;60.000;0:01:00;1.369;810.000;13.500;15.213;124.389
+Řisuty;50.217;14.017;670;2022-07-20 13:40:00;175;CTU portable rainfall simulator;cultivated fallow;without cover;very wet;NA;NA;NA;60.000;0:00:00;1.149;900.000;15.000;99.838;2010.411
+Řisuty;50.217;14.017;673;2022-07-20 13:40:00;174;CTU portable rainfall simulator;cultivated fallow;without cover;very wet;NA;NA;NA;60.000;0:00:00;1.157;900.000;15.000;113.190;2304.290
+Řisuty;50.217;14.017;666;2022-07-20 13:43:00;172;CTU small portable rainfall simulator (9550);cultivated fallow;without cover;dry;14.825;NA;NA;60.000;0:11:00;NA;2310.000;38.500;14.375;161.926
+Řisuty;50.217;14.017;667;2022-07-20 14:29:00;172;CTU small portable rainfall simulator (9550);cultivated fallow;without cover;very wet;27.450;NA;NA;60.000;0:01:00;NA;1710.000;28.500;22.626;248.580
+Řisuty;50.217;14.017;701;2022-10-05 00:05:00;186;CTU portable rainfall simulator;cultivated fallow;without cover;dry;NA;NA;NA;60.000;0:05:00;NA;1950.000;32.500;279.446;10160.148
+Řisuty;50.217;14.017;697;2022-10-05 11:00:00;187;CTU portable rainfall simulator;winter barley;winter cereals;dry;NA;NA;NA;60.000;0:11:00;NA;2310.000;38.500;28.387;298.043
+Řisuty;50.217;14.017;690;2022-10-05 11:58:00;182;CTU small portable rainfall simulator (9550);winter barley;winter cereals;very wet;28.925;NA;NA;60.000;0:04:00;NA;1890.000;31.500;0.972;3.392
+Řisuty;50.217;14.017;698;2022-10-05 11:58:00;187;CTU portable rainfall simulator;winter barley;winter cereals;very wet;NA;NA;NA;60.000;0:00:30;NA;1680.000;28.000;137.458;2150.995
+Řisuty;50.217;14.017;691;2022-10-05 13:06:00;183;CTU small portable rainfall simulator (9550);winter barley;winter cereals;dry;11.675;NA;NA;60.000;0:21:00;NA;2910.000;48.500;2.083;8.620
+Řisuty;50.217;14.017;699;2022-10-05 13:53:00;188;CTU portable rainfall simulator;winter rape;oil-crops;dry;16.860;NA;NA;60.000;0:09:00;NA;2190.000;36.500;203.526;9934.203
+Řisuty;50.217;14.017;692;2022-10-05 14:13:00;183;CTU small portable rainfall simulator (9550);winter barley;winter cereals;very wet;30.250;NA;NA;60.000;0:11:00;NA;2310.000;38.500;5.144;19.457
+Řisuty;50.217;14.017;700;2022-10-05 14:47:00;188;CTU portable rainfall simulator;winter rape;oil-crops;very wet;28.200;NA;NA;60.000;0:01:00;NA;1710.000;28.500;332.108;12325.927
+Řisuty;50.217;14.017;693;2022-10-05 15:40:00;184;CTU small portable rainfall simulator (9550);winter rape;oil-crops;dry;19.575;NA;NA;60.000;0:05:00;NA;1950.000;32.500;18.926;531.142
+Řisuty;50.217;14.017;694;2022-10-05 16:30:00;184;CTU small portable rainfall simulator (9550);winter rape;oil-crops;very wet;31.725;NA;NA;60.000;0:01:00;NA;1710.000;28.500;27.457;611.164
+Řisuty;50.217;14.017;702;2022-10-05 16:36:00;186;CTU portable rainfall simulator;cultivated fallow;without cover;very wet;NA;NA;NA;60.000;0:01:00;NA;1710.000;28.500;408.848;10377.336
+Řisuty;50.217;14.017;695;2022-10-05 17:17:00;185;CTU small portable rainfall simulator (9550);winter rape;oil-crops;dry;16.575;NA;NA;60.000;0:07:00;NA;2070.000;34.500;19.837;506.620
+Řisuty;50.217;14.017;696;2022-10-05 18:10:00;185;CTU small portable rainfall simulator (9550);winter rape;oil-crops;very wet;29.200;NA;NA;60.000;0:01:00;NA;1710.000;28.500;25.497;585.630
+Řisuty;50.217;14.017;703;2022-11-02 09:15:00;187;CTU portable rainfall simulator;winter barley;winter cereals;dry;25.060;NA;NA;60.000;0:15:00;NA;2550.000;42.500;20.369;25.368
+Řisuty;50.217;14.017;704;2022-11-02 10:14:00;187;CTU portable rainfall simulator;winter barley;winter cereals;very wet;NA;NA;NA;60.000;0:03:00;NA;1830.000;30.500;33.690;76.050
+Řisuty;50.217;14.017;705;2022-11-02 11:40:00;188;CTU portable rainfall simulator;winter rape;oil-crops;dry;23.640;NA;NA;60.000;0:05:00;NA;1950.000;32.500;88.480;877.877
+Řisuty;50.217;14.017;711;2022-11-02 12:00:00;184;CTU small portable rainfall simulator (9550);winter rape;oil-crops;dry;21.850;NA;NA;60.000;0:14:00;NA;2490.000;41.500;19.141;142.511
+Řisuty;50.217;14.017;706;2022-11-02 12:30:00;188;CTU portable rainfall simulator;winter rape;oil-crops;very wet;32.730;NA;NA;60.000;0:00:30;NA;1680.000;28.000;194.314;2025.743
+Řisuty;50.217;14.017;712;2022-11-02 12:58:00;184;CTU small portable rainfall simulator (9550);winter rape;oil-crops;very wet;34.900;NA;NA;60.000;0:01:00;NA;1710.000;28.500;24.290;162.560
+Řisuty;50.217;14.017;713;2022-11-02 13:45:00;185;CTU small portable rainfall simulator (9550);winter rape;oil-crops;dry;27.450;NA;NA;60.000;0:05:00;NA;1950.000;32.500;14.774;151.011
+Řisuty;50.217;14.017;714;2022-11-02 14:36:00;185;CTU small portable rainfall simulator (9550);winter rape;oil-crops;very wet;30.375;NA;NA;60.000;0:01:00;NA;1710.000;28.500;21.622;232.632

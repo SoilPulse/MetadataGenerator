@@ -1,0 +1,93 @@
+{
+    "locality": [
+        {
+            "term": "locality",
+            "vocabulary": "*own",
+            "uri": "locality@ownvocab"
+        }
+    ],
+    "simulator": [
+        {
+            "term": "rainfall simulator",
+            "vocabulary": "*own",
+            "uri": "rainfall_simulator@ownvocab"
+        }
+    ],
+    "date": [
+        {
+            "term": "date of experiment",
+            "vocabulary": "methodic",
+            "uri": "date_of_experiment@ownvocab"
+        }
+    ],
+    "init. moisture": [
+        {
+            "term": "initial moisture",
+            "vocabulary": "*own",
+            "uri": "initial_moisture@ownvocab"
+        }
+    ],
+    "canopy cover": [
+        {
+            "term": "canopy cover",
+            "vocabulary": "*own",
+            "uri": "canopy_cover@ownvocab"
+        }
+    ],
+    "BBCH": [
+        {
+            "term": "BBCH",
+            "vocabulary": "*own",
+            "uri": "bbch@ownvocab"
+        }
+    ],
+    "rain intensity": [
+        {
+            "term": "rainfall intensity",
+            "vocabulary": "*own",
+            "uri": "rainfall_intensity@ownvocab"
+        }
+    ],
+    "time to runoff": [
+        {
+            "term": "time to runoff",
+            "vocabulary": "*own",
+            "uri": "time_to_runoff@ownvocab"
+        }
+    ],
+    "bulk density": [
+        {
+            "term": "bulk density",
+            "vocabulary": "*own",
+            "uri": "bulk_density@ownvocab"
+        }
+    ],
+    "total time": [
+        {
+            "term": "experiment duration",
+            "vocabulary": "*own",
+            "uri": "experiment_duration@ownvocab"
+        }
+    ],
+    "total rainfall": [
+        {
+            "term": "rainfall total",
+            "vocabulary": "*own",
+            "uri": "rainfall_total@ownvocab"
+        }
+    ],
+    "total discharge": [
+        {
+            "term": "total discharge",
+            "vocabulary": "*own",
+            "uri": "total_discharge@ownvocab"
+        }
+    ],
+    "total soil loss": [
+        {
+            "term": "total soil loss",
+            "vocabulary": "*own",
+            "uri": "total_soil_loss@ownvocab"
+        }
+    ]
+}
