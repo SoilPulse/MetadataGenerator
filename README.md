@@ -1,6 +1,6 @@
 # MetadataGenerator
 
-<!-- [![Test SoilPulse](https://github.com/SoilPulse/MetadataGenerator/actions/workflows/python-package.yml/badge.svg)](https://github.com/SoilPulse/MetadataGenerator/actions/workflows/python-package.yml) -->
+[![Test SoilPulse](https://github.com/SoilPulse/MetadataGenerator/actions/workflows/python-package.yml/badge.svg)](https://github.com/SoilPulse/MetadataGenerator/actions/workflows/python-package.yml)
 [![codecov](https://codecov.io/gh/SoilPulse/MetadataGenerator/graph/badge.svg?token=DROH4NLAXT)](https://codecov.io/gh/SoilPulse/MetadataGenerator)
 [On test-Pypi](https://test.pypi.org/project/soilpulsecore/)
 
