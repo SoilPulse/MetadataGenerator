@@ -273,26 +273,6 @@
             "method": "own:rainfall intensity valid in the preceding time interval"
           },
           {
-            "name": "plotwidth",
-            "type": "integer",
-            "concept": [
-              "http://aims.fao.org/aos/agrovoc/c_36811",
-              "http://aims.fao.org/aos/agrovoc/c_8387"
-            ],
-            "unit": "m",
-            "method": "own:SetByDesign"
-          },
-          {
-            "name": "plotlength",
-            "type": "integer",
-            "concept": [
-              "http://aims.fao.org/aos/agrovoc/c_36811",
-              "http://aims.fao.org/aos/agrovoc/c_4260"
-            ],
-            "unit": "m",
-            "method": "own:SetByDesign"
-          },
-          {
             "name": "overflow",
             "type": "boolean",
             "concept": "",
