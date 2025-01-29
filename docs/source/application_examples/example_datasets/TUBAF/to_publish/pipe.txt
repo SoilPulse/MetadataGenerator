@@ -1,6 +1,15 @@
 
 [
     steps.resource_transform(
+        name='time',
+        steps=[
+            steps.table_normalize(),
+            steps.field_filter(names=["No","time","runoffrate","sedconc","rainfall","overflow"]),
+            steps.row_filter(formula="not ( No == '99' and time == 3720 )"),     # ToDo this step needs to be modified, primiary key is duplicate here. the first value must be kept, the second must be likely "time = 3740", check maybe with original protocols...
+            #steps.field_update(name="sedconc", descriptor={"type": "boolean"}),
+            ]
+    ),
+    steps.resource_transform(
         name='ready2',
         steps=[
             steps.table_normalize(),
@@ -21,14 +30,5 @@
                 )
             ]
     ),
-    steps.resource_remove(name='ready2'),
-    steps.resource_transform(
-        name='time',
-        steps=[
-            steps.table_normalize(),
-            steps.field_filter(names=["No","time","runoffrate","sedconc","rainfall","overflow"]),
-            steps.row_filter(formula="not ( No == '99' and time == 3720 )"),     # ToDo this step needs to be modified, primiary key is duplicate here. the first value must be kept, the second must be likely "time = 3740", check maybe with original protocols...
-            #steps.field_update(name="sedconc", descriptor={"type": "boolean"}),
-            ]
-    )
+    steps.resource_remove(name='ready2')
 ]
