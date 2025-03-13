@@ -66,7 +66,7 @@
           },
           {
             "name": "Plant_coverage",
-            "type": "number",
+            "type": "integer",
             "description": " Estimated percentage of plant coverage ",
             "unit": "%",
             "concept": ""
@@ -584,6 +584,19 @@
                 "Site_number"
               ]
             }
+          },
+          {
+            "fields": [
+              "Site_number",
+              "Experiment_number"
+            ],
+            "reference": {
+              "resource": "3_experiment_time_series",
+              "fields": [
+                "Site_number",
+                "Experiment_number"
+              ]
+            }
           }
         ]
       }
@@ -615,7 +628,7 @@
           },
           {
             "name": "Experiment_number",
-            "type": "string",
+            "type": "integer",
             "description": " ID number of experiment ",
             "unit": "1to6",
             "concept": ""
@@ -873,7 +886,8 @@
         ],
         "primaryKey": [
           "Date_time",
-          "Site_number"
+          "Site_number",
+          "Experiment_number"
         ],
         "foreignKeys": [
           {

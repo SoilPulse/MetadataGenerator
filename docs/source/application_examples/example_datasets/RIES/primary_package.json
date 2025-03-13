@@ -602,6 +602,19 @@
                 "Site_number"
               ]
             }
+          },
+          {
+            "fields": [
+              "Site_number",
+              "Experiment_number"
+            ],
+            "reference": {
+              "resource": "3_experiment_time_series",
+              "fields": [
+                "Site_number",
+                "Experiment_number"
+              ]
+            }
           }
         ]
       }
@@ -645,7 +658,7 @@
           },
           {
             "name": "Experiment_number",
-            "type": "string",
+            "type": "integer",
             "description": " ID number of experiment ",
             "unit": "1to6",
             "concept": ""
@@ -902,8 +915,9 @@
           "NA"
         ],
         "primaryKey": [
+          "Date_time",
           "Site_number",
-          "Date_time"
+          "Experiment_number"
         ],
         "foreignKeys": [
           {

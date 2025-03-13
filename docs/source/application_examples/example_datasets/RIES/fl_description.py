@@ -12,7 +12,7 @@ from pathlib import Path
 from frictionless import steps, transform, Detector
 
 # load prepared package with defined comment rows of the three tables, but no schema
-ries = Package("catalogue\\temp_4\\example_Ries.json")
+ries = Package("example_Ries.json")
 
 # infer schema
 ries.infer()
@@ -20,7 +20,7 @@ ries.infer()
 # parse metadata in files to frictionless
 for x in ries.resources:
     # open files from unzipped files
-    with open("catalogue\\temp_4\\"+x.path.replace(".zip","")+"/"+x.innerpath) as f:
+    with open(x.innerpath) as f:
         for z in f.readlines():
             # comment rows starting with "# - " hold metadata on data columns
             # units are in "[]"
@@ -72,6 +72,16 @@ x = transform(x,
                                     )
                  ]
              )
+# transform experiment number to integer
+x = transform(x,
+             steps = [
+                 steps.field_update(name = "Experiment_number",
+                                    descriptor = {
+                                        'type': "integer"
+                                        }
+                                    )
+                     ]
+                 )
 
 numeric_list = [x.name for x in ries.resources[1].schema.fields if "Q_" in x.name or "P_" in x.name or "RC_" in x.name]
 print(numeric_list)
@@ -90,6 +100,8 @@ x = transform(x,
 # set primary and foreign keys
 ries.resources[0].schema.primary_key = ["Site_number"]
 ries.resources[1].schema.primary_key = ["Site_number", "Experiment_number"]
+ries.resources[2].schema.primary_key = ["Date_time", "Site_number", "Experiment_number"]
+
 ries.resources[1].schema.foreign_keys = [
     {'fields': ['Site_number'],
      'reference': {
@@ -98,9 +110,18 @@ ries.resources[1].schema.foreign_keys = [
             "Site_number"
             ]
          }
-     }
+     },
+     {'fields': ['Site_number', 'Experiment_number'],
+      'reference': {
+          "resource": ries.resources[2].name,
+          "fields": [
+             "Site_number",
+             'Experiment_number'
+             ]
+          }
+      }
      ]
-ries.resources[2].schema.primary_key = ["Site_number", "Date_time"]
+
 ries.resources[2].schema.foreign_keys = [
     {'fields': ['Site_number'],
      'reference': {
@@ -109,17 +130,8 @@ ries.resources[2].schema.foreign_keys = [
             "Site_number"
             ]
          }
-     }#, # the following foreign key is correct in principal, but is invalid, as not all timesteps belong to an experiment
-#     {'fields': ['Site_number', 'Experiment_number'],
-#      'reference': {
-#          "resource": ries.resources[1].name,
-#          "fields": [
-#             "Site_number",
-#             'Experiment_number'
-#             ]
-#          }
-#      }
-     ]
+     }
+    ]
 
 
 # manual assignment of concepts by Agrovoc URI
@@ -260,13 +272,13 @@ ries.validate()
 
 
 
-ries.to_json("catalogue\\temp_4\\primary_package.json")
+ries.to_json("primary_package.json")
 
 # do data transformation
 
-with open('catalogue\\temp_4\\to_publish\\pipe.txt', 'r') as f:
+with open('to_publish\\pipe.txt', 'r') as f:
     pipe = Pipeline(steps=eval(f.read()))
 
 ries.transform(pipe)
 ries.validate()
-ries.to_json("catalogue\\temp_4\\to_publish\\piped_package.json")
+ries.to_json("to_publish\\piped_package.json")
